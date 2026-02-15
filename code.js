@@ -121,10 +121,10 @@ function extractBorders(node, settings, isWidget = false, widgetType = "") {
     if (node.cornerRadius === figma.mixed) {
       settings[radiusKey] = {
         unit: "px",
-        top: String(node.topLeftRadius || 0),
-        right: String(node.topRightRadius || 0),
-        bottom: String(node.bottomRightRadius || 0),
-        left: String(node.bottomLeftRadius || 0),
+        top: String(node.topLeftRadius !== figma.mixed ? node.topLeftRadius || 0 : 0),
+        right: String(node.topRightRadius !== figma.mixed ? node.topRightRadius || 0 : 0),
+        bottom: String(node.bottomRightRadius !== figma.mixed ? node.bottomRightRadius || 0 : 0),
+        left: String(node.bottomLeftRadius !== figma.mixed ? node.bottomLeftRadius || 0 : 0),
         isLinked: false
       };
     } else if (node.cornerRadius > 0) {
@@ -139,7 +139,7 @@ function extractBorders(node, settings, isWidget = false, widgetType = "") {
     }
   }
 
-  if (node.strokes && node.strokes.length > 0 && node.strokeWeight > 0) {
+  if (node.strokes && node.strokes.length > 0 && node.strokeWeight !== figma.mixed && node.strokeWeight > 0) {
     const stroke = node.strokes[0];
     if (stroke.type === "SOLID") {
       settings[borderKey] = "solid";
@@ -186,9 +186,9 @@ function extractTextStyle(node) {
       color = figmaColorToRGBA(node.fills[0].color, node.fills[0].opacity);
     }
   }
-  const size = (node.fontSize && node.fontSize !== figma.mixed) ? node.fontSize : 16;
+  const size = (node.fontSize !== undefined && node.fontSize !== figma.mixed) ? node.fontSize : 16;
   let weight = "400";
-  if (node.fontName && node.fontName !== figma.mixed) {
+  if (node.fontName !== undefined && node.fontName !== figma.mixed) {
     weight = mapFontWeight(node.fontName.style);
   }
   return { color, size, weight };
@@ -305,29 +305,23 @@ function mapContainer(node, children, isRoot, isForcedFull) {
   const bgSettings = extractBackground(node);
   const direction = getLayoutDirection(node);
 
-  // --- NOVA LÓGICA DE LARGURA INTELIGENTE ---
-  let containerWidth = { size: 100, unit: "%" }; // Padrão
+  let containerWidth = { size: 100, unit: "%" };
 
   if (isRoot) {
-    // Lógica do Pai Root
     containerWidth = isBoxed ? { size: 1140, unit: "px" } : { size: 100, unit: "%" };
   } else {
-    // Lógica para Containers Filhos
-    // Se estiver definido como "FIXED" ou não tiver auto-layout (frames manuais), usa PX
-    // Se estiver como "FILL", usa %
     if (node.layoutSizingHorizontal === 'FIXED') {
       containerWidth = { size: node.width, unit: "px" };
     } else if (node.layoutSizingHorizontal === 'FILL') {
       containerWidth = { size: 100, unit: "%" };
     } else {
-      // Fallback: Se for Frame/Group comum ou Hug, respeita o visual pixel-perfect
       containerWidth = { size: node.width, unit: "px" };
     }
   }
 
   const settings = {
     content_width: isBoxed ? "boxed" : "full",
-    width: containerWidth, // Aplica a largura calculada
+    width: containerWidth,
     flex_direction: direction,
     justify_content: node.primaryAxisAlignItems === "CENTER" ? "center" : "flex-start",
     align_items: node.counterAxisAlignItems === "CENTER" ? "center" : "flex-start",
