@@ -1,4 +1,26 @@
+# Dependências
 node_modules
+
+# Sistema
 .DS_Store
+Thumbs.db
+
+# Ambiente
 .env
+.env.local
+
+# Build
 dist
+
+# Logs
+*.log
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporários
+*.tmp
+*.zip
