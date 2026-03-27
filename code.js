@@ -25,7 +25,7 @@ figma.ui.onmessage = (msg) => {
       const structure = traverseNode(selection[0], true);
       const elementorJSON = {
         version: "0.4",
-        title: "Export V16 Width Fix - " + selection[0].name,
+        title: "Export V17 Icon Box Fix - " + selection[0].name,
         type: "container",
         content: [structure]
       };
@@ -69,7 +69,8 @@ function figmaColorToRGBA(color, opacity = 1) {
   const r = Math.round(color.r * 255);
   const g = Math.round(color.g * 255);
   const b = Math.round(color.b * 255);
-  return `rgba(${r},${g},${b},${parseFloat(opacity.toFixed(2))})`;
+  const alpha = opacity !== undefined ? opacity : 1;
+  return `rgba(${r},${g},${b},${parseFloat(alpha.toFixed(2))})`;
 }
 
 function mapFontWeight(style) {
@@ -259,6 +260,46 @@ function handleManualTag(node, tag, isRoot) {
     settings.description_typography_font_weight = secStyle.weight;
 
     settings.image = { url: "", id: "" };
+  }
+  else if (tag === "icon-box") {
+    settings.title_text = texts[0] || "Título do Ícone";
+    settings.title = settings.title_text; // Garantia dupla
+
+    if (mainStyle.color) settings.title_color = mainStyle.color;
+    settings.title_typography_typography = "custom";
+    settings.title_typography_font_size = { size: mainStyle.size, unit: "px" };
+    settings.title_typography_font_weight = mainStyle.weight;
+
+    settings.description_text = texts.slice(1).join(" ");
+    settings.description = settings.description_text; // Garantia dupla
+
+    if (secStyle.color) settings.description_color = secStyle.color;
+    settings.description_typography_typography = "custom";
+    settings.description_typography_font_size = { size: secStyle.size, unit: "px" };
+    settings.description_typography_font_weight = secStyle.weight;
+
+    let iconColor = mainStyle.color;
+    let iconName = "fas fa-star";
+
+    // Extração de Ícone
+    let vectorNodes = [];
+    if (node.type === "VECTOR" || node.type === "BOOLEAN_OPERATION") vectorNodes.push(node);
+    else if ("findAll" in node) vectorNodes = node.findAll(n => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
+
+    if (vectorNodes.length > 0) {
+      const vector = vectorNodes[0];
+      if (vector.name.startsWith("fas ") || vector.name.startsWith("fab ") || vector.name.startsWith("far ")) {
+        iconName = vector.name;
+      }
+      if (vector.fills && vector.fills !== figma.mixed && vector.fills.length > 0) {
+        if (vector.fills[0].type === "SOLID") {
+          iconColor = figmaColorToRGBA(vector.fills[0].color, vector.fills[0].opacity);
+        }
+      }
+    }
+
+    settings.selected_icon = { value: iconName, library: iconName.startsWith("fab") ? "fa-brands" : "fa-solid" };
+    if (iconColor) settings.primary_color = iconColor;
   }
   else if (tag === "icon-list") {
     let listItems = texts;
