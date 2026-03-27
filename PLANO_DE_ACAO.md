@@ -37,6 +37,15 @@ A lógica de priorização segue:
   - Para imagens: agrupar na chave `carousel` populando a array de objetos `{id, url}`.
   - Inserir padrões (fallback) para `slides_to_show` e `navigation`.
 
+### 1.3 Widget: `button` (Alta Prioridade)
+- **O Problema:** O widget de botão existe na interface, mas necessita de um handler específico no `code.js` para capturar todas as suas propriedades essenciais definidas pela estrutura do Elementor.
+- **Ação Técnica:**
+  - Extrair a string do nó de texto interno para popular a chave geométrica `text`.
+  - Identificar o alinhamento e as propriedades de Auto Layout do Figma para mapear as chaves `align` (left, center, right, justify) e `size` (sm, md, lg, xl).
+  - Extrair as propriedades de estilo essenciais (cor de fundo, cor do texto, tipografia, e `border-radius`).
+  - Identificar se há um nó de vetor (ícone) junto ao texto para popular as chaves correspondentes `icon`, `icon_align` (left/right) e `icon_indent`, dependendo da ordem dos elementos no Auto Layout.
+  - Mapear links de prototipagem (Figma Reactions) para o objeto de link no Elementor populando `link: { url: "...", is_external: false }`.
+
 ---
 
 ## 🛠️ FASE 2: Refatoração e Estabilidade (Curto Prazo)
