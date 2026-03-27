@@ -129,6 +129,11 @@ function extractBorders(node, settings, isWidget = false, widgetType = "") {
     borderKey = "image_border_border";
     widthKey = "image_border_width";
     colorKey = "image_border_color";
+  } else if (widgetType === "button") {
+    radiusKey = "border_radius";
+    borderKey = "border_border";
+    widthKey = "border_width";
+    colorKey = "border_color";
   }
 
   if (node.cornerRadius !== undefined) {
@@ -344,6 +349,66 @@ function handleManualTag(node, tag, isRoot) {
     settings.typography_typography = "custom";
     settings.typography_font_size = { size: mainStyle.size, unit: "px" };
     settings.typography_font_weight = mainStyle.weight;
+  }
+  else if (tag === "button") {
+    settings.text = texts.join(" ") || "Clique Aqui";
+
+    if (mainStyle.color) {
+      settings.text_color = mainStyle.color;
+    }
+
+    settings.typography_typography = "custom";
+    settings.typography_font_size = { size: mainStyle.size, unit: "px" };
+    settings.typography_font_weight = mainStyle.weight;
+
+    // Background remap
+    if (settings._background_color) {
+      settings.background_color = settings._background_color;
+      delete settings._background_color;
+      delete settings._background_background;
+    }
+
+    // UX / Size Heuristic
+    let paddingTop = node.paddingTop || 0;
+    let paddingBottom = node.paddingBottom || 0;
+    let sumPadding = paddingTop + paddingBottom;
+    if (sumPadding >= 40) settings.size = "lg";
+    else if (sumPadding >= 20) settings.size = "md";
+    else settings.size = "sm";
+
+    // Align Heuristic
+    let align = "justify";
+    if (node.layoutSizingHorizontal === "FILL") align = "justify";
+    else if (node.primaryAxisAlignItems === "CENTER") align = "center";
+    else if (node.primaryAxisAlignItems === "MAX") align = "right";
+    else align = "left";
+    settings.align = align;
+
+    // Vector / Icon Logic
+    let vectorNodes = [];
+    if ("findAll" in node) {
+      vectorNodes = node.findAll(n => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
+    }
+    if (vectorNodes.length > 0) {
+      const vector = vectorNodes[0];
+      if (vector.name.startsWith("fas ") || vector.name.startsWith("fab ") || vector.name.startsWith("far ")) {
+        settings.selected_icon = { value: vector.name, library: vector.name.startsWith("fab") ? "fa-brands" : "fa-solid" };
+        if (textNodes.length > 0 && vector.x > textNodes[0].x) {
+          settings.icon_align = "right";
+        } else {
+          settings.icon_align = "left";
+        }
+        settings.icon_indent = { size: node.itemSpacing || 5, unit: "px" };
+      }
+    }
+
+    // Hyperlinks (Prototype Reactions)
+    if (node.reactions && node.reactions.length > 0) {
+      const reaction = node.reactions.find(r => r.action && r.action.type === "URL");
+      if (reaction) {
+        settings.link = { url: reaction.action.url, is_external: true };
+      }
+    }
   }
   else if (tag === "image") {
     settings.image = { url: "", id: "" };
