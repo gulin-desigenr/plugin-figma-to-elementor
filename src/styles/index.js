@@ -1,5 +1,6 @@
 import { figmaColorToRGBA } from '../utils/colors.js';
 import { mapFontWeight } from '../utils/typography.js';
+import { extractBase64Image } from '../utils/nodes.js';
 
 export function extractBorders(node, settings, isWidget = false, widgetType = "") {
   let radiusKey = isWidget ? "_border_radius" : "border_radius";
@@ -116,9 +117,22 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
 }
 
 export async function extractBackground(node, maps = { colorMap: {}, typoMap: {} }) {
+  let result = {};
+
   if (node.fills && node.fills !== figma.mixed && node.fills.length > 0) {
-    if (node.fills[0].type === "SOLID") {
-      const color = figmaColorToRGBA(node.fills[0].color, node.fills[0].opacity);
+    const imageFill = node.fills.find(f => f.type === "IMAGE" && f.visible !== false);
+    
+    if (imageFill) {
+      const base64Data = await extractBase64Image(node);
+      if (base64Data) {
+        result.background_background = "classic";
+        result.background_image = { url: base64Data, id: "" };
+      }
+    }
+
+    const solidFill = node.fills.find(f => f.type === "SOLID" && f.visible !== false);
+    if (solidFill) {
+      const color = figmaColorToRGBA(solidFill.color, solidFill.opacity);
       let globalColorId = null;
 
       if (node.fillStyleId) {
@@ -128,12 +142,11 @@ export async function extractBackground(node, maps = { colorMap: {}, typoMap: {}
         }
       }
 
-      return {
-        background_background: "classic",
-        background_color: color,
-        globalColorId
-      };
+      result.background_background = "classic";
+      result.background_color = color;
+      if (globalColorId) result.globalColorId = globalColorId;
     }
   }
-  return {};
+
+  return result;
 }

@@ -91,10 +91,31 @@ A lógica de priorização segue:
 
 ---
 
-## 🤖 FASE 4: Experiência Mágica (Longo Prazo)
+## ✨ FASE 4: Refinamentos e UI Overhaul
+*Objetivo: Limpar inconsistências no payload e garantir a estética profissional do plugin.*
+
+### 4.1 Ignorar Elementos Soltos (Não-Tagueados) (Issue #8)
+- **O Problema:** A engine não purga os elementos genéricos sem tag, mantendo sujeiras visuais no JSON.
+- **Ação Técnica:** Adicionar lógica no `traverseNode` para forçar o skip de nós órfãos de tags de widget.
+
+### 4.2 CSS Customizado Fantasma (Issue #5)
+- **O Problema:** Injeção indevida de CSS ou position attributes que bloqueiam a edição nativa via Elementor.
+- **Ação Técnica:** Filtrar as propriedades enviadas, garantindo que formatações inline absolutas não escapem.
+
+### 4.3 Background-Image Nativo (Issue #6/#7)
+- **O Problema:** Consolidar os preenchimentos de imagem (`IMAGE` fills) aplicados sobre fundos de Container.
+- **Ação Técnica:** Refinar tratativas em `styles/index.js` para mesclar background sólido e imagem de fundo corretamente no JSON do Elementor.
+
+### 4.4 Redesign Mestre de Interface (Issue #4)
+- **O Problema:** Layout atual (`ui.html`) não transmite a qualidade premium condizente com as regras de design moderno, prejudicando o onboarding.
+- **Ação Técnica:** Refatorar HTML/CSS do `ui.html` utilizando um Design System com base visual do Figma UI (Dark Mode nativo, Tabs para controle, tooltips elucidativos e states hover fluídos).
+
+---
+
+## 🔮 FASE 5: Experiência Mágica (Longo Prazo)
 *Objetivo: Reduzir a necessidade de marcação manual em grandes volumes.*
 
-### 4.1 Parser de Elementos "Zero-Tag" via Heurística Avançada
+### 5.1 Parser de Elementos "Zero-Tag" via Heurística Avançada
 - **O Problema:** O usuário gasta muito tempo tagueando estruturas óbvias para um desenvolvedor front-end.
 - **Ação Técnica:**
   - Criar detectores visuais baseados em geometria.
@@ -103,27 +124,8 @@ A lógica de priorização segue:
 
 ---
 
-## 📋 Resumo Priorizado para Execução Imediata
+## 📋 Resumo Priorizado para Execução (Próximos Passos)
 
-Se tivéssemos que abrir um Pull Request amanhã, a ordem de execução deve ser:
-
-1. **Bugfix / Features faltantes:** Implementar os Handlers de `icon-box` e `image-carousel` no `code.js` para honrar os botões já expostos na UI.
-2. **Melhoria Arquitetural:** Extrair os validadores visuais para aliviar o root file.
-3. **QoL (Quality of Life):** Implementar conversão de Imagens pra Base64 para poupar cliques maçantes no WP.
-
----
-
-## 📥 BACKLOG / GITHUB ISSUES PARA PRÓXIMAS FASES
-*Estas tarefas foram extraídas das Issues do repositório para serem incorporadas após a Estabilidade da Fase 2.*
-
-### Correções (Bugs & Refinamentos)
-- **#8 Ignorar Elementos Soltos (Não-Tagueados):** Fazer com que a engine do `traverseNode` purgue e ignore elementos genéricos na canvas que não receberam tag do usuário, mantendo o JSON mais limpo e livre de sujeiras visuais do Figma.
-- **#5 CSS Customizado Fantasma:** Corrigir injeção indevida de customizações CSS nativas que ficam chumbadas no container pai invisíveis para a edição do cliente no painel do WordPress.
-
-### Novas Funcionalidades (Features)
-- **#6/#7 Background-Image nativo:** Habilitar suporte à decodificação de `fills` do tipo `IMAGE` no objeto de Container, formatando a chave Elementor para que a propriedade `Imagem de Fundo` no painel Estilo herde a imagem vinculada.
-
-### Atualização Mestra de Interface (Redesign)
-- **#4 Layout do plugin é feio (UI Overhaul):** Refatorar completamente o código HTML/CSS da interface do Figmentor. Substituir a lista de botões genéricos por um Design System premium: cores neutras escuras (Dark Mode Figma-like), separação avançada por abas (Tabs), transições suaves, tooltips para tags complexas e identidade visual forte.
-
-*(Nota: Importante notar que as antigas Issues #1, #2 e #3 já foram completamente arquitetadas, validadas e sanadas nas Fases 1.2, 1.3 e 2.1 durante os últimos ciclos de desenvolvimento!)*
+1. **Qualidade Mestra (UI e Pipeline):** Entregar a interface premium solicitada no roadmap (UI Overhaul).
+2. **Qualidade de Exportação (Backend):** Proteger o payload limpando CSS fantasmas e expurgando loose-nodes (elementos soltos não-tagueados).
+3. **Escala Futura:** Planejar arquitetura para a dectecção heurística "Zero-tag" nos sprints tardios.

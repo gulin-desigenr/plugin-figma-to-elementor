@@ -1,7 +1,7 @@
 import { traverseNode } from './traverse.js';
 import { extractBorders, extractShadows, extractTextStyle, extractBackground } from '../styles/index.js';
 import { figmaColorToRGBA } from '../utils/colors.js';
-import { getIterableNodes, getLayoutDirection, hasImageFill, getNodeRole } from '../utils/nodes.js';
+import { getIterableNodes, getLayoutDirection, hasImageFill, getNodeRole, extractBase64Image } from '../utils/nodes.js';
 
 export async function handleManualTag(node, tag, isRoot, maps) {
   if (tag === 'container' || tag === 'container-full' || tag === 'page-wrapper') {
@@ -10,7 +10,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     
     if ("children" in node) {
       for (const child of node.children) {
-        const res = await traverseNode(child, childIsRoot, maps);
+        const res = await traverseNode(child, childIsRoot, maps, true);
         if (res) {
           if (Array.isArray(res)) children = children.concat(res);
           else children.push(res);
@@ -42,7 +42,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     if (bgSettings.background_background) {
       settings._background_background = bgSettings.background_background;
       settings._background_color = bgSettings.background_color;
-      if (bgSettings.__globals__) settings.__globals__ = { ...settings.__globals__, ...bgSettings.__globals__ };
+      if (bgSettings.__globals__) settings.__globals__ = Object.assign({}, settings.__globals__ || {}, bgSettings.__globals__);
     }
   }
 
@@ -83,7 +83,8 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.description_typography_font_size = { size: dStyle.size, unit: "px" };
     settings.description_typography_font_weight = dStyle.weight;
 
-    settings.image = { url: "", id: "" };
+    const base64Image = await extractBase64Image(node);
+    settings.image = { url: base64Image || "", id: "" };
   }
   else if (tag === "icon-box") {
     let titleNode = textNodes.find(n => getNodeRole(n) === 'title_text');
@@ -282,7 +283,8 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     }
   }
   else if (tag === "image") {
-    settings.image = { url: "", id: "" };
+    const base64Image = await extractBase64Image(node);
+    settings.image = { url: base64Image || "", id: "" };
     settings._width = { size: node.width, unit: "px" };
   }
   else if (tag === "image-carousel") {
@@ -291,7 +293,8 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     
     for (const child of iterableNodes) {
       if (child.type === "IMAGE" || hasImageFill(child) || child.type === "RECTANGLE" || child.type === "FRAME") {
-        carouselItems.push({ id: child.id || "", url: "" });
+        const base64Image = await extractBase64Image(child);
+        carouselItems.push({ id: child.id || "", url: base64Image || "" });
       } else {
         carouselItems.push({ id: "", url: "" });
       }
@@ -310,7 +313,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     let elements = [];
     
     for (const child of iterableNodes) {
-      const res = await traverseNode(child, false, maps);
+      const res = await traverseNode(child, false, maps, true);
       if (res) {
         if (Array.isArray(res)) {
           elements.push({ elType: "container", settings: {}, elements: res });
@@ -429,7 +432,8 @@ export async function mapText(node, maps) {
 }
 
 export async function mapImage(node) {
-  let settings = { image: { url: "", id: "" }, align: "center" };
+  const base64Image = await extractBase64Image(node);
+  let settings = { image: { url: base64Image || "", id: "" }, align: "center" };
 
   extractBorders(node, settings, true, "image");
   extractShadows(node, settings, true, "image");
