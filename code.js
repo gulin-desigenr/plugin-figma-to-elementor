@@ -65,6 +65,19 @@ function traverseNode(node, isRoot) {
 
 // --- UTILITÁRIOS ---
 
+function getIterableNodes(node) {
+  if ("children" in node && node.children.length > 0) {
+    return node.children.filter(c => c.visible);
+  }
+  
+  const selection = figma.currentPage.selection;
+  if (selection.length > 1 && selection.includes(node)) {
+    return selection.filter(n => n.visible);
+  }
+  
+  return [node];
+}
+
 function figmaColorToRGBA(color, opacity = 1) {
   const r = Math.round(color.r * 255);
   const g = Math.round(color.g * 255);
@@ -335,6 +348,59 @@ function handleManualTag(node, tag, isRoot) {
   else if (tag === "image") {
     settings.image = { url: "", id: "" };
     settings._width = { size: node.width, unit: "px" };
+  }
+  else if (tag === "image-carousel") {
+    const iterableNodes = getIterableNodes(node);
+    const carouselItems = [];
+    
+    for (const child of iterableNodes) {
+      if (child.type === "IMAGE" || hasImageFill(child) || child.type === "RECTANGLE" || child.type === "FRAME") {
+        carouselItems.push({ id: child.id || "", url: "" });
+      } else {
+        carouselItems.push({ id: "", url: "" });
+      }
+    }
+    
+    if (carouselItems.length === 0) carouselItems.push({ id: "", url: "" });
+
+    settings.carousel = carouselItems;
+    settings.slides_to_show = "3";
+    settings.slides_to_scroll = "1";
+    settings.navigation = "both";
+    settings.image_size = "full";
+  }
+  else if (tag === "container-carousel") {
+    const iterableNodes = getIterableNodes(node);
+    let elements = [];
+    
+    for (const child of iterableNodes) {
+      const res = traverseNode(child, false);
+      if (res) {
+        if (Array.isArray(res)) {
+          elements.push({
+            elType: "container",
+            settings: {},
+            elements: res
+          });
+        }
+        else if (res.elType !== "container") {
+          elements.push({
+            elType: "container",
+            settings: {},
+            elements: [res]
+          });
+        }
+        else {
+          elements.push(res);
+        }
+      }
+    }
+
+    settings.slides_to_show = "3";
+    settings.slides_to_scroll = "1";
+    settings.navigation = "both";
+    
+    return { elType: "widget", widgetType: "nested-carousel", settings: settings, elements: elements };
   }
 
   return { elType: "widget", widgetType: tag, settings: settings };
