@@ -3,14 +3,14 @@ import { extractBorders, extractShadows, extractTextStyle, extractBackground } f
 import { figmaColorToRGBA } from '../utils/colors.js';
 import { getIterableNodes, getLayoutDirection, hasImageFill, getNodeRole } from '../utils/nodes.js';
 
-export function handleManualTag(node, tag, isRoot) {
+export async function handleManualTag(node, tag, isRoot, maps) {
   if (tag === 'container' || tag === 'container-full' || tag === 'page-wrapper') {
     let children = [];
     const childIsRoot = (tag === 'page-wrapper');
     
     if ("children" in node) {
       for (const child of node.children) {
-        const res = traverseNode(child, childIsRoot);
+        const res = await traverseNode(child, childIsRoot, maps);
         if (res) {
           if (Array.isArray(res)) children = children.concat(res);
           else children.push(res);
@@ -23,7 +23,7 @@ export function handleManualTag(node, tag, isRoot) {
       return children;
     }
 
-    return mapContainer(node, children, isRoot, tag === 'container-full');
+    return await mapContainer(node, children, isRoot, tag === 'container-full', maps);
   }
 
   let textNodes = [];
@@ -31,17 +31,18 @@ export function handleManualTag(node, tag, isRoot) {
   else if ("findAll" in node) textNodes = node.findAll(n => n.type === "TEXT");
 
   const texts = textNodes.map(t => t.characters);
-  const styles = textNodes.map(t => extractTextStyle(t));
+  const styles = await Promise.all(textNodes.map(t => extractTextStyle(t, maps)));
   const mainStyle = styles.length > 0 ? styles[0] : { color: "", size: 16, weight: "400" };
   const secStyle = styles.length > 1 ? styles[1] : mainStyle;
 
   let settings = { align: "center" };
 
   if (node.type !== "TEXT") {
-    const bgSettings = extractBackground(node);
+    const bgSettings = await extractBackground(node, maps);
     if (bgSettings.background_background) {
       settings._background_background = bgSettings.background_background;
       settings._background_color = bgSettings.background_color;
+      if (bgSettings.__globals__) settings.__globals__ = { ...settings.__globals__, ...bgSettings.__globals__ };
     }
   }
 
@@ -53,15 +54,31 @@ export function handleManualTag(node, tag, isRoot) {
     let descNode = textNodes.find(n => getNodeRole(n) === 'description_text');
 
     settings.title_text = titleNode ? titleNode.characters : (texts[0] || "Título");
-    let tStyle = titleNode ? extractTextStyle(titleNode) : mainStyle;
+    let tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
     if (tStyle.color) settings.title_color = tStyle.color;
+    if (tStyle.globalColorId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.title_color = `globals/colors?id=${tStyle.globalColorId}`;
+    }
+    if (tStyle.globalTypoId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.title_typography_typography = `globals/typography?id=${tStyle.globalTypoId}`;
+    }
     settings.title_typography_typography = "custom";
     settings.title_typography_font_size = { size: tStyle.size, unit: "px" };
     settings.title_typography_font_weight = tStyle.weight;
 
     settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
-    let dStyle = descNode ? extractTextStyle(descNode) : secStyle;
+    let dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
     if (dStyle.color) settings.description_color = dStyle.color;
+    if (dStyle.globalColorId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.description_color = `globals/colors?id=${dStyle.globalColorId}`;
+    }
+    if (dStyle.globalTypoId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.description_typography_typography = `globals/typography?id=${dStyle.globalTypoId}`;
+    }
     settings.description_typography_typography = "custom";
     settings.description_typography_font_size = { size: dStyle.size, unit: "px" };
     settings.description_typography_font_weight = dStyle.weight;
@@ -75,8 +92,16 @@ export function handleManualTag(node, tag, isRoot) {
     settings.title_text = titleNode ? titleNode.characters : (texts[0] || "Título do Ícone");
     settings.title = settings.title_text;
 
-    let tStyle = titleNode ? extractTextStyle(titleNode) : mainStyle;
+    let tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
     if (tStyle.color) settings.title_color = tStyle.color;
+    if (tStyle.globalColorId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.title_color = `globals/colors?id=${tStyle.globalColorId}`;
+    }
+    if (tStyle.globalTypoId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.title_typography_typography = `globals/typography?id=${tStyle.globalTypoId}`;
+    }
     settings.title_typography_typography = "custom";
     settings.title_typography_font_size = { size: tStyle.size, unit: "px" };
     settings.title_typography_font_weight = tStyle.weight;
@@ -84,8 +109,16 @@ export function handleManualTag(node, tag, isRoot) {
     settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
     settings.description = settings.description_text;
 
-    let dStyle = descNode ? extractTextStyle(descNode) : secStyle;
+    let dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
     if (dStyle.color) settings.description_color = dStyle.color;
+    if (dStyle.globalColorId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.description_color = `globals/colors?id=${dStyle.globalColorId}`;
+    }
+    if (dStyle.globalTypoId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.description_typography_typography = `globals/typography?id=${dStyle.globalTypoId}`;
+    }
     settings.description_typography_typography = "custom";
     settings.description_typography_font_size = { size: dStyle.size, unit: "px" };
     settings.description_typography_font_weight = dStyle.weight;
@@ -128,6 +161,16 @@ export function handleManualTag(node, tag, isRoot) {
       settings.icon_color = mainStyle.color;
       settings.text_color = mainStyle.color;
     }
+    if (mainStyle.globalColorId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.icon_color = `globals/colors?id=${mainStyle.globalColorId}`;
+      settings.__globals__.text_color = `globals/colors?id=${mainStyle.globalColorId}`;
+    }
+    if (mainStyle.globalTypoId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.text_typography_typography = `globals/typography?id=${mainStyle.globalTypoId}`;
+    }
+
     settings.text_typography_typography = "custom";
     settings.text_typography_font_size = { size: mainStyle.size, unit: "px" };
     settings.text_typography_font_weight = mainStyle.weight;
@@ -135,6 +178,14 @@ export function handleManualTag(node, tag, isRoot) {
   else if (tag === "heading") {
     settings.title = texts.join(" ");
     if (mainStyle.color) settings.title_color = mainStyle.color;
+    if (mainStyle.globalColorId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.title_color = `globals/colors?id=${mainStyle.globalColorId}`;
+    }
+    if (mainStyle.globalTypoId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.typography_typography = `globals/typography?id=${mainStyle.globalTypoId}`;
+    }
     settings.typography_typography = "custom";
     settings.typography_font_size = { size: mainStyle.size, unit: "px" };
     settings.typography_font_weight = mainStyle.weight;
@@ -142,6 +193,14 @@ export function handleManualTag(node, tag, isRoot) {
   else if (tag === "text-editor") {
     settings.editor = texts.join("<br>");
     if (mainStyle.color) settings.text_color = mainStyle.color;
+    if (mainStyle.globalColorId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.text_color = `globals/colors?id=${mainStyle.globalColorId}`;
+    }
+    if (mainStyle.globalTypoId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.typography_typography = `globals/typography?id=${mainStyle.globalTypoId}`;
+    }
     settings.typography_typography = "custom";
     settings.typography_font_size = { size: mainStyle.size, unit: "px" };
     settings.typography_font_weight = mainStyle.weight;
@@ -153,6 +212,14 @@ export function handleManualTag(node, tag, isRoot) {
       if (mainStyle.color) {
         settings.text_color = mainStyle.color;
       }
+      if (mainStyle.globalColorId) {
+        settings.__globals__ = settings.__globals__ || {};
+        settings.__globals__.button_text_color = `globals/colors?id=${mainStyle.globalColorId}`;
+      }
+      if (mainStyle.globalTypoId) {
+        settings.__globals__ = settings.__globals__ || {};
+        settings.__globals__.typography_typography = `globals/typography?id=${mainStyle.globalTypoId}`;
+      }
 
       settings.typography_typography = "custom";
       settings.typography_font_size = { size: mainStyle.size, unit: "px" };
@@ -160,6 +227,10 @@ export function handleManualTag(node, tag, isRoot) {
 
       if (settings._background_color) {
         settings.background_color = settings._background_color;
+        if (bgSettings.globalColorId) {
+          settings.__globals__ = settings.__globals__ || {};
+          settings.__globals__.background_color = `globals/colors?id=${bgSettings.globalColorId}`;
+        }
         delete settings._background_color;
         delete settings._background_background;
       }
@@ -239,7 +310,7 @@ export function handleManualTag(node, tag, isRoot) {
     let elements = [];
     
     for (const child of iterableNodes) {
-      const res = traverseNode(child, false);
+      const res = await traverseNode(child, false, maps);
       if (res) {
         if (Array.isArray(res)) {
           elements.push({ elType: "container", settings: {}, elements: res });
@@ -263,11 +334,11 @@ export function handleManualTag(node, tag, isRoot) {
   return { elType: "widget", widgetType: tag, settings: settings };
 }
 
-export function mapContainer(node, children, isRoot, isForcedFull) {
+export async function mapContainer(node, children, isRoot, isForcedFull, maps) {
   try {
     if (!children || children.length === 0) return null;
     const isBoxed = (isRoot === true && isForcedFull === false);
-    const bgSettings = extractBackground(node);
+    const bgSettings = await extractBackground(node, maps);
     const direction = getLayoutDirection(node);
 
     let containerWidth = { size: 100, unit: "%" };
@@ -305,6 +376,10 @@ export function mapContainer(node, children, isRoot, isForcedFull) {
     if (bgSettings.background_background) {
       settings.background_background = bgSettings.background_background;
       settings.background_color = bgSettings.background_color;
+      if (bgSettings.globalColorId) {
+        settings.__globals__ = settings.__globals__ || {};
+        settings.__globals__.background_color = `globals/colors?id=${bgSettings.globalColorId}`;
+      }
     }
 
     extractBorders(node, settings, false);
@@ -317,9 +392,9 @@ export function mapContainer(node, children, isRoot, isForcedFull) {
   }
 }
 
-export function mapText(node) {
+export async function mapText(node, maps) {
   try {
-    const style = extractTextStyle(node);
+    const style = await extractTextStyle(node, maps);
     const widgetType = style.size >= 32 ? "heading" : "text-editor";
     let settings = {
       align: "center",
@@ -327,6 +402,15 @@ export function mapText(node) {
       typography_font_size: { size: style.size, unit: "px" },
       typography_font_weight: style.weight
     };
+
+    if (style.globalColorId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__[widgetType === "heading" ? "title_color" : "text_color"] = `globals/colors?id=${style.globalColorId}`;
+    }
+    if (style.globalTypoId) {
+      settings.__globals__ = settings.__globals__ || {};
+      settings.__globals__.typography_typography = `globals/typography?id=${style.globalTypoId}`;
+    }
 
     extractShadows(node, settings, true);
 
@@ -344,7 +428,7 @@ export function mapText(node) {
   }
 }
 
-export function mapImage(node) {
+export async function mapImage(node) {
   let settings = { image: { url: "", id: "" }, align: "center" };
 
   extractBorders(node, settings, true, "image");

@@ -47,18 +47,26 @@ figma.ui.onmessage = (msg) => {
 
       figma.notify("⏳ Calculando árvore...");
 
-      let structure = traverseNode(selection[0], true);
-      let content = Array.isArray(structure) ? structure : [structure];
+      (async () => {
+        try {
+          const { colorMap, typoMap } = msg;
+          let structure = await traverseNode(selection[0], true, { colorMap, typoMap });
+          let content = Array.isArray(structure) ? structure : [structure];
 
-      const elementorJSON = {
-        version: "0.4",
-        title: "Export V18 Error Control - " + selection[0].name,
-        type: "container",
-        content: content
-      };
+          const elementorJSON = {
+            version: "0.4",
+            title: "Export V18 Global Vars - " + selection[0].name,
+            type: "container",
+            content: content
+          };
 
-      figma.ui.postMessage({ type: "json-generated", data: JSON.stringify(elementorJSON, null, 2) });
-      setTimeout(() => { figma.notify("✅ JSON Gerado com Sucesso!"); }, 500);
+          figma.ui.postMessage({ type: "json-generated", data: JSON.stringify(elementorJSON, null, 2) });
+          figma.notify("✅ JSON Gerado com Sucesso!");
+        } catch (err) {
+          figma.notify("Erro na exportação: " + err.message);
+          console.error(err);
+        }
+      })();
     }
   } catch (e) {
     figma.notify("Erro: " + e.message);

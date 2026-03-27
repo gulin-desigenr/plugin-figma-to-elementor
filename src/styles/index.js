@@ -81,27 +81,57 @@ export function extractShadows(node, settings, isWidget = false, widgetType = ""
   }
 }
 
-export function extractTextStyle(node) {
+export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} }) {
   let color = "";
+  let globalColorId = null;
+  let globalTypoId = null;
+
   if (node.fills && node.fills !== figma.mixed && node.fills.length > 0) {
     if (node.fills[0].type === "SOLID") {
       color = figmaColorToRGBA(node.fills[0].color, node.fills[0].opacity);
+      
+      if (node.fillStyleId) {
+        const style = await figma.getStyleByIdAsync(node.fillStyleId);
+        if (style && maps.colorMap && maps.colorMap[style.name]) {
+          globalColorId = maps.colorMap[style.name];
+        }
+      }
     }
   }
+
   const size = (node.fontSize !== undefined && node.fontSize !== figma.mixed) ? node.fontSize : 16;
   let weight = "400";
   if (node.fontName !== undefined && node.fontName !== figma.mixed) {
     weight = mapFontWeight(node.fontName.style);
   }
-  return { color, size, weight };
+
+  if (node.textStyleId) {
+    const style = await figma.getStyleByIdAsync(node.textStyleId);
+    if (style && maps.typoMap && maps.typoMap[style.name]) {
+      globalTypoId = maps.typoMap[style.name];
+    }
+  }
+
+  return { color, size, weight, globalColorId, globalTypoId };
 }
 
-export function extractBackground(node) {
+export async function extractBackground(node, maps = { colorMap: {}, typoMap: {} }) {
   if (node.fills && node.fills !== figma.mixed && node.fills.length > 0) {
     if (node.fills[0].type === "SOLID") {
+      const color = figmaColorToRGBA(node.fills[0].color, node.fills[0].opacity);
+      let globalColorId = null;
+
+      if (node.fillStyleId) {
+        const style = await figma.getStyleByIdAsync(node.fillStyleId);
+        if (style && maps.colorMap && maps.colorMap[style.name]) {
+          globalColorId = maps.colorMap[style.name];
+        }
+      }
+
       return {
         background_background: "classic",
-        background_color: figmaColorToRGBA(node.fills[0].color, node.fills[0].opacity)
+        background_color: color,
+        globalColorId
       };
     }
   }

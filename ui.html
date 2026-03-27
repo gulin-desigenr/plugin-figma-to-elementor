@@ -123,6 +123,16 @@
         <button class="btn-role" onclick="applyRole('image')">Marcar Imagem</button>
     </div>
 
+    <div class="section-title">VARIÁVEIS GLOBAIS (DE-PARA)</div>
+    <div style="margin-top: 8px;">
+        <label style="font-size: 10px; font-weight: bold;">Cores (Figma.Style:Elementor.Global)</label>
+        <textarea id="color-map" placeholder="Brand Primary:primary&#10;Brand Secondary:secondary" style="height: 50px;"></textarea>
+    </div>
+    <div style="margin-top: 8px;">
+        <label style="font-size: 10px; font-weight: bold;">Tipografia (Figma.Style:Elementor.Global)</label>
+        <textarea id="typo-map" placeholder="Heading 1:primary" style="height: 50px;"></textarea>
+    </div>
+
     <button id="generate" class="btn-main">GERAR E BAIXAR JSON</button>
     
     <div style="position: relative; margin-top: 10px;">
@@ -139,8 +149,22 @@
             parent.postMessage({ pluginMessage: { type: 'apply-role', role: role } }, '*');
         }
 
+        function parseMap(text) {
+            const map = {};
+            if (!text) return map;
+            text.split('\n').forEach(line => {
+                const parts = line.split(':');
+                if (parts.length === 2) {
+                    map[parts[0].trim()] = parts[1].trim();
+                }
+            });
+            return map;
+        }
+
         document.getElementById('generate').onclick = () => {
-            parent.postMessage({ pluginMessage: { type: 'export-json' } }, '*');
+            const colorMap = parseMap(document.getElementById('color-map').value);
+            const typoMap = parseMap(document.getElementById('typo-map').value);
+            parent.postMessage({ pluginMessage: { type: 'export-json', colorMap, typoMap } }, '*');
         }
 
         document.getElementById('copy-btn').onclick = () => {
