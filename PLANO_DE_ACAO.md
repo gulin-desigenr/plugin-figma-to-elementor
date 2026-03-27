@@ -63,6 +63,13 @@ A lógica de priorização segue:
   - Criar um validador de seleção (Ex: Impedir export se múltiplas seções raiz simultâneas forem selecionadas e quebrarem o JSON).
   - Logs mais claros e feedback visual não bloqueante (`figma.notify`).
 
+### 2.3 Sistema de Sub-Tagueamento (Inner Roles) para Widgets Complexos
+- **O Problema:** Widgets com múltiplos elementos (como `image-box`, `icon-box`, `testimonial` e `button`) muitas vezes sofrem com extração trocada ou falha no JSON (ex: confundir o título com a descrição) porque o script tenta adivinhar o papel de cada nó com base em ordem hierárquica ou tamanho da fonte.
+- **Ação Técnica Sugerida:**
+  - **Ação no Código (Backend):** Modificar os handlers para que, antes de aplicar heurísticas, eles procurem por metadados explícitos ou convenções de nome de camada.
+  - **Abordagem 1 (UI e PluginData):** Adicionar ações na aba do plugin para "Marcar como Título" ou "Marcar como Ícone". Isso usaria `node.setPluginData('elementor_role', 'title_text')` para registrar o papel ocultamente no Figma. O script leria `getPluginData` e associaria com 100% de confiança ao JSON.
+  - **Abordagem 2 (Nomenclatura Power-User):** Ensinar via Tooltip que o usuário pode renomear explicitamente as camadas internas para `[title]`, `[description]`, `[icon]`, e `[image]`. O script faria um `.includes()` no nome da layer.
+
 ---
 
 ## 🎨 FASE 3: Fidelidade e Sincronização (Médio Prazo)

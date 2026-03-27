@@ -20,6 +20,26 @@ figma.ui.onmessage = (msg) => {
       }
     }
 
+    if (msg.type === 'apply-role') {
+      const selection = figma.currentPage.selection;
+      if (selection.length > 0) {
+        selection.forEach(node => {
+          node.setPluginData("elementor_role", msg.role);
+          
+          let newName = node.name.replace(/\[(?:title|description|icon|image)\]\s*/gi, '');
+          
+          let roleLabel = msg.role;
+          if (msg.role === 'title_text') roleLabel = 'title';
+          if (msg.role === 'description_text') roleLabel = 'description';
+            
+          node.name = `[${roleLabel}] ${newName}`;
+        });
+        figma.notify("Sub-Tag Aplicada: " + msg.role);
+      } else {
+        figma.notify("Selecione um elemento interno primeiro.");
+      }
+    }
+
     if (msg.type === "export-json") {
       const selection = figma.currentPage.selection;
       if (selection.length === 0) { figma.notify("Selecione o Frame Principal."); return; }

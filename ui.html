@@ -53,6 +53,10 @@
             border-left: 4px solid #ff9800;
         }
 
+        .btn-role {
+            border-left: 4px solid #9c27b0;
+        }
+
         .btn-main {
             background: #0d99ff;
             color: white;
@@ -111,6 +115,14 @@
         <button onclick="applyTag('container-carousel')">Carrossel Container</button>
     </div>
 
+    <div class="section-title">SUB-ELEMENTOS (INNER ROLES)</div>
+    <div class="grid">
+        <button class="btn-role" onclick="applyRole('title_text')">Marcar Título</button>
+        <button class="btn-role" onclick="applyRole('description_text')">Marcar Descrição</button>
+        <button class="btn-role" onclick="applyRole('icon')">Marcar Ícone</button>
+        <button class="btn-role" onclick="applyRole('image')">Marcar Imagem</button>
+    </div>
+
     <button id="generate" class="btn-main">GERAR E BAIXAR JSON</button>
     
     <div style="position: relative; margin-top: 10px;">
@@ -121,6 +133,10 @@
     <script>
         function applyTag(tag) {
             parent.postMessage({ pluginMessage: { type: 'apply-tag', tag: tag } }, '*');
+        }
+
+        function applyRole(role) {
+            parent.postMessage({ pluginMessage: { type: 'apply-role', role: role } }, '*');
         }
 
         document.getElementById('generate').onclick = () => {

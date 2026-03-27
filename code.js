@@ -18,6 +18,26 @@ figma.ui.onmessage = (msg) => {
       }
     }
 
+    if (msg.type === 'apply-role') {
+      const selection = figma.currentPage.selection;
+      if (selection.length > 0) {
+        selection.forEach(node => {
+          node.setPluginData("elementor_role", msg.role);
+          
+          let newName = node.name.replace(/\[(?:title|description|icon|image)\]\s*/gi, '');
+          
+          let roleLabel = msg.role;
+          if (msg.role === 'title_text') roleLabel = 'title';
+          if (msg.role === 'description_text') roleLabel = 'description';
+            
+          node.name = `[${roleLabel}] ${newName}`;
+        });
+        figma.notify("Sub-Tag Aplicada: " + msg.role);
+      } else {
+        figma.notify("Selecione um elemento interno primeiro.");
+      }
+    }
+
     if (msg.type === "export-json") {
       const selection = figma.currentPage.selection;
       if (selection.length === 0) { figma.notify("Selecione o Frame Principal."); return; }
@@ -76,6 +96,19 @@ function getIterableNodes(node) {
   }
   
   return [node];
+}
+
+function getNodeRole(node) {
+  const pluginRole = node.getPluginData("elementor_role");
+  if (pluginRole) return pluginRole;
+  
+  const name = (node.name || "").toLowerCase();
+  if (name.includes('[title]')) return 'title_text';
+  if (name.includes('[description]')) return 'description_text';
+  if (name.includes('[icon]')) return 'icon';
+  if (name.includes('[image]')) return 'image';
+  
+  return null;
 }
 
 function figmaColorToRGBA(color, opacity = 1) {
@@ -265,36 +298,46 @@ function handleManualTag(node, tag, isRoot) {
   extractShadows(node, settings, true, tag);
 
   if (tag === "image-box") {
-    settings.title_text = texts[0] || "Título";
-    if (mainStyle.color) settings.title_color = mainStyle.color;
-    settings.title_typography_typography = "custom";
-    settings.title_typography_font_size = { size: mainStyle.size, unit: "px" };
-    settings.title_typography_font_weight = mainStyle.weight;
+    let titleNode = textNodes.find(n => getNodeRole(n) === 'title_text');
+    let descNode = textNodes.find(n => getNodeRole(n) === 'description_text');
 
-    settings.description_text = texts.slice(1).join(" ");
-    if (secStyle.color) settings.description_color = secStyle.color;
+    settings.title_text = titleNode ? titleNode.characters : (texts[0] || "Título");
+    let tStyle = titleNode ? extractTextStyle(titleNode) : mainStyle;
+    if (tStyle.color) settings.title_color = tStyle.color;
+    settings.title_typography_typography = "custom";
+    settings.title_typography_font_size = { size: tStyle.size, unit: "px" };
+    settings.title_typography_font_weight = tStyle.weight;
+
+    settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
+    let dStyle = descNode ? extractTextStyle(descNode) : secStyle;
+    if (dStyle.color) settings.description_color = dStyle.color;
     settings.description_typography_typography = "custom";
-    settings.description_typography_font_size = { size: secStyle.size, unit: "px" };
-    settings.description_typography_font_weight = secStyle.weight;
+    settings.description_typography_font_size = { size: dStyle.size, unit: "px" };
+    settings.description_typography_font_weight = dStyle.weight;
 
     settings.image = { url: "", id: "" };
   }
   else if (tag === "icon-box") {
-    settings.title_text = texts[0] || "Título do Ícone";
+    let titleNode = textNodes.find(n => getNodeRole(n) === 'title_text');
+    let descNode = textNodes.find(n => getNodeRole(n) === 'description_text');
+
+    settings.title_text = titleNode ? titleNode.characters : (texts[0] || "Título do Ícone");
     settings.title = settings.title_text; // Garantia dupla
 
-    if (mainStyle.color) settings.title_color = mainStyle.color;
+    let tStyle = titleNode ? extractTextStyle(titleNode) : mainStyle;
+    if (tStyle.color) settings.title_color = tStyle.color;
     settings.title_typography_typography = "custom";
-    settings.title_typography_font_size = { size: mainStyle.size, unit: "px" };
-    settings.title_typography_font_weight = mainStyle.weight;
+    settings.title_typography_font_size = { size: tStyle.size, unit: "px" };
+    settings.title_typography_font_weight = tStyle.weight;
 
-    settings.description_text = texts.slice(1).join(" ");
+    settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
     settings.description = settings.description_text; // Garantia dupla
 
-    if (secStyle.color) settings.description_color = secStyle.color;
+    let dStyle = descNode ? extractTextStyle(descNode) : secStyle;
+    if (dStyle.color) settings.description_color = dStyle.color;
     settings.description_typography_typography = "custom";
-    settings.description_typography_font_size = { size: secStyle.size, unit: "px" };
-    settings.description_typography_font_weight = secStyle.weight;
+    settings.description_typography_font_size = { size: dStyle.size, unit: "px" };
+    settings.description_typography_font_weight = dStyle.weight;
 
     let iconColor = mainStyle.color;
     let iconName = "fas fa-star";
@@ -303,6 +346,9 @@ function handleManualTag(node, tag, isRoot) {
     let vectorNodes = [];
     if (node.type === "VECTOR" || node.type === "BOOLEAN_OPERATION") vectorNodes.push(node);
     else if ("findAll" in node) vectorNodes = node.findAll(n => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
+
+    let specificIconVector = vectorNodes.find(n => getNodeRole(n) === 'icon');
+    if (specificIconVector) vectorNodes = [specificIconVector];
 
     if (vectorNodes.length > 0) {
       const vector = vectorNodes[0];
@@ -389,6 +435,10 @@ function handleManualTag(node, tag, isRoot) {
     if ("findAll" in node) {
       vectorNodes = node.findAll(n => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
     }
+
+    let specificIconVector = vectorNodes.find(n => getNodeRole(n) === 'icon');
+    if (specificIconVector) vectorNodes = [specificIconVector];
+
     if (vectorNodes.length > 0) {
       const vector = vectorNodes[0];
       if (vector.name.startsWith("fas ") || vector.name.startsWith("fab ") || vector.name.startsWith("far ")) {

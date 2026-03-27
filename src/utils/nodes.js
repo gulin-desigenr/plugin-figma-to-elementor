@@ -30,3 +30,16 @@ export function hasImageFill(node) {
   if (!node.fills || node.fills === figma.mixed) return false;
   return Array.isArray(node.fills) && node.fills.some(f => f.type === 'IMAGE');
 }
+
+export function getNodeRole(node) {
+  const pluginRole = node.getPluginData("elementor_role");
+  if (pluginRole) return pluginRole;
+  
+  const name = (node.name || "").toLowerCase();
+  if (name.includes('[title]')) return 'title_text';
+  if (name.includes('[description]')) return 'description_text';
+  if (name.includes('[icon]')) return 'icon';
+  if (name.includes('[image]')) return 'image';
+  
+  return null;
+}
