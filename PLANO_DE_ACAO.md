@@ -103,3 +103,20 @@ Se tivéssemos que abrir um Pull Request amanhã, a ordem de execução deve ser
 1. **Bugfix / Features faltantes:** Implementar os Handlers de `icon-box` e `image-carousel` no `code.js` para honrar os botões já expostos na UI.
 2. **Melhoria Arquitetural:** Extrair os validadores visuais para aliviar o root file.
 3. **QoL (Quality of Life):** Implementar conversão de Imagens pra Base64 para poupar cliques maçantes no WP.
+
+---
+
+## 📥 BACKLOG / GITHUB ISSUES PARA PRÓXIMAS FASES
+*Estas tarefas foram extraídas das Issues do repositório para serem incorporadas após a Estabilidade da Fase 2.*
+
+### Correções (Bugs & Refinamentos)
+- **#8 Ignorar Elementos Soltos (Não-Tagueados):** Fazer com que a engine do `traverseNode` purgue e ignore elementos genéricos na canvas que não receberam tag do usuário, mantendo o JSON mais limpo e livre de sujeiras visuais do Figma.
+- **#5 CSS Customizado Fantasma:** Corrigir injeção indevida de customizações CSS nativas que ficam chumbadas no container pai invisíveis para a edição do cliente no painel do WordPress.
+
+### Novas Funcionalidades (Features)
+- **#6/#7 Background-Image nativo:** Habilitar suporte à decodificação de `fills` do tipo `IMAGE` no objeto de Container, formatando a chave Elementor para que a propriedade `Imagem de Fundo` no painel Estilo herde a imagem vinculada.
+
+### Atualização Mestra de Interface (Redesign)
+- **#4 Layout do plugin é feio (UI Overhaul):** Refatorar completamente o código HTML/CSS da interface do Figmentor. Substituir a lista de botões genéricos por um Design System premium: cores neutras escuras (Dark Mode Figma-like), separação avançada por abas (Tabs), transições suaves, tooltips para tags complexas e identidade visual forte.
+
+*(Nota: Importante notar que as antigas Issues #1, #2 e #3 já foram completamente arquitetadas, validadas e sanadas nas Fases 1.2, 1.3 e 2.1 durante os últimos ciclos de desenvolvimento!)*
