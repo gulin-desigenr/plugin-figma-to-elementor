@@ -23,19 +23,22 @@ figma.ui.onmessage = (msg) => {
     if (msg.type === "export-json") {
       const selection = figma.currentPage.selection;
       if (selection.length === 0) { figma.notify("Selecione o Frame Principal."); return; }
+      if (selection.length > 1) { figma.notify("🚨 Selecione apenas UM frame raiz. Use [PAGE-WRAPPER] com Auto Layout se necessário.", { error: true }); return; }
+
+      figma.notify("⏳ Calculando árvore...");
 
       let structure = traverseNode(selection[0], true);
       let content = Array.isArray(structure) ? structure : [structure];
 
       const elementorJSON = {
         version: "0.4",
-        title: "Export V17 Icon Box Fix - " + selection[0].name,
+        title: "Export V18 Error Control - " + selection[0].name,
         type: "container",
         content: content
       };
 
       figma.ui.postMessage({ type: "json-generated", data: JSON.stringify(elementorJSON, null, 2) });
-      figma.notify("JSON Gerado: Larguras Fiéis ao Figma!");
+      setTimeout(() => { figma.notify("✅ JSON Gerado com Sucesso!"); }, 500);
     }
   } catch (e) {
     figma.notify("Erro: " + e.message);

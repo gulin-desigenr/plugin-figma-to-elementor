@@ -134,58 +134,63 @@ export function handleManualTag(node, tag, isRoot) {
     settings.typography_font_weight = mainStyle.weight;
   }
   else if (tag === "button") {
-    settings.text = texts.join(" ") || "Clique Aqui";
+    try {
+      settings.text = texts.join(" ") || "Clique Aqui";
 
-    if (mainStyle.color) {
-      settings.text_color = mainStyle.color;
-    }
+      if (mainStyle.color) {
+        settings.text_color = mainStyle.color;
+      }
 
-    settings.typography_typography = "custom";
-    settings.typography_font_size = { size: mainStyle.size, unit: "px" };
-    settings.typography_font_weight = mainStyle.weight;
+      settings.typography_typography = "custom";
+      settings.typography_font_size = { size: mainStyle.size, unit: "px" };
+      settings.typography_font_weight = mainStyle.weight;
 
-    if (settings._background_color) {
-      settings.background_color = settings._background_color;
-      delete settings._background_color;
-      delete settings._background_background;
-    }
+      if (settings._background_color) {
+        settings.background_color = settings._background_color;
+        delete settings._background_color;
+        delete settings._background_background;
+      }
 
-    let paddingTop = node.paddingTop || 0;
-    let paddingBottom = node.paddingBottom || 0;
-    let sumPadding = paddingTop + paddingBottom;
-    if (sumPadding >= 40) settings.size = "lg";
-    else if (sumPadding >= 20) settings.size = "md";
-    else settings.size = "sm";
+      let paddingTop = node.paddingTop || 0;
+      let paddingBottom = node.paddingBottom || 0;
+      let sumPadding = paddingTop + paddingBottom;
+      if (sumPadding >= 40) settings.size = "lg";
+      else if (sumPadding >= 20) settings.size = "md";
+      else settings.size = "sm";
 
-    let align = "justify";
-    if (node.layoutSizingHorizontal === "FILL") align = "justify";
-    else if (node.primaryAxisAlignItems === "CENTER") align = "center";
-    else if (node.primaryAxisAlignItems === "MAX") align = "right";
-    else align = "left";
-    settings.align = align;
+      let align = "justify";
+      if (node.layoutSizingHorizontal === "FILL") align = "justify";
+      else if (node.primaryAxisAlignItems === "CENTER") align = "center";
+      else if (node.primaryAxisAlignItems === "MAX") align = "right";
+      else align = "left";
+      settings.align = align;
 
-    let vectorNodes = [];
-    if ("findAll" in node) {
-      vectorNodes = node.findAll(n => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
-    }
-    if (vectorNodes.length > 0) {
-      const vector = vectorNodes[0];
-      if (vector.name.startsWith("fas ") || vector.name.startsWith("fab ") || vector.name.startsWith("far ")) {
-        settings.selected_icon = { value: vector.name, library: vector.name.startsWith("fab") ? "fa-brands" : "fa-solid" };
-        if (textNodes.length > 0 && vector.x > textNodes[0].x) {
-          settings.icon_align = "right";
-        } else {
-          settings.icon_align = "left";
+      let vectorNodes = [];
+      if ("findAll" in node) {
+        vectorNodes = node.findAll(n => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
+      }
+      if (vectorNodes.length > 0) {
+        const vector = vectorNodes[0];
+        if (vector.name.startsWith("fas ") || vector.name.startsWith("fab ") || vector.name.startsWith("far ")) {
+          settings.selected_icon = { value: vector.name, library: vector.name.startsWith("fab") ? "fa-brands" : "fa-solid" };
+          if (textNodes.length > 0 && vector.x > textNodes[0].x) {
+            settings.icon_align = "right";
+          } else {
+            settings.icon_align = "left";
+          }
+          settings.icon_indent = { size: node.itemSpacing || 5, unit: "px" };
         }
-        settings.icon_indent = { size: node.itemSpacing || 5, unit: "px" };
       }
-    }
 
-    if (node.reactions && node.reactions.length > 0) {
-      const reaction = node.reactions.find(r => r.action && r.action.type === "URL");
-      if (reaction) {
-        settings.link = { url: reaction.action.url, is_external: true };
+      if (node.reactions && node.reactions.length > 0) {
+        const reaction = node.reactions.find(r => r.action && r.action.type === "URL");
+        if (reaction) {
+          settings.link = { url: reaction.action.url, is_external: true };
+        }
       }
+    } catch (err) {
+      console.error("Erro crítico extraindo button, ignorando componente:", err);
+      return null;
     }
   }
   else if (tag === "image") {
@@ -242,74 +247,84 @@ export function handleManualTag(node, tag, isRoot) {
 }
 
 export function mapContainer(node, children, isRoot, isForcedFull) {
-  if (!children || children.length === 0) return null;
-  const isBoxed = (isRoot === true && isForcedFull === false);
-  const bgSettings = extractBackground(node);
-  const direction = getLayoutDirection(node);
+  try {
+    if (!children || children.length === 0) return null;
+    const isBoxed = (isRoot === true && isForcedFull === false);
+    const bgSettings = extractBackground(node);
+    const direction = getLayoutDirection(node);
 
-  let containerWidth = { size: 100, unit: "%" };
+    let containerWidth = { size: 100, unit: "%" };
 
-  if (isRoot) {
-    containerWidth = isBoxed ? { size: 1140, unit: "px" } : { size: 100, unit: "%" };
-  } else {
-    if (node.layoutSizingHorizontal === 'FIXED') {
-      containerWidth = { size: node.width, unit: "px" };
-    } else if (node.layoutSizingHorizontal === 'FILL') {
-      containerWidth = { size: 100, unit: "%" };
+    if (isRoot) {
+      containerWidth = isBoxed ? { size: 1140, unit: "px" } : { size: 100, unit: "%" };
     } else {
-      containerWidth = { size: node.width, unit: "px" };
+      if (node.layoutSizingHorizontal === 'FIXED') {
+        containerWidth = { size: node.width, unit: "px" };
+      } else if (node.layoutSizingHorizontal === 'FILL') {
+        containerWidth = { size: 100, unit: "%" };
+      } else {
+        containerWidth = { size: node.width, unit: "px" };
+      }
     }
-  }
 
-  const settings = {
-    content_width: isBoxed ? "boxed" : "full",
-    width: containerWidth,
-    flex_direction: direction,
-    justify_content: node.primaryAxisAlignItems === "CENTER" ? "center" : "flex-start",
-    align_items: node.counterAxisAlignItems === "CENTER" ? "center" : "flex-start",
-    gap: { column: node.itemSpacing || 0, row: node.itemSpacing || 0, unit: "px" },
-    padding: {
-      top: node.paddingTop || 0, right: node.paddingRight || 0,
-      bottom: node.paddingBottom || 0, left: node.paddingLeft || 0,
-      unit: "px"
+    const settings = {
+      content_width: isBoxed ? "boxed" : "full",
+      width: containerWidth,
+      flex_direction: direction,
+      justify_content: node.primaryAxisAlignItems === "CENTER" ? "center" : "flex-start",
+      align_items: node.counterAxisAlignItems === "CENTER" ? "center" : "flex-start",
+      gap: { column: node.itemSpacing || 0, row: node.itemSpacing || 0, unit: "px" },
+      padding: {
+        top: node.paddingTop || 0, right: node.paddingRight || 0,
+        bottom: node.paddingBottom || 0, left: node.paddingLeft || 0,
+        unit: "px"
+      }
+    };
+
+    if (direction === "row") {
+      settings.flex_wrap = "nowrap";
     }
-  };
 
-  if (direction === "row") {
-    settings.flex_wrap = "nowrap";
+    if (bgSettings.background_background) {
+      settings.background_background = bgSettings.background_background;
+      settings.background_color = bgSettings.background_color;
+    }
+
+    extractBorders(node, settings, false);
+    extractShadows(node, settings, false);
+
+    return { elType: "container", settings: settings, elements: children };
+  } catch (err) {
+    console.error("Erro crítico em mapContainer, ignorando:", err);
+    return null;
   }
-
-  if (bgSettings.background_background) {
-    settings.background_background = bgSettings.background_background;
-    settings.background_color = bgSettings.background_color;
-  }
-
-  extractBorders(node, settings, false);
-  extractShadows(node, settings, false);
-
-  return { elType: "container", settings: settings, elements: children };
 }
 
 export function mapText(node) {
-  const style = extractTextStyle(node);
-  const widgetType = style.size >= 32 ? "heading" : "text-editor";
-  let settings = {
-    align: "center",
-    typography_typography: "custom",
-    typography_font_size: { size: style.size, unit: "px" },
-    typography_font_weight: style.weight
-  };
+  try {
+    const style = extractTextStyle(node);
+    const widgetType = style.size >= 32 ? "heading" : "text-editor";
+    let settings = {
+      align: "center",
+      typography_typography: "custom",
+      typography_font_size: { size: style.size, unit: "px" },
+      typography_font_weight: style.weight
+    };
 
-  extractShadows(node, settings, true);
+    extractShadows(node, settings, true);
 
-  if (widgetType === "heading") {
-    settings.title = node.characters;
-    if (style.color) settings.title_color = style.color;
-  } else {
-    settings.editor = node.characters;
-    if (style.color) settings.text_color = style.color;
+    if (widgetType === "heading") {
+      settings.title = node.characters;
+      if (style.color) settings.title_color = style.color;
+    } else {
+      settings.editor = node.characters;
+      if (style.color) settings.text_color = style.color;
+    }
+    return { elType: "widget", widgetType: widgetType, settings: settings };
+  } catch (err) {
+    console.error("Erro crítico em mapText, ignorando:", err);
+    return null;
   }
-  return { elType: "widget", widgetType: widgetType, settings: settings };
 }
 
 export function mapImage(node) {

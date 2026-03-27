@@ -6,6 +6,10 @@ export function traverseNode(node, isRoot) {
 
   const manualTag = node.getPluginData("elementor-tag");
 
+  if (manualTag === 'image-background' || manualTag === 'ignore') {
+    return null;
+  }
+
   if (manualTag) return handleManualTag(node, manualTag, isRoot);
   if (node.type === "TEXT") return mapText(node);
   if (hasImageFill(node)) return mapImage(node);
@@ -19,6 +23,7 @@ export function traverseNode(node, isRoot) {
         else childrenJSON.push(data);
       }
     }
+    childrenJSON = childrenJSON.filter(item => item && typeof item === 'object' && item.elType);
     if (!isRoot && node.layoutMode === "NONE") return childrenJSON;
     return mapContainer(node, childrenJSON, isRoot, false);
   }
