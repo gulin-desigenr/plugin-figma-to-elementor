@@ -88,6 +88,7 @@
 
     <div class="section-title">LAYOUT (ESTRUTURA)</div>
     <div class="grid">
+        <button class="btn-layout" onclick="applyTag('page-wrapper')">Página (Wrapper)</button>
         <button class="btn-layout" onclick="applyTag('container')">Seção (1140px Boxed)</button>
         <button class="btn-layout" onclick="applyTag('container-full')">Container Filho (100% Full)</button>
     </div>
@@ -110,7 +111,11 @@
     </div>
 
     <button id="generate" class="btn-main">GERAR E BAIXAR JSON</button>
-    <textarea id="output" placeholder="O código JSON aparecerá aqui..."></textarea>
+    
+    <div style="position: relative; margin-top: 10px;">
+        <button id="copy-btn" style="position: absolute; right: 5px; top: 5px; background: #eee; border: 1px solid #ccc; padding: 4px 8px; font-size: 10px; cursor: pointer; border-radius: 3px; z-index: 10;">Copiar JSON</button>
+        <textarea id="output" placeholder="O código JSON aparecerá aqui..." style="margin-top: 0; padding-top: 30px;"></textarea>
+    </div>
 
     <script>
         function applyTag(tag) {
@@ -119,6 +124,15 @@
 
         document.getElementById('generate').onclick = () => {
             parent.postMessage({ pluginMessage: { type: 'export-json' } }, '*');
+        }
+
+        document.getElementById('copy-btn').onclick = () => {
+            const textarea = document.getElementById('output');
+            textarea.select();
+            document.execCommand('copy');
+            const btn = document.getElementById('copy-btn');
+            btn.innerText = 'Copiado!';
+            setTimeout(() => btn.innerText = 'Copiar JSON', 2000);
         }
 
         onmessage = (event) => {
