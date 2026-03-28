@@ -358,16 +358,31 @@ export async function mapContainer(node, children, isRoot, isForcedFull, maps) {
       }
     }
 
+    let justifyContent = "flex-start";
+    if (node.primaryAxisAlignItems === "CENTER") justifyContent = "center";
+    else if (node.primaryAxisAlignItems === "MAX") justifyContent = "flex-end";
+    else if (node.primaryAxisAlignItems === "SPACE_BETWEEN") justifyContent = "space-between";
+
+    let alignItems = "flex-start";
+    if (node.counterAxisAlignItems === "CENTER") alignItems = "center";
+    else if (node.counterAxisAlignItems === "MAX") alignItems = "flex-end";
+
+    let alignContent = "flex-start";
+    if (node.primaryAxisAlignItems === "SPACE_BETWEEN") alignContent = "space-between";
+
     const settings = {
       content_width: isBoxed ? "boxed" : "full",
       width: containerWidth,
       flex_direction: direction,
-      justify_content: node.primaryAxisAlignItems === "CENTER" ? "center" : "flex-start",
-      align_items: node.counterAxisAlignItems === "CENTER" ? "center" : "flex-start",
+      justify_content: justifyContent,
+      align_items: alignItems,
+      align_content: alignContent,
       gap: { column: node.itemSpacing || 0, row: node.itemSpacing || 0, unit: "px" },
       padding: {
-        top: node.paddingTop || 0, right: node.paddingRight || 0,
-        bottom: node.paddingBottom || 0, left: node.paddingLeft || 0,
+        top: node.paddingTop || 0, 
+        right: (isRoot && isBoxed) ? 0 : (node.paddingRight || 0),
+        bottom: node.paddingBottom || 0, 
+        left: (isRoot && isBoxed) ? 0 : (node.paddingLeft || 0),
         unit: "px"
       }
     };

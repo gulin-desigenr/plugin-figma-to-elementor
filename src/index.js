@@ -54,6 +54,29 @@ try {
             let structure = await traverseNode(selection[0], true, { colorMap, typoMap });
             let content = Array.isArray(structure) ? structure : [structure];
 
+            function sanitizeOutput(nodes) {
+              if (!nodes || !Array.isArray(nodes)) return;
+              nodes.forEach(node => {
+                if (node && node.settings) {
+                  delete node.settings._position;
+                  delete node.settings.position;
+                  delete node.settings.margin;
+                  delete node.settings._margin;
+                  delete node.settings.custom_css;
+                  delete node.settings._offset_x;
+                  delete node.settings._offset_y;
+                  delete node.settings._z_index;
+                  delete node.settings.offset_x;
+                  delete node.settings.offset_y;
+                }
+                if (node && node.elements) {
+                  sanitizeOutput(node.elements);
+                }
+              });
+            }
+
+            sanitizeOutput(content);
+
             const elementorJSON = {
               version: "0.4",
               title: "Export V19 Soltos Fix - " + selection[0].name,
