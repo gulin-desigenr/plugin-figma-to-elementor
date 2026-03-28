@@ -1,146 +1,435 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-BR">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figmentor</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+        :root {
+            --bg-color: #0C080E;
+            --surface-color: rgba(58, 58, 129, 0.3);
+            --surface-hover: rgba(58, 58, 129, 0.6);
+            --surface-border: rgba(113, 132, 227, 0.2);
+            --accent-blue: #7184E3;
+            --accent-pink: #F0ABCE;
+            --text-color: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --border-radius: 8px;
+            --tag-layout: #FFA800;
+            --tag-inner: #F0ABCE;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: sans-serif;
-            padding: 15px;
-            color: #333;
-            background-color: #f9f9f9;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            width: 350px;
+            height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            font-size: 13px;
         }
 
-        h2 {
-            font-size: 16px;
-            margin-bottom: 5px;
-            color: #1a1a1a;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
 
-        .section-title {
-            font-size: 11px;
-            font-weight: bold;
-            color: #757575;
-            margin-top: 15px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 3px;
-            text-transform: uppercase;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        button {
-            border: 1px solid #ccc;
-            background: white;
-            padding: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            transition: 0.2s;
+        /* ─── HEADER ─── */
+        .header {
+            padding: 18px 20px 0 20px;
             text-align: center;
         }
 
-        button:hover {
-            background: #f0f7ff;
-            border-color: #0d99ff;
+        .logo {
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 14px;
         }
 
-        .btn-layout {
-            border-left: 4px solid #ff9800;
+        /* ─── TABS ─── */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--surface-border);
         }
 
-        .btn-role {
-            border-left: 4px solid #9c27b0;
-        }
-
-        .btn-main {
-            background: #0d99ff;
-            color: white;
-            border: none;
-            font-weight: bold;
-            margin-top: 20px;
-            width: 100%;
-            padding: 12px;
-            font-size: 13px;
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 5px;
             cursor: pointer;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.25s ease;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
         }
 
-        .btn-main:hover {
-            background: #007be5;
+        .tab:hover {
+            color: var(--text-color);
+            background: rgba(113, 132, 227, 0.05);
+        }
+
+        .tab.active {
+            color: var(--text-color);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        /* ─── VIEWS ─── */
+        .view {
+            display: none;
+            padding: 15px 20px 24px 20px;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .view.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ─── SECTION TITLES ─── */
+        .section-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 8px;
+            margin-top: 18px;
+            border-bottom: 1px solid var(--surface-border);
+            padding-bottom: 5px;
+        }
+
+        .section-title:first-child { margin-top: 0; }
+
+        /* ─── BUTTON GRIDS ─── */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 7px;
+        }
+
+        .btn-grid-1 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 7px;
+        }
+
+        /* ─── TAG BUTTONS ─── */
+        button.btn-tag {
+            background: var(--surface-color);
+            border: 1px solid var(--surface-border);
+            color: var(--text-color);
+            padding: 9px 8px;
+            border-radius: var(--border-radius);
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        button.btn-tag:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent-blue);
+            transform: translateY(-1px);
+        }
+
+        button.btn-tag:active { transform: translateY(0); }
+
+        /* Accent borders for tag categories */
+        .border-left-orange { border-left: 3px solid var(--tag-layout); }
+        .border-left-pink   { border-left: 3px solid var(--tag-inner); }
+
+        /* ─── FORM ELEMENTS ─── */
+        .input-group { margin-bottom: 12px; }
+
+        .input-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 5px;
         }
 
         textarea {
             width: 100%;
-            height: 100px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--surface-border);
+            color: var(--text-color);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            padding: 9px 10px;
+            border-radius: var(--border-radius);
+            resize: vertical;
+            min-height: 54px;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        textarea::placeholder { color: rgba(255,255,255,0.25); }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(113, 132, 227, 0.18);
+        }
+
+        /* ─── PRIMARY BUTTON ─── */
+        button.btn-primary {
+            width: 100%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-pink));
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: var(--border-radius);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
             margin-top: 10px;
-            font-family: monospace;
+            margin-bottom: 14px;
+            transition: opacity 0.25s, transform 0.2s;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+        button.btn-primary:active { transform: translateY(1px); }
+        button.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* ─── SPINNER ─── */
+        .loading-spinner {
+            display: none;
+            width: 15px;
+            height: 15px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.9s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── JSON OUTPUT AREA ─── */
+        .json-area-wrapper { position: relative; }
+
+        .json-area-wrapper textarea { min-height: 110px; }
+
+        button.btn-small {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: var(--surface-hover);
+            border: 1px solid var(--surface-border);
+            color: rgba(255,255,255,0.8);
+            padding: 3px 9px;
             font-size: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 5px;
-            box-sizing: border-box;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            font-family: inherit;
+        }
+
+        button.btn-small:hover {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        /* ─── TOGGLE SWITCHES ─── */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .toggle-row:last-child { border-bottom: none; }
+
+        .toggle-label { font-size: 12px; color: var(--text-color); }
+
+        .toggle-switch {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--surface-border);
+            transition: .3s;
+            border-radius: 20px;
+        }
+
+        .slider::before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+            background: var(--text-muted);
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: rgba(240, 171, 206, 0.15);
+            border-color: var(--accent-pink);
+        }
+
+        input:checked + .slider::before {
+            transform: translateX(16px);
+            background: var(--accent-pink);
         }
     </style>
 </head>
-
 <body>
-    <h2>Manual Tagging System</h2>
 
-    <div class="section-title">LAYOUT (ESTRUTURA)</div>
-    <div class="grid">
-        <button class="btn-layout" onclick="applyTag('page-wrapper')">Página (Wrapper)</button>
-        <button class="btn-layout" onclick="applyTag('container')">Seção (1140px Boxed)</button>
-        <button class="btn-layout" onclick="applyTag('container-full')">Container Filho (100% Full)</button>
+    <!-- ═══════════════ HEADER ═══════════════ -->
+    <div class="header">
+        <div class="logo">Figmentor</div>
+        <div class="tabs">
+            <div class="tab active" data-target="view-tags" id="tab-tags">Tags</div>
+            <div class="tab" data-target="view-export" id="tab-export">Exportador</div>
+            <div class="tab" data-target="view-config" id="tab-config">Config</div>
+        </div>
     </div>
 
-    <div class="section-title">WIDGETS DE CONTEÚDO</div>
-    <div class="grid">
-        <button onclick="applyTag('heading')">Título (Heading)</button>
-        <button onclick="applyTag('image')">Imagem</button>
-        <button onclick="applyTag('image-background')">Fundo (Ignorar)</button>
-        <button onclick="applyTag('image-box')">Caixa de Imagem</button>
-        <button onclick="applyTag('icon-box')">Caixa de Ícone</button>
-        <button onclick="applyTag('icon-list')">Lista de Ícone</button>
-        <button onclick="applyTag('text-editor')">Editor de Texto</button>
-        <button onclick="applyTag('button')">Botão (CTA)</button>
+    <!-- ═══════════════ VIEW: TAGS ═══════════════ -->
+    <div class="view active" id="view-tags">
+
+        <div class="section-title">Layout (Estrutura)</div>
+        <div class="btn-grid-1" style="margin-bottom: 7px;">
+            <button class="btn-tag border-left-orange" onclick="applyTag('page-wrapper')">Página (Wrapper)</button>
+        </div>
+        <div class="btn-grid">
+            <button class="btn-tag border-left-orange" onclick="applyTag('container')">Seção (1140px Boxed)</button>
+            <button class="btn-tag border-left-orange" onclick="applyTag('container-full')">Container Filho (100% Full)</button>
+        </div>
+
+        <div class="section-title">Widgets de Conteúdo</div>
+        <div class="btn-grid">
+            <button class="btn-tag" onclick="applyTag('heading')">Título (Heading)</button>
+            <button class="btn-tag" onclick="applyTag('image')">Imagem</button>
+            <button class="btn-tag" onclick="applyTag('image-background')">Fundo (Ignorar)</button>
+            <button class="btn-tag" onclick="applyTag('image-box')">Caixa de Imagem</button>
+            <button class="btn-tag" onclick="applyTag('icon-box')">Caixa de Ícone</button>
+            <button class="btn-tag" onclick="applyTag('icon-list')">Lista de Ícone</button>
+            <button class="btn-tag" onclick="applyTag('text-editor')">Editor de Texto</button>
+            <button class="btn-tag" onclick="applyTag('button')">Botão (CTA)</button>
+        </div>
+
+        <div class="section-title">Dinâmicos</div>
+        <div class="btn-grid">
+            <button class="btn-tag" onclick="applyTag('image-carousel')">Carrossel Imagem</button>
+            <button class="btn-tag" onclick="applyTag('container-carousel')">Carrossel Container</button>
+        </div>
+
+        <div class="section-title">Sub-Elementos (Inner Roles)</div>
+        <div class="btn-grid">
+            <button class="btn-tag border-left-pink" onclick="applyRole('title_text')">Marcar Título</button>
+            <button class="btn-tag border-left-pink" onclick="applyRole('description_text')">Marcar Descrição</button>
+            <button class="btn-tag border-left-pink" onclick="applyRole('icon')">Marcar Ícone</button>
+            <button class="btn-tag border-left-pink" onclick="applyRole('image')">Marcar Imagem</button>
+        </div>
+
     </div>
 
-    <div class="section-title">DINÂMICOS</div>
-    <div class="grid">
-        <button onclick="applyTag('image-carousel')">Carrossel Imagem</button>
-        <button onclick="applyTag('container-carousel')">Carrossel Container</button>
+    <!-- ═══════════════ VIEW: EXPORTADOR ═══════════════ -->
+    <div class="view" id="view-export">
+
+        <div class="section-title">Variáveis Globais (De-Para)</div>
+
+        <div class="input-group">
+            <label class="input-label">Cores (Figma.Style:Elementor.Global)</label>
+            <textarea id="color-map" placeholder="Brand Primary:primary&#10;Brand Secondary:secondary"></textarea>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Tipografia (Figma.Style:Elementor.Global)</label>
+            <textarea id="typo-map" placeholder="Heading 1:primary"></textarea>
+        </div>
+
+        <button class="btn-primary" id="generate">
+            <span class="loading-spinner" id="spinner-export"></span>
+            <span id="text-export">Gerar e Baixar JSON</span>
+        </button>
+
+        <div class="json-area-wrapper">
+            <textarea id="output" placeholder="O código JSON aparecerá aqui..." readonly></textarea>
+            <button class="btn-small" id="copy-btn">Copiar JSON</button>
+        </div>
+
     </div>
 
-    <div class="section-title">SUB-ELEMENTOS (INNER ROLES)</div>
-    <div class="grid">
-        <button class="btn-role" onclick="applyRole('title_text')">Marcar Título</button>
-        <button class="btn-role" onclick="applyRole('description_text')">Marcar Descrição</button>
-        <button class="btn-role" onclick="applyRole('icon')">Marcar Ícone</button>
-        <button class="btn-role" onclick="applyRole('image')">Marcar Imagem</button>
+    <!-- ═══════════════ VIEW: CONFIG ═══════════════ -->
+    <div class="view" id="view-config">
+
+        <div class="section-title">Opções de Exportação</div>
+
+        <div class="toggle-row">
+            <span class="toggle-label">Ignorar Elementos Soltos (Sem Tag)</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-ignore-loose" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="toggle-row">
+            <span class="toggle-label">Manter Estrutura Flexbox</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-flexbox" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="toggle-row">
+            <span class="toggle-label">Otimizar Imagens (Base64)</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-optimize" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+
     </div>
 
-    <div class="section-title">VARIÁVEIS GLOBAIS (DE-PARA)</div>
-    <div style="margin-top: 8px;">
-        <label style="font-size: 10px; font-weight: bold;">Cores (Figma.Style:Elementor.Global)</label>
-        <textarea id="color-map" placeholder="Brand Primary:primary&#10;Brand Secondary:secondary" style="height: 50px;"></textarea>
-    </div>
-    <div style="margin-top: 8px;">
-        <label style="font-size: 10px; font-weight: bold;">Tipografia (Figma.Style:Elementor.Global)</label>
-        <textarea id="typo-map" placeholder="Heading 1:primary" style="height: 50px;"></textarea>
-    </div>
-
-    <button id="generate" class="btn-main">GERAR E BAIXAR JSON</button>
-    
-    <div style="position: relative; margin-top: 10px;">
-        <button id="copy-btn" style="position: absolute; right: 5px; top: 5px; background: #eee; border: 1px solid #ccc; padding: 4px 8px; font-size: 10px; cursor: pointer; border-radius: 3px; z-index: 10;">Copiar JSON</button>
-        <textarea id="output" placeholder="O código JSON aparecerá aqui..." style="margin-top: 0; padding-top: 30px;"></textarea>
-    </div>
-
+    <!-- ═══════════════ SCRIPTS ═══════════════ -->
     <script>
+        // ─── Tab Navigation ───────────────────────────────────────
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.getAttribute('data-target')).classList.add('active');
+            });
+        });
+
+        // ─── Backend Bridge: Tag & Role Functions ─────────────────
         function applyTag(tag) {
             parent.postMessage({ pluginMessage: { type: 'apply-tag', tag: tag } }, '*');
         }
@@ -149,6 +438,7 @@
             parent.postMessage({ pluginMessage: { type: 'apply-role', role: role } }, '*');
         }
 
+        // ─── Parse global variable map (col : val) ────────────────
         function parseMap(text) {
             const map = {};
             if (!text) return map;
@@ -161,12 +451,23 @@
             return map;
         }
 
-        document.getElementById('generate').onclick = () => {
-            const colorMap = parseMap(document.getElementById('color-map').value);
-            const typoMap = parseMap(document.getElementById('typo-map').value);
-            parent.postMessage({ pluginMessage: { type: 'export-json', colorMap, typoMap } }, '*');
-        }
+        // ─── Generate & Download JSON ─────────────────────────────
+        const btnGenerate = document.getElementById('generate');
+        const spinner     = document.getElementById('spinner-export');
+        const textExport  = document.getElementById('text-export');
 
+        btnGenerate.onclick = () => {
+            // Loading state
+            btnGenerate.disabled = true;
+            spinner.style.display = 'block';
+            textExport.textContent = 'Processando...';
+
+            const colorMap = parseMap(document.getElementById('color-map').value);
+            const typoMap  = parseMap(document.getElementById('typo-map').value);
+            parent.postMessage({ pluginMessage: { type: 'export-json', colorMap, typoMap } }, '*');
+        };
+
+        // ─── Copy JSON to Clipboard ───────────────────────────────
         document.getElementById('copy-btn').onclick = () => {
             const textarea = document.getElementById('output');
             textarea.select();
@@ -174,25 +475,39 @@
             const btn = document.getElementById('copy-btn');
             btn.innerText = 'Copiado!';
             setTimeout(() => btn.innerText = 'Copiar JSON', 2000);
-        }
+        };
 
+        // ─── Receive messages from Figma backend ──────────────────
         onmessage = (event) => {
             const msg = event.data.pluginMessage;
+            if (!msg) return;
+
             if (msg.type === 'json-generated') {
+                // Reset loading state
+                btnGenerate.disabled = false;
+                spinner.style.display = 'none';
+                textExport.textContent = 'Gerar e Baixar JSON';
+
+                // Populate output area
                 const textarea = document.getElementById('output');
                 textarea.value = msg.data;
 
-                // Lógica de Download Automático (Fase 03)
+                // Auto-download
                 const blob = new Blob([msg.data], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
+                const url  = URL.createObjectURL(blob);
                 const link = document.createElement('a');
-                link.href = url;
+                link.href     = url;
                 link.download = `elementor-template-${Date.now()}.json`;
                 link.click();
                 URL.revokeObjectURL(url);
+
+                // Navigate to Exportador tab to show result
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                document.getElementById('tab-export').classList.add('active');
+                document.getElementById('view-export').classList.add('active');
             }
-        }
+        };
     </script>
 </body>
-
 </html>
