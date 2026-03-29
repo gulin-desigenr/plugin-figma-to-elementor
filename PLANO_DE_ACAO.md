@@ -111,6 +111,72 @@ A lógica de priorização segue:
   - Nó com tag `image` ou `image-carousel`.
   - Nó com fill do tipo `IMAGE`.
   - Elemento filho interno de `image-box` com role `image`.
+  - *(3.3.1)* Nó do tipo `SLICE` nativo do Figma, ou qualquer nó tagueado como `image` que seja do tipo `SLICE`.
+
+### 3.3.1 Suporte a Slices do Figma na Exportação WebP
+
+- **O Problema:** O Figma possui um tipo de nó nativo chamado **Slice** (`node.type === 'SLICE'`), que funciona como uma "janela de captura" — exporta como imagem única **tudo que está dentro da sua área retangular**, independente da hierarquia de camadas (incluindo nós acima, abaixo ou que transbordam a sua borda).
+  - O fluxo atual de exportação WebP (3.3) **ignora Slices**, pois o `collectImageNodes` não os inclui nos critérios de elegibilidade.
+  - O usuário também pode taguear um Slice com `"image"` para indicar ao plugin que aquele Slice deve ser tratado da mesma forma que uma imagem na exportação.
+
+- **Comportamento Esperado:**
+  - **Caso A — Slice nativo sem tag:** Qualquer nó de tipo `SLICE` presente na seleção (ou encontrado recursivamente) é elegível para exportação, usando exatamente o mesmo pipeline WebP (PNG → Canvas → WebP → JSZip).
+  - **Caso B — Slice tagueado como `image`:** Se o usuário taguear um Slice como `image` via plugin, o comportamento deve ser idêntico ao Caso A — o Slice é exportado renderizando tudo dentro dos seus bounds.
+  - **Nome do arquivo:** Usa o nome da camada do Slice no Figma, sanitizado para kebab-case (ex: `Slice — Hero Banner` → `slice-hero-banner.webp`).
+  - **Escala e Qualidade:** Respeitam os mesmos controles da UI (slider de qualidade + seletor 1x/2x/3x).
+
+- **Como o Figma lida com Slices tecnicamente:**
+  - A Figma API trata `SLICE` como um nó exportável como qualquer outro via `node.exportAsync()`.
+  - A diferença é que um Slice **não possui fills próprios** — ele é uma região de captura. O `exportAsync` dele renderiza todos os nós visíveis sobrepostos à sua área, como a exportação nativa do Figma faz.
+  - Portanto, **não é necessária nenhuma lógica de composição manual** — `exportAsync({ format: 'PNG', useAbsoluteBounds: true, constraint: { type: 'SCALE', value: N } })` no nó Slice já produz o resultado correto.
+
+- **Ação Técnica:**
+
+  #### Backend (`src/index.js`) — `collectImageNodes`
+  Adicionar um **4º critério de elegibilidade** na função `collectImageNodes`, antes da recursão em `children`:
+
+  ```js
+  // Priority 4: Figma native Slice node — exports everything within its bounds
+  if (node.type === 'SLICE') {
+    results.push(node);
+    return results; // Slice já cobre sua área; não recursar
+  }
+  ```
+
+  > **Observação:** Como Slices não possuem `children` exportáveis (são apenas regiões), o `return results` garante que não haja recursão desnecessária.
+
+  #### Backend — Identificação de Slices tagueados como `image`
+  O critério 1 já captura nós tagueados como `"image"` — incluindo Slices tagueados. Basta garantir que o **critério 4** (Slice nativo) seja verificado **antes** do critério 3 (IMAGE fill), pois Slices não têm fills e falhariam silenciosamente no critério 3.
+
+  #### UI (`ui.html`) — Nenhuma mudança necessária
+  O pipeline Canvas → WebP → JSZip já funciona com qualquer `Uint8Array` de bytes PNG gerado pelo `exportAsync`, independente se o nó é um Slice, Rectangle ou qualquer outro tipo.
+
+- **Fluxo Completo:**
+  ```
+  Usuário seleciona frame com Slices
+       ↓
+  collectImageNodes percorre nós
+       ↓
+  Encontra node.type === 'SLICE' (ou Slice tagueado como 'image')
+       ↓
+  exportAsync(PNG, scale: Nx, useAbsoluteBounds: true)
+  → Figma renderiza TUDO dentro dos bounds do Slice
+       ↓
+  UI recebe bytes PNG
+  → Canvas converte para WebP (quality: Q%)
+  → JSZip empacota como 'webp-exports/nome-do-slice.webp'
+       ↓
+  Download automático do .zip
+  ```
+
+- **Casos de Validação:**
+  - **V1:** Frame com Slice nativo sem tag → Slice aparece no zip como `.webp`
+  - **V2:** Slice tagueado como `image` → idem ao V1
+  - **V3:** Slice com conteúdo em múltiplas camadas → resultado é uma imagem flat única (composição correta via `exportAsync`)
+  - **V4:** Slice + imagem normal na mesma seleção → ambos exportados no mesmo zip
+  - **V5:** Slice em escala 2x → sufixo `@2x` no nome do arquivo
+
+
 
 ### 3.4 Captura e Mapeamento de Fonte (Font Family) para o JSON
 - **O Problema:** Atualmente, apenas `font-size` e `font-weight` são extraídos dos nós de texto. A `font-family` (ex: `"Inter"`, `"Roboto"`, `"Lato"`) é ignorada, forçando o usuário a reconfigurar a tipografia manualmente em cada widget após a importação.

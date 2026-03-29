@@ -140,6 +140,14 @@ try {
                 return results;
               }
 
+              // Priority 4: Figma native Slice — exportAsync renders everything within bounds
+              // Note: a Slice tagged as 'image' is already caught by Priority 1 above.
+              // This covers untagged Slices dropped directly into a frame.
+              if (node.type === 'SLICE') {
+                results.push(node);
+                return results; // Slices have no exportable children; stop recursion
+              }
+
               // Recurse into children
               if ('children' in node) {
                 for (const child of node.children) {
