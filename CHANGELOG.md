@@ -7,6 +7,17 @@ e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.1.0] - 2026-03-28
+
+### Adicionado
+- Documentação para exportação WebP e suporte a Font Family.
+- Planejamento de automação de assets no PLANO_DE_ACAO.md.
+
+### Corrigido
+- Escopo da variável `bgSettings` em `handleManualTag` para evitar erros de referência.
+
+---
+
 ## [0.4.0] - 2025-02-15
 
 ### Corrigido

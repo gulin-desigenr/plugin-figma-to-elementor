@@ -36,9 +36,10 @@ export async function handleManualTag(node, tag, isRoot, maps) {
   const secStyle = styles.length > 1 ? styles[1] : mainStyle;
 
   let settings = { align: "center" };
+  let bgSettings = {};
 
   if (node.type !== "TEXT") {
-    const bgSettings = await extractBackground(node, maps);
+    bgSettings = await extractBackground(node, maps);
     if (bgSettings.background_background) {
       settings._background_background = bgSettings.background_background;
       settings._background_color = bgSettings.background_color;

@@ -89,6 +89,50 @@ A lógica de priorização segue:
   - Injetar no `url` do plugin.
   - *Desafio:* Payload limite do Figma/Navegador para gerar blobs muito grandes. Necessita de redimensionamento interno.
 
+### 3.3 Exportação de Imagens Tagueadas em WebP (Issue #9)
+- **O Problema:** Imagens inseridas no Figma precisam ser manualmente exportadas e re-upadas no WordPress. Isso gera retrabalho constante e rompe o fluxo de entrega.
+- **Descrição da Funcionalidade:**
+  - Adicionar botão **"📥 Exportar Imagens"** na UI do plugin (`ui.html`).
+  - Ao clicar, o plugin varre toda a seleção atual e localiza todos os nós tagueados como `image`, `image-box`, `image-carousel` ou que possuam image-fill.
+  - Cada imagem é exportada individualmente em formato **WebP** usando a Figma Export API (`node.exportAsync({ format: 'WEBP' })`).
+  - O `code.js` retorna os bytes para a UI via `postMessage`, e a UI dispara downloads de cada arquivo individualmente via blob URL (`URL.createObjectURL`).
+  - O nome do arquivo exportado corresponde ao nome da camada no Figma (ex: `hero-banner.webp`).
+- **Slider de Qualidade (0–100%):**
+  - Exibir um **slider horizontal** logo acima ou abaixo do botão de exportação, com label dinâmico que mostra o valor atual (ex: `Qualidade: 80%`).
+  - Valor padrão: **80%** (balanço entre fidelidade e tamanho de arquivo).
+  - O valor selecionado é enviado junto com a mensagem `"export-images"` ao `code.js` como campo `quality` (número de 0 a 1, ex: `0.8`).
+  - A API do Figma suporta o parâmetro: `node.exportAsync({ format: 'WEBP', quality: <0–1> })`.
+  - O slider deve ter aparência visual consistente com o Design System do plugin (thumb estilizado, track com gradiente, sem aparência nativa do browser).
+- **Ação Técnica:**
+  - No `index.js`: adicionar handler para msg.type `"export-images"` que lê `msg.quality`, percorre a seleção, extrai bytes em WebP com `{ format: 'WEBP', quality: msg.quality }` de todos os nós elegíveis e retorna um array `[{ name, bytes }]`.
+  - Na `ui.html`: adicionar o slider (`<input type="range" min="0" max="100" value="80">`) com label ao vivo via evento `input`, botão `"📥 Exportar Imagens"`, e handler JS que, ao receber `"images-exported"`, itera o array e faz download de cada item como `.webp`.
+  - Feedback de progresso via `figma.notify()` durante a exportação (ex: `"Exportando 3 imagens em WebP (qualidade: 80%)..."`).
+- **Critérios de Elegibilidade para Export:**
+  - Nó com tag `image` ou `image-carousel`.
+  - Nó com fill do tipo `IMAGE`.
+  - Elemento filho interno de `image-box` com role `image`.
+
+### 3.4 Captura e Mapeamento de Fonte (Font Family) para o JSON
+- **O Problema:** Atualmente, apenas `font-size` e `font-weight` são extraídos dos nós de texto. A `font-family` (ex: `"Inter"`, `"Roboto"`, `"Lato"`) é ignorada, forçando o usuário a reconfigurar a tipografia manualmente em cada widget após a importação.
+- **Descrição da Funcionalidade:**
+  - O plugin lê a propriedade `fontName.family` de cada nó de texto (`TEXT`) no Figma.
+  - Essa informação é injetada nos `settings` do widget exportado sob as chaves padrão do Elementor:
+    - `typography_font_family` → para widgets `heading`, `text-editor`, `button`, `image-box`, `icon-box`, etc.
+    - `title_typography_font_family` / `description_typography_font_family` → para widgets com título/descrição separados.
+  - **Fallback:** Se a fonte usada não for reconhecida pelo Elementor (fontes personalizadas, fontes de sistema), o campo é omitido e o Elementor aplicará sua fonte padrão configurada no Site Settings — sem quebrar o JSON.
+- **Ação Técnica:**
+  - Em `styles/index.js`, dentro de `extractTextStyle()`: Adicionar extração de `node.fontName.family` (com guard para `figma.mixed`) e retornar como campo `fontFamily` no objeto de style.
+  - Em `handlers.js`, em todos os blocos de widget que já aplicam tipografia: Injetar a chave `typography_font_family` (e suas variantes prefixadas) usando o `fontFamily` retornado.
+  - Em `utils/nodes.js`: cobrir o caso `figma.mixed` com um fallback gracioso (retorna `null` ou string vazia).
+- **Diagrama de Fluxo:**
+  ```
+  Nó TEXT no Figma
+  └─ fontName.family = "Inter"
+       └─ extractTextStyle() → { fontFamily: "Inter", size: 24, weight: "700" }
+            └─ handlers.js → settings.typography_font_family = "Inter"
+                 └─ JSON exportado → Elementor aplica fonte "Inter" automaticamente
+  ```
+
 ---
 
 ## ✨ FASE 4: Refinamentos e UI Overhaul
@@ -128,4 +172,6 @@ A lógica de priorização segue:
 
 1. **Qualidade Mestra (UI e Pipeline):** Entregar a interface premium solicitada no roadmap (UI Overhaul).
 2. **Qualidade de Exportação (Backend):** Proteger o payload limpando CSS fantasmas e expurgando loose-nodes (elementos soltos não-tagueados).
-3. **Escala Futura:** Planejar arquitetura para a dectecção heurística "Zero-tag" nos sprints tardios.
+3. **Fidelidade Tipográfica (3.4):** Implementar captura de `font-family` para eliminar reconfiguração manual de fontes no Elementor após importação.
+4. **Automação de Assets (3.3):** Implementar exportação em lote de imagens WebP para eliminar o processo manual de re-upload no WordPress.
+5. **Escala Futura:** Planejar arquitetura para a detecção heurística "Zero-tag" nos sprints tardios.
