@@ -68,6 +68,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.title_typography_typography = "custom";
     settings.title_typography_font_size = { size: tStyle.size, unit: "px" };
     settings.title_typography_font_weight = tStyle.weight;
+    if (tStyle.fontFamily) settings.title_typography_font_family = tStyle.fontFamily; // B4
 
     settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
     let dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
@@ -83,6 +84,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.description_typography_typography = "custom";
     settings.description_typography_font_size = { size: dStyle.size, unit: "px" };
     settings.description_typography_font_weight = dStyle.weight;
+    if (dStyle.fontFamily) settings.description_typography_font_family = dStyle.fontFamily; // B4
 
     const base64Image = await extractBase64Image(node);
     settings.image = { url: base64Image || "", id: "" };
@@ -107,6 +109,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.title_typography_typography = "custom";
     settings.title_typography_font_size = { size: tStyle.size, unit: "px" };
     settings.title_typography_font_weight = tStyle.weight;
+    if (tStyle.fontFamily) settings.title_typography_font_family = tStyle.fontFamily; // B5
 
     settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
     settings.description = settings.description_text;
@@ -124,6 +127,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.description_typography_typography = "custom";
     settings.description_typography_font_size = { size: dStyle.size, unit: "px" };
     settings.description_typography_font_weight = dStyle.weight;
+    if (dStyle.fontFamily) settings.description_typography_font_family = dStyle.fontFamily; // B5
 
     let iconColor = mainStyle.color;
     let iconName = "fas fa-star";
@@ -176,6 +180,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.text_typography_typography = "custom";
     settings.text_typography_font_size = { size: mainStyle.size, unit: "px" };
     settings.text_typography_font_weight = mainStyle.weight;
+    if (mainStyle.fontFamily) settings.text_typography_font_family = mainStyle.fontFamily; // B6
   }
   else if (tag === "heading") {
     settings.title = texts.join(" ");
@@ -191,6 +196,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.typography_typography = "custom";
     settings.typography_font_size = { size: mainStyle.size, unit: "px" };
     settings.typography_font_weight = mainStyle.weight;
+    if (mainStyle.fontFamily) settings.typography_font_family = mainStyle.fontFamily; // B1
   }
   else if (tag === "text-editor") {
     settings.editor = texts.join("<br>");
@@ -206,7 +212,9 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.typography_typography = "custom";
     settings.typography_font_size = { size: mainStyle.size, unit: "px" };
     settings.typography_font_weight = mainStyle.weight;
+    if (mainStyle.fontFamily) settings.typography_font_family = mainStyle.fontFamily; // B2
   }
+
   else if (tag === "button") {
     try {
       settings.text = texts.join(" ") || "Clique Aqui";
@@ -226,6 +234,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       settings.typography_typography = "custom";
       settings.typography_font_size = { size: mainStyle.size, unit: "px" };
       settings.typography_font_weight = mainStyle.weight;
+      if (mainStyle.fontFamily) settings.typography_font_family = mainStyle.fontFamily; // B3
 
       if (settings._background_color) {
         settings.background_color = settings._background_color;
@@ -421,6 +430,7 @@ export async function mapText(node, maps) {
       typography_font_size: { size: style.size, unit: "px" },
       typography_font_weight: style.weight
     };
+    if (style.fontFamily) settings.typography_font_family = style.fontFamily; // B7
 
     if (style.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};

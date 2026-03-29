@@ -1,6 +1,6 @@
 import { figmaColorToRGBA } from '../utils/colors.js';
 import { mapFontWeight } from '../utils/typography.js';
-import { extractBase64Image } from '../utils/nodes.js';
+import { extractBase64Image, getSafeFontFamily } from '../utils/nodes.js';
 
 export function extractBorders(node, settings, isWidget = false, widgetType = "") {
   let radiusKey = isWidget ? "_border_radius" : "border_radius";
@@ -106,6 +106,9 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
     weight = mapFontWeight(node.fontName.style);
   }
 
+  // A1/A2: Safe font-family extraction (guards figma.mixed and undefined)
+  const fontFamily = getSafeFontFamily(node);
+
   if (node.textStyleId) {
     const style = await figma.getStyleByIdAsync(node.textStyleId);
     if (style && maps.typoMap && maps.typoMap[style.name]) {
@@ -113,7 +116,7 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
     }
   }
 
-  return { color, size, weight, globalColorId, globalTypoId };
+  return { color, size, weight, fontFamily, globalColorId, globalTypoId };
 }
 
 export async function extractBackground(node, maps = { colorMap: {}, typoMap: {} }) {

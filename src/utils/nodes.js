@@ -44,6 +44,11 @@ export function getNodeRole(node) {
   return null;
 }
 
+export function getSafeFontFamily(node) {
+  if (!node || node.fontName === figma.mixed || !node.fontName) return null;
+  return node.fontName.family || null;
+}
+
 export async function extractBase64Image(node) {
   try {
     if (!node.fills || node.fills === figma.mixed) return null;
