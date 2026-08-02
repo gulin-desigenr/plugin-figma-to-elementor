@@ -42,10 +42,10 @@ refactor: extrair funções de estilo para módulo separado
 - **Ponto-e-vírgula**: obrigatório
 
 ### Ao adicionar um novo widget
-1. Adicionar handler em `code.js` dentro de `handleManualTag()`
+1. Adicionar handler em `src/core/handlers.js` dentro de `handleManualTag()`
 2. Adicionar botão correspondente em `ui.html`
 3. Atualizar tabela de tags no `README.md`
-4. Adicionar entrada no `CHANGELOG.md`
+4. Executar `npm run build` para atualizar `dist/code.js`
 
 ### Documentação de funções (JSDoc)
 ```javascript
@@ -61,11 +61,12 @@ function extractBorders(node, settings, isWidget = false, widgetType = "") {
 
 ## 🧪 Teste antes de Merge
 
-1. Abra o plugin no Figma Desktop
-2. Crie um frame com todos os tipos de widget suportados
-3. Aplique tags manualmente
-4. Exporte o JSON
-5. Importe no Elementor e verifique:
+1. Execute `npm run check`
+2. Abra o plugin no Figma Desktop
+3. Crie um frame com todos os tipos de widget suportados
+4. Aplique tags manualmente
+5. Exporte o JSON
+6. Importe no Elementor e verifique:
    - Layout direction correto
    - Cores, fontes e tamanhos preservados
    - Bordas e sombras aplicadas

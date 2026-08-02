@@ -1,8 +1,8 @@
-# 🎨 Figmentor — Figma to Elementor
+# Figmentor — Figma to Elementor
 
-> Plugin Figma que converte seus designs diretamente em JSON compatível com Elementor, preservando layout, estilos, tipografia e estrutura.
+> Traducao estrutural de layout do Figma para o Elementor, com foco em hierarquia, spacing, tipografia, cores e composicao nativa de containers.
 
-![Status](https://img.shields.io/badge/status-MVP%20v0.4-blue)
+![Status](https://img.shields.io/badge/status-v1.1.0-blue)
 ![Figma](https://img.shields.io/badge/plataforma-Figma-purple)
 ![Elementor](https://img.shields.io/badge/destino-Elementor-red)
 
@@ -10,10 +10,10 @@
 
 ## 📋 Sumário
 
-- [O que faz](#-o-que-faz)
-- [Como funciona](#-como-funciona)
+- [O que faz](#o-que-faz)
+- [Como funciona](#como-funciona)
 - [Instalação](#-instalação)
-- [Tags Suportadas](#-tags-suportadas)
+- [Tags suportadas](#tags-suportadas)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
 - [Estrutura do JSON Exportado](#-estrutura-do-json-exportado)
 - [Branches](#-branches)
@@ -23,15 +23,27 @@
 
 ---
 
-## ✨ O que faz
+## O que faz
 
 O Figmentor permite que você:
 
-1. **Tagueie** elementos no Figma com widgets do Elementor (heading, image, container, etc.)
+1. **Tagueie** elementos no Figma com widgets e containers estruturais do Elementor
 2. **Exporte** toda a estrutura como um JSON compatível com Elementor
-3. **Importe** o JSON diretamente no Elementor para recriar o layout
+3. **Importe** o JSON diretamente no Elementor para recriar o layout-base
+4. **Baixe** o JSON gerado para importá-lo manualmente no Elementor
 
-### O que é preservado na conversão
+### Essencia do produto
+
+O Figmentor nao tenta mais prometer traducao visual completa de uma pagina.
+
+O foco do projeto e:
+
+- traduzir a estrutura do frame em Auto Layout para a estrutura real do Elementor
+- preservar hierarquia, ordem, containers, spacing, larguras, alturas e alinhamentos
+- preservar tipografia, cores de texto, backgrounds nativos, bordas e sombras quando houver suporte confiavel
+- deixar imagens, icones e uploads de assets fora do fluxo principal
+
+### O que e preservado na conversao
 
 | Propriedade | Status |
 |---|---|
@@ -41,16 +53,17 @@ O Figmentor permite que você:
 | Bordas e border-radius | ✅ |
 | Sombras (drop shadow) | ✅ |
 | Larguras (fixed/fill) | ✅ |
-| Imagens (estrutura) | ✅ (URL manual) |
+| Alturas e min-height estruturais | ✅ |
+| Imagens e icones reais | Fora do escopo principal |
 
 ---
 
-## 🔄 Como funciona
+## Como funciona
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌───────────────┐
-│  Figma       │────▶│  Figmentor   │────▶│  JSON         │
-│  Design      │     │  (tagging)   │     │  Elementor    │
+│  Figma      │────▶│  Figmentor   │────▶│  JSON          │
+│  Auto Layout│     │  (tagging)   │     │  Elementor     │
 └─────────────┘     └──────────────┘     └───────────────┘
 ```
 
@@ -59,6 +72,12 @@ O Figmentor permite que você:
 3. Selecione o frame principal
 4. Clique **"GERAR E BAIXAR JSON"**
 5. Importe o `.json` no Elementor
+6. Faça o upload manual de imagens e icones, quando necessario
+7. Ajuste manualmente imagens e detalhes finais no Elementor, se necessário
+
+### Fluxo recomendado
+
+`Plugin Figma to Elementor -> mapeia a estrutura no Figma -> gera JSON -> upload manual do JSON no Elementor`
 
 ---
 
@@ -75,34 +94,43 @@ O Figmentor permite que você:
 4. Selecione o arquivo `manifest.json` deste repositório
 5. O plugin aparecerá em **Plugins → Development**
 
----
+### Build e validação local
 
-## 🏷️ Tags Suportadas
+```bash
+npm ci
+npm run check
+```
 
-### Layout (Estrutura)
+O comando `check` gera `dist/code.js` e executa os testes smoke do projeto. O arquivo `dist/code.js` é versionado porque é o bundle carregado pelo `manifest.json`.
+
+## Tags suportadas
+
+### Estrutura principal
 
 | Tag | Descrição | Elementor |
 |---|---|---|
 | `container` | Seção com largura boxed (1140px) | Container boxed |
 | `container-full` | Container filho 100% full-width | Container full |
 
-### Widgets de Conteúdo
+### Conteudo estrutural
 
 | Tag | Descrição | Elementor |
 |---|---|---|
 | `heading` | Título — texto com fonte ≥32px é auto-detectado | Heading widget |
 | `text-editor` | Bloco de texto — texto com fonte <32px é auto-detectado | Text Editor widget |
-| `image` | Imagem (detectada por fill type IMAGE) | Image widget |
-| `image-box` | Caixa de imagem com título e descrição | Image Box widget |
-| `icon-list` | Lista com ícones | Icon List widget |
-| `icon-box` | Caixa com ícone | Icon Box widget (⚠️ em desenvolvimento) |
+| `accordion` | Sanfona com itens expansíveis | Accordion widget |
+| `accordeon` | Accordeon com containers aninhados por item | Nested Accordion widget |
+| `button` | CTA textual e estrutural | Button widget |
 
-### Dinâmicos
+### Fora do escopo principal
 
-| Tag | Descrição | Status |
-|---|---|---|
-| `image-carousel` | Carrossel de imagens | ⚠️ Em desenvolvimento |
-| `container-carousel` | Carrossel de containers | ⚠️ Em desenvolvimento |
+As estruturas abaixo continuam disponíveis na UI, mas não fazem parte do fluxo
+estrutural principal:
+
+- widgets de imagem
+- widgets baseados em icone
+- uploads de assets
+- collage, hero media e composicao visual dependente de imagem
 
 ---
 
@@ -110,15 +138,18 @@ O Figmentor permite que você:
 
 ```
 plugin-figma-to-elementor/
+├── .github/workflows/ci.yml # Validação automática no GitHub
+├── .editorconfig         # Convenções de edição
 ├── manifest.json        # Manifesto do plugin Figma
-├── code.js              # Backend — lógica de traversal e export
+├── src/                 # Código modular do backend Figma
+├── tests/                # Testes smoke e contratos básicos
+├── dist/code.js         # Bundle carregado pelo manifesto
 ├── ui.html              # Frontend — interface de tagging
 ├── .gitignore           # Arquivos ignorados pelo Git
-├── .agents/
-│   └── rules.md         # Regras para agentes AI
 ├── README.md            # Este arquivo
+├── AUDITORIA_TECNICA_EXPORTACAO.md # Base da auditoria do exportador
 ├── CONTRIBUTING.md      # Guia de contribuição
-└── CHANGELOG.md         # Histórico de versões
+└── USER GUIDE - Figmentor.md # Guia de uso
 ```
 
 ---
@@ -170,14 +201,14 @@ plugin-figma-to-elementor/
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] v0.1 — Estrutura base e tagging manual
 - [x] v0.4 — Correção de propriedades mistas (`figma.mixed`)
-- [ ] v0.5 — Handlers para `icon-box`, `image-carousel`, `container-carousel`
-- [ ] v0.6 — Export de imagens como base64 ou URL
+- [ ] v0.5 — Refino da traducao estrutural de spacing, sizing e tipografia
+- [ ] v0.6 — Fortalecimento da exportação estrutural para layout responsivo
 - [ ] v0.7 — Suporte a gradientes e múltiplos fills
-- [ ] v1.0 — Importação direta via API do Elementor
+- [ ] v1.0 — Melhorias de importação manual e validação do JSON
 
 ---
 

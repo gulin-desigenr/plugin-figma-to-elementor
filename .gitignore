@@ -9,8 +9,8 @@ Thumbs.db
 .env
 .env.local
 
-# Build
-dist
+# Testes
+coverage
 
 # Logs
 *.log

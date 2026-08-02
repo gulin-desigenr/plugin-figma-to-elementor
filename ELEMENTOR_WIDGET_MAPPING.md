@@ -134,6 +134,61 @@ O Container é a fundação do layout. Substituiu as antigas Seções e Colunas.
 | Slides To Scroll | `slides_to_scroll` | Número (em string) | Ex: `"1"` |
 | Navegação | `navigation` | `"both"`, `"arrows"`, `"dots"`, `"none"` | Setas ou pontinhos de paginação. |
 
+### 4.3 Sanfona (Accordion)
+**Nome do Widget:** `accordion`
+
+| Figmentor Setting | Elementor Control ID | Tipo / Opções Válidas | Observação |
+|---|---|---|---|
+| Itens da Sanfona | `tabs` | Array de Objetos | Cada item deve conter `tab_title` e `tab_content`. |
+| Título do Item | `tab_title` | String | Campo interno de cada item do repeater. |
+| Conteúdo do Item | `tab_content` | String (aceita HTML) | Campo interno de cada item do repeater. |
+| Ícone Fechado | `selected_icon` | Object (value, library) | Ex: `{ value: "fas fa-plus", library: "fa-solid" }` |
+| Ícone Aberto | `selected_active_icon` | Object (value, library) | Ex: `{ value: "fas fa-minus", library: "fa-solid" }` |
+| Tag HTML do Título | `title_html_tag` | `h1`-`h6` / `div` | Default seguro: `div`. |
+| Cor do Título | `title_color` | String (Hex/RGBA) | |
+| Cor do Conteúdo | `content_color` | String (Hex/RGBA) | |
+| Alinhamento do Ícone | `icon_align` | `left` / `right` | Default seguro: `left`. |
+| Tipografia do Título | `title_typography_*` | Grupo de tipografia | Mesmo padrão dos widgets já suportados. |
+| Tipografia do Conteúdo | `content_typography_*` | Grupo de tipografia | Mesmo padrão dos widgets já suportados. |
+
+**Exemplo de Objeto `tabs`:**
+```json
+"tabs": [
+  {
+    "tab_title": "Pergunta 1",
+    "tab_content": "Resposta 1"
+  },
+  {
+    "tab_title": "Pergunta 2",
+    "tab_content": "Resposta 2"
+  }
+]
+```
+
+### 4.4 Accordeon (Nested Accordion)
+**Nome do Widget:** `nested-accordion`
+
+| Figmentor Setting | Elementor Control ID | Tipo / Opções Válidas | Observação |
+|---|---|---|---|
+| Itens do Accordeon | `items` | Array de Objetos | Cada item deve conter `item_title` e pode conter `element_css_id`. |
+| Título do Item | `item_title` | String | Campo interno de cada item do nested repeater. |
+| CSS ID do Item | `element_css_id` | String | Aplicado no item, não no widget raiz. |
+| Conteúdo do Item | `elements` | Array de Containers | Cada item recebe um container filho correspondente em `elements`. |
+| Ícone de Expandir | `accordion_item_title_icon` | Object (value, library) | Default seguro: `fas fa-plus`. |
+| Ícone de Recolher | `accordion_item_title_icon_active` | Object (value, library) | Default seguro: `fas fa-minus`. |
+| Posição do Ícone | `accordion_item_title_icon_position` | `start` / `end` | Default seguro: `start`. |
+| Posição do Título | `accordion_item_title_position_horizontal` | `start` / `center` / `end` / `stretch` | Default seguro: `stretch`. |
+| Tag HTML do Título | `title_tag` | `h1`-`h6` / `div` / `span` / `p` | Default seguro: `div`. |
+| FAQ Schema | `faq_schema` | `yes` / `no` | Sai como `no` por padrão no plugin. |
+| Estado Inicial | `default_state` | `expanded` / `all_collapsed` | Default seguro: `expanded`. |
+| Máx. Itens Abertos | `max_items_expended` | `one` / `multiple` | Default seguro: `one`. |
+| Duração da Animação | `n_accordion_animation_duration` | Object | Ex: `{ size: 400, unit: "ms" }`. |
+| Cor do Título | `normal_title_color` | String (Hex/RGBA) | Cor base do título no estado normal. |
+| Tipografia do Título | `title_typography_*` | Grupo de tipografia | Tipografia do título do item. |
+
+**Observação de implementação**
+No plugin do Figma, `accordion` e `accordeon` coexistem como tags distintas de UI. A `Sanfona` exporta o widget clássico `accordion`, enquanto o `Accordeon` exporta `nested-accordion`, com um container aninhado por item para receber widgets internos.
+
 ---
 
 ## 🛑 Padrão de Estilos Globais e Avançados
