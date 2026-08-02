@@ -1,4 +1,12 @@
 import { traverseNode } from './core/traverse.js';
+import { annotateExportContent, validateExportDocument } from './core/contract.js';
+
+const EXPORT_MODES = new Set(['section', 'page']);
+
+function sendExportError(message) {
+  figma.notify(`Exportação interrompida: ${message}`, { error: true });
+  figma.ui.postMessage({ type: 'export-error', message });
+}
 
 try {
   figma.showUI(__html__, { width: 400, height: 620 });
@@ -43,8 +51,30 @@ try {
 
       if (msg.type === "export-json") {
         const selection = figma.currentPage.selection;
-        if (selection.length === 0) { figma.notify("Selecione o Frame Principal."); return; }
-        if (selection.length > 1) { figma.notify("🚨 Selecione apenas UM frame raiz. Use [PAGE-WRAPPER] com Auto Layout se necessário.", { error: true }); return; }
+        const exportMode = msg.exportMode;
+
+        if (!EXPORT_MODES.has(exportMode)) {
+          sendExportError("Escolha se você está criando uma seção ou uma página.");
+          return;
+        }
+        if (selection.length === 0) {
+          sendExportError("Selecione o frame principal.");
+          return;
+        }
+        if (selection.length > 1) {
+          sendExportError("Selecione apenas um frame raiz.");
+          return;
+        }
+
+        const rootTag = selection[0].getPluginData("elementor-tag");
+        if (exportMode === "section" && rootTag !== "container") {
+          sendExportError("No modo Seção, o frame principal precisa da tag Seção (1140px Boxed).");
+          return;
+        }
+        if (exportMode === "page" && rootTag !== "page-wrapper") {
+          sendExportError("No modo Página, o frame principal precisa da tag Página (Wrapper).");
+          return;
+        }
 
         figma.notify("⏳ Calculando árvore...");
 
@@ -77,17 +107,26 @@ try {
 
             sanitizeOutput(content);
 
+            content = annotateExportContent(content);
+
             const elementorJSON = {
               version: "0.4",
-              title: "Export V19 Soltos Fix - " + selection[0].name,
-              type: "container",
+              title: `${exportMode === "page" ? "Page" : "Container"} Export - ${selection[0].name}`,
+              type: exportMode === "page" ? "page" : "container",
+              ...(exportMode === "page" ? { page_settings: {} } : {}),
               content: content
             };
+
+            const validation = validateExportDocument(elementorJSON, exportMode);
+            if (!validation.valid) {
+              sendExportError(validation.errors.join(" "));
+              return;
+            }
 
             figma.ui.postMessage({ type: "json-generated", data: JSON.stringify(elementorJSON, null, 2) });
             figma.notify("✅ JSON Gerado com Sucesso!");
           } catch (err) {
-            figma.notify("Erro na exportação: " + err.message);
+            sendExportError(err.message);
             console.error(err);
           }
         })();

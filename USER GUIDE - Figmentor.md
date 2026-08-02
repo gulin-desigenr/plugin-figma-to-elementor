@@ -69,16 +69,41 @@ Para maximizar a compatibilidade de parsing do Elementor, o código adota padrõ
 
 ## 4. FLUXO DE USO COMPLETO
 
-### 4.1 Exportar Múltiplos Componentes / Layout de Página
-1. Selecione o `Frame` pai de todo o layout. Aplique a tag `Seção (1140px Boxed)`.
-2. Selecione containers internos de layout e rotule-os como `Container Filho (100% Full)`.
-3. Assinale blocos semânticos aplicando as respecticas tags (`heading`, `image-box`, `icon-list`, etc).
-4. Verifique elementos não rotulados: nós de puro texto e blocos com inserção de imagem são processados automaticamente como fallback se visíveis.
-5. Selecione novamente apenas o *Pai* da estrutura.
+### 4.1 Exportar uma seção
+1. Escolha `Criar uma seção` na tela inicial.
+2. Selecione o `Frame` principal e aplique a tag `Seção (1140px Boxed)`.
+3. Selecione containers internos de layout e rotule-os como `Container Filho (100% Full)`.
+4. Assinale blocos semânticos aplicando as respectivas tags (`heading`, `text-editor`, etc.).
+5. Selecione novamente apenas o frame principal.
 6. Clique em **GERAR E BAIXAR JSON**.
-7. No painel de importação do Elementor, envie o arquivo exportado.
+7. No painel de importação do Elementor, envie o arquivo exportado como container.
 
-### 4.2 Restricao deliberada de midia e iconografia
+### 4.2 Exportar uma página com várias seções
+1. Escolha `Criar uma página` na tela inicial.
+2. Selecione o `Frame` pai de todo o layout e aplique a tag `Página (Wrapper)`.
+3. Marque cada seção interna como `Seção (1140px Boxed)`.
+4. Use `Container Filho (100% Full)` para estruturas internas quando necessário.
+5. Assinale blocos semânticos aplicando as respectivas tags.
+6. Selecione novamente apenas o frame principal.
+7. Clique em **GERAR E BAIXAR JSON**.
+8. No painel de importação do Elementor, envie o arquivo exportado como página.
+
+O modo Página não define configurações gerais de layout, fundo ou tipografia.
+O arquivo usa `page_settings: {}` para permitir que o WordPress, o Elementor e o
+Hello Elementor mantenham suas configurações padrão.
+
+### 4.3 Validação de importação no WordPress
+
+Os dois modos de exportação foram testados manualmente dentro do WordPress:
+
+- o JSON de página foi importado com sucesso no Elementor;
+- o JSON de seção foi importado com sucesso no Elementor.
+
+Isso confirma o funcionamento do contrato de saída para os dois envelopes. A
+importação estrutural funciona, mas imagens, SVGs, mockups e outros assets ainda
+devem ser preenchidos manualmente no Elementor.
+
+### 4.4 Restricao deliberada de midia e iconografia
 1. Imagens, SVGs, mockups, texturas e icones nao fazem parte do fluxo estrutural principal do Figmentor.
 2. O JSON exportado deve ser entendido como base estrutural do layout.
 3. O upload e a escolha final de imagens e icones acontecem manualmente no Elementor.

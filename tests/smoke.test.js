@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { annotateExportContent, validateExportDocument } from '../src/core/contract.js';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = relativePath => fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
@@ -60,6 +61,75 @@ test('UI tags have corresponding backend handling', () => {
   }
 
   assert.match(traversal, /manualTag === 'image-background'/);
+});
+
+test('UI exposes the approved section and page modes', () => {
+  const ui = read('ui.html');
+  const source = read('src/index.js');
+
+  assert.match(ui, /selectExportMode\('section'\)/);
+  assert.match(ui, /selectExportMode\('page'\)/);
+  assert.match(ui, /id="tag-page-wrapper"/);
+  assert.match(ui, /exportMode: currentExportMode/);
+  assert.match(source, /exportMode === "section"/);
+  assert.match(source, /exportMode === "page"/);
+  assert.match(source, /page_settings: \{\}/);
+});
+
+test('export contract annotates stable metadata and validates page output', () => {
+  const content = annotateExportContent([
+    {
+      elType: 'container',
+      settings: { css_id: 'section' },
+      elements: [
+        {
+          elType: 'widget',
+          widgetType: 'heading',
+          settings: { title: 'Título', css_id: 'section' }
+        }
+      ]
+    }
+  ]);
+
+  const document = {
+    version: '0.4',
+    type: 'page',
+    page_settings: {},
+    content
+  };
+  const validation = validateExportDocument(document, 'page');
+
+  assert.equal(validation.valid, true);
+  assert.match(content[0].id, /^c[a-z0-9]{6}$/);
+  assert.equal(content[0].isInner, false);
+  assert.equal(content[0].elements[0].isInner, true);
+  assert.equal(content[0].elements[0].settings.css_id, 'section-2');
+});
+
+test('export contract avoids collisions with existing suffixed css ids', () => {
+  const content = annotateExportContent([
+    { elType: 'widget', widgetType: 'heading', settings: { css_id: 'hero' } },
+    { elType: 'widget', widgetType: 'heading', settings: { css_id: 'hero' } },
+    { elType: 'widget', widgetType: 'heading', settings: { css_id: 'hero-2' } }
+  ]);
+
+  assert.deepEqual(
+    content.map(element => element.settings.css_id),
+    ['hero', 'hero-2', 'hero-2-2']
+  );
+});
+
+test('export contract rejects invalid mode envelopes and malformed elements', () => {
+  const validation = validateExportDocument({
+    version: '0.4',
+    type: 'container',
+    content: [null]
+  }, 'page');
+
+  assert.equal(validation.valid, false);
+  assert.match(validation.errors.join(' '), /type deve ser "page"/);
+  assert.match(validation.errors.join(' '), /deve ser um objeto/);
+  assert.match(validation.errors.join(' '), /page_settings deve ser um objeto/);
 });
 
 test('audit baseline is part of the repository', () => {

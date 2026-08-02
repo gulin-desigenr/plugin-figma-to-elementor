@@ -630,7 +630,9 @@ export async function mapContainer(node, children, isRoot, isForcedFull, maps) {
 
     let containerWidth = { size: 100, unit: "%" };
 
-    if (isRoot) {
+    if (isForcedFull) {
+      containerWidth = { size: 100, unit: "%" };
+    } else if (isRoot) {
       containerWidth = { size: 100, unit: "%" };
     } else {
       if (node.layoutSizingHorizontal === 'FIXED') {
@@ -670,9 +672,11 @@ export async function mapContainer(node, children, isRoot, isForcedFull, maps) {
       }
     };
 
-    if (isRoot) {
+    if (isRoot && !isForcedFull) {
       settings.content_width = "boxed";
       settings.boxed_width = { size: 1140, unit: "px" };
+    } else if (isForcedFull) {
+      settings.content_width = "full";
     }
 
     if (node.layoutSizingVertical === "FIXED" && node.height > 0) {

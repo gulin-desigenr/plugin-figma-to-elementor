@@ -852,7 +852,9 @@
       const bgSettings = await extractBackground(node, maps);
       const direction = getLayoutDirection(node);
       let containerWidth = { size: 100, unit: "%" };
-      if (isRoot) {
+      if (isForcedFull) {
+        containerWidth = { size: 100, unit: "%" };
+      } else if (isRoot) {
         containerWidth = { size: 100, unit: "%" };
       } else {
         if (node.layoutSizingHorizontal === "FIXED") {
@@ -887,9 +889,11 @@
           unit: "px"
         }
       };
-      if (isRoot) {
+      if (isRoot && !isForcedFull) {
         settings.content_width = "boxed";
         settings.boxed_width = { size: 1140, unit: "px" };
+      } else if (isForcedFull) {
+        settings.content_width = "full";
       }
       if (node.layoutSizingVertical === "FIXED" && node.height > 0) {
         settings.min_height = { size: Math.round(node.height), unit: "px" };
@@ -991,7 +995,145 @@
     return null;
   }
 
+  // src/core/contract.js
+  var ELEMENT_ID_PATTERN = /^[cw][a-z0-9]{6}$/;
+  function isPlainObject(value) {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  }
+  function stableHash(value) {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index += 1) {
+      hash ^= value.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+  function createElementId(element, path) {
+    const prefix = element.elType === "widget" ? "w" : "c";
+    const hash = stableHash(`${path}:${element.elType}:${element.widgetType || "container"}`).toString(36).padStart(6, "0").slice(-6);
+    return `${prefix}${hash}`;
+  }
+  function uniqueCssId(value, seen) {
+    if (typeof value !== "string" || !value) return value;
+    const base = value.slice(0, 64);
+    let candidate = base;
+    let suffixIndex = 1;
+    while (seen.has(candidate)) {
+      suffixIndex += 1;
+      const suffix = `-${suffixIndex}`;
+      candidate = `${base.slice(0, 64 - suffix.length)}${suffix}`;
+    }
+    seen.add(candidate);
+    return candidate;
+  }
+  function annotateElements(elements, depth, parentPath, seenCssIds) {
+    return elements.map((element, index) => {
+      if (!isPlainObject(element)) return element;
+      const path = `${parentPath}.${index}`;
+      const annotated = {
+        ...element,
+        id: createElementId(element, path),
+        isInner: depth > 0
+      };
+      if (annotated.settings && typeof annotated.settings.css_id === "string") {
+        annotated.settings = {
+          ...annotated.settings,
+          css_id: uniqueCssId(annotated.settings.css_id, seenCssIds)
+        };
+      }
+      if (Array.isArray(annotated.elements)) {
+        annotated.elements = annotateElements(
+          annotated.elements,
+          depth + 1,
+          path,
+          seenCssIds
+        );
+      }
+      return annotated;
+    });
+  }
+  function annotateExportContent(content) {
+    if (!Array.isArray(content)) return content;
+    return annotateElements(content, 0, "content", /* @__PURE__ */ new Set());
+  }
+  function validateElement(element, path, errors, seenIds, seenCssIds) {
+    if (!isPlainObject(element)) {
+      errors.push(`${path} deve ser um objeto.`);
+      return;
+    }
+    if (!ELEMENT_ID_PATTERN.test(element.id || "")) {
+      errors.push(`${path}.id deve ser um ID est\xE1vel v\xE1lido.`);
+    } else if (seenIds.has(element.id)) {
+      errors.push(`${path}.id est\xE1 duplicado.`);
+    } else {
+      seenIds.add(element.id);
+    }
+    if (typeof element.isInner !== "boolean") {
+      errors.push(`${path}.isInner deve ser booleano.`);
+    }
+    if (element.elType !== "container" && element.elType !== "widget") {
+      errors.push(`${path}.elType deve ser "container" ou "widget".`);
+    }
+    if (!isPlainObject(element.settings)) {
+      errors.push(`${path}.settings deve ser um objeto.`);
+    }
+    if (element.elType === "container" && !Array.isArray(element.elements)) {
+      errors.push(`${path}.elements deve ser um array em containers.`);
+    }
+    if (element.elType === "widget" && (!element.widgetType || typeof element.widgetType !== "string")) {
+      errors.push(`${path}.widgetType \xE9 obrigat\xF3rio em widgets.`);
+    }
+    if (Array.isArray(element.elements)) {
+      element.elements.forEach((child, index) => {
+        validateElement(child, `${path}.elements[${index}]`, errors, seenIds, seenCssIds);
+      });
+    }
+    const cssId = element.settings && element.settings.css_id;
+    if (cssId) {
+      if (seenCssIds.has(cssId)) {
+        errors.push(`${path}.settings.css_id est\xE1 duplicado.`);
+      } else {
+        seenCssIds.add(cssId);
+      }
+    }
+  }
+  function validateExportDocument(document, mode) {
+    const errors = [];
+    const expectedType = mode === "page" ? "page" : "container";
+    if (!isPlainObject(document)) {
+      return { valid: false, errors: ["O documento exportado deve ser um objeto."] };
+    }
+    if (document.version !== "0.4") {
+      errors.push('version deve ser "0.4".');
+    }
+    if (document.type !== expectedType) {
+      errors.push(`type deve ser "${expectedType}" no modo ${mode}.`);
+    }
+    if (!Array.isArray(document.content) || document.content.length === 0) {
+      errors.push("content deve conter pelo menos um elemento.");
+    }
+    if (mode === "page" && !isPlainObject(document.page_settings)) {
+      errors.push("page_settings deve ser um objeto no modo p\xE1gina.");
+    }
+    if (Array.isArray(document.content)) {
+      const seenIds = /* @__PURE__ */ new Set();
+      const seenCssIds = /* @__PURE__ */ new Set();
+      document.content.forEach((element, index) => {
+        validateElement(element, `content[${index}]`, errors, seenIds, seenCssIds);
+      });
+    }
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
   // src/index.js
+  var EXPORT_MODES = /* @__PURE__ */ new Set(["section", "page"]);
+  function sendExportError(message) {
+    figma.notify(`Exporta\xE7\xE3o interrompida: ${message}`, { error: true });
+    figma.ui.postMessage({ type: "export-error", message });
+  }
   try {
     figma.showUI(__html__, { width: 400, height: 620 });
     figma.ui.onmessage = (msg) => {
@@ -1028,12 +1170,26 @@
         }
         if (msg.type === "export-json") {
           const selection = figma.currentPage.selection;
+          const exportMode = msg.exportMode;
+          if (!EXPORT_MODES.has(exportMode)) {
+            sendExportError("Escolha se voc\xEA est\xE1 criando uma se\xE7\xE3o ou uma p\xE1gina.");
+            return;
+          }
           if (selection.length === 0) {
-            figma.notify("Selecione o Frame Principal.");
+            sendExportError("Selecione o frame principal.");
             return;
           }
           if (selection.length > 1) {
-            figma.notify("\u{1F6A8} Selecione apenas UM frame raiz. Use [PAGE-WRAPPER] com Auto Layout se necess\xE1rio.", { error: true });
+            sendExportError("Selecione apenas um frame raiz.");
+            return;
+          }
+          const rootTag = selection[0].getPluginData("elementor-tag");
+          if (exportMode === "section" && rootTag !== "container") {
+            sendExportError("No modo Se\xE7\xE3o, o frame principal precisa da tag Se\xE7\xE3o (1140px Boxed).");
+            return;
+          }
+          if (exportMode === "page" && rootTag !== "page-wrapper") {
+            sendExportError("No modo P\xE1gina, o frame principal precisa da tag P\xE1gina (Wrapper).");
             return;
           }
           figma.notify("\u23F3 Calculando \xE1rvore...");
@@ -1063,16 +1219,23 @@
               let structure = await traverseNode(selection[0], true, { colorMap, typoMap });
               let content = Array.isArray(structure) ? structure : [structure];
               sanitizeOutput(content);
+              content = annotateExportContent(content);
               const elementorJSON = {
                 version: "0.4",
-                title: "Export V19 Soltos Fix - " + selection[0].name,
-                type: "container",
+                title: `${exportMode === "page" ? "Page" : "Container"} Export - ${selection[0].name}`,
+                type: exportMode === "page" ? "page" : "container",
+                ...exportMode === "page" ? { page_settings: {} } : {},
                 content
               };
+              const validation = validateExportDocument(elementorJSON, exportMode);
+              if (!validation.valid) {
+                sendExportError(validation.errors.join(" "));
+                return;
+              }
               figma.ui.postMessage({ type: "json-generated", data: JSON.stringify(elementorJSON, null, 2) });
               figma.notify("\u2705 JSON Gerado com Sucesso!");
             } catch (err) {
-              figma.notify("Erro na exporta\xE7\xE3o: " + err.message);
+              sendExportError(err.message);
               console.error(err);
             }
           })();

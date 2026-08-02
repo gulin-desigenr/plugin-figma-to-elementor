@@ -2,7 +2,7 @@
 
 > Traducao estrutural de layout do Figma para o Elementor, com foco em hierarquia, spacing, tipografia, cores e composicao nativa de containers.
 
-![Status](https://img.shields.io/badge/status-v1.1.0-blue)
+![Status](https://img.shields.io/badge/status-v1.2.0-blue)
 ![Figma](https://img.shields.io/badge/plataforma-Figma-purple)
 ![Elementor](https://img.shields.io/badge/destino-Elementor-red)
 
@@ -68,16 +68,40 @@ O foco do projeto e:
 ```
 
 1. Abra o plugin no Figma
-2. Selecione elementos e aplique tags com os botões
-3. Selecione o frame principal
-4. Clique **"GERAR E BAIXAR JSON"**
-5. Importe o `.json` no Elementor
-6. Faça o upload manual de imagens e icones, quando necessario
-7. Ajuste manualmente imagens e detalhes finais no Elementor, se necessário
+2. Escolha se o trabalho é uma **seção** ou uma **página**
+3. Selecione elementos e aplique tags com os botões
+4. Selecione o frame principal
+5. Clique **"GERAR E BAIXAR JSON"**
+6. Importe o `.json` no Elementor
+7. Faça o upload manual de imagens e icones, quando necessario
+8. Ajuste manualmente imagens e detalhes finais no Elementor, se necessário
+
+### Modos de exportação
+
+**Criar uma seção** exige que o frame principal tenha a tag `container`.
+Nesse modo, a tag `page-wrapper` fica oculta. A tag `container-full` continua
+disponível para containers internos.
+
+**Criar uma página** exige que o frame principal tenha a tag `page-wrapper`.
+O wrapper organiza as seções, mas não é exportado como um elemento Elementor.
+O JSON usa `type: "page"` e `page_settings: {}` para preservar as configurações
+globais do WordPress, Elementor e Hello Elementor.
 
 ### Fluxo recomendado
 
 `Plugin Figma to Elementor -> mapeia a estrutura no Figma -> gera JSON -> upload manual do JSON no Elementor`
+
+### Validação de importação
+
+O fluxo foi validado manualmente no WordPress com os dois formatos de saída:
+
+- JSON de página, gerado pelo modo `Criar uma página`;
+- JSON de seção, gerado pelo modo `Criar uma seção`.
+
+Ambos foram importados com sucesso no Elementor. O modo página utiliza
+`page_settings: {}` e mantém as configurações gerais do WordPress, Elementor e
+Hello Elementor. Imagens e outros assets continuam sendo preenchidos
+manualmente após a importação.
 
 ---
 
@@ -163,7 +187,9 @@ plugin-figma-to-elementor/
   "type": "container",
   "content": [
     {
+      "id": "c1a2b3c",
       "elType": "container",
+      "isInner": false,
       "settings": {
         "content_width": "boxed",
         "flex_direction": "column",
@@ -172,8 +198,10 @@ plugin-figma-to-elementor/
       },
       "elements": [
         {
+          "id": "w4d5e6f",
           "elType": "widget",
           "widgetType": "heading",
+          "isInner": true,
           "settings": {
             "title": "Meu Título",
             "title_color": "rgba(26,26,26,1)",
@@ -185,6 +213,10 @@ plugin-figma-to-elementor/
   ]
 }
 ```
+
+No modo página, o envelope usa `type: "page"`, inclui `page_settings: {}` e
+mantém as configurações gerais do site. Elementos exportados recebem IDs
+estáveis e `isInner` conforme sua posição na hierarquia.
 
 ---
 
