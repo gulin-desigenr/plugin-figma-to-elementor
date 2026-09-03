@@ -3,7 +3,7 @@ export function getIterableNodes(node) {
     return node.children.filter(c => c.visible);
   }
   
-  const selection = figma.currentPage.selection;
+  const selection = globalThis.figma?.currentPage?.selection || [];
   if (selection.length > 1 && selection.includes(node)) {
     return selection.filter(n => n.visible);
   }
@@ -27,12 +27,12 @@ export function getLayoutDirection(node) {
 }
 
 export function hasImageFill(node) {
-  if (!node.fills || node.fills === figma.mixed) return false;
+  if (!node.fills || isFigmaMixed(node.fills)) return false;
   return Array.isArray(node.fills) && node.fills.some(f => f.type === 'IMAGE');
 }
 
 export function getNodeRole(node) {
-  const pluginRole = node.getPluginData("elementor_role");
+  const pluginRole = node.getPluginData?.("elementor_role");
   if (pluginRole) return pluginRole;
   
   const name = (node.name || "").toLowerCase();
@@ -45,8 +45,12 @@ export function getNodeRole(node) {
 }
 
 export function getSafeFontFamily(node) {
-  if (!node || node.fontName === figma.mixed || !node.fontName) return null;
+  if (!node || isFigmaMixed(node.fontName) || !node.fontName) return null;
   return node.fontName.family || null;
+}
+
+export function isFigmaMixed(value) {
+  return Boolean(globalThis.figma) && value === globalThis.figma.mixed;
 }
 
 const TEXT_ALIGN_MAP = {
@@ -66,7 +70,7 @@ export function getTextAlign(node) {
   if (
     node.type === "TEXT" &&
     node.textAlignHorizontal &&
-    node.textAlignHorizontal !== figma.mixed
+    !isFigmaMixed(node.textAlignHorizontal)
   ) {
     return mapTextAlign(node.textAlignHorizontal);
   }
@@ -75,7 +79,7 @@ export function getTextAlign(node) {
     const textChild = node.findOne(child => (
       child.type === "TEXT" &&
       child.textAlignHorizontal &&
-      child.textAlignHorizontal !== figma.mixed
+      !isFigmaMixed(child.textAlignHorizontal)
     ));
 
     if (textChild) {

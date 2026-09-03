@@ -4,6 +4,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { annotateExportContent, validateExportDocument } from '../src/core/contract.js';
+import {
+  FIGMENTOR_SELECTION_KEY,
+  createSelectionRecord,
+  isSupportedRootNode,
+  serializeSelectionRecord
+} from '../src/core/selection.js';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = relativePath => fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
@@ -60,7 +66,7 @@ test('UI tags have corresponding backend handling', () => {
     assert.match(handlers, new RegExp(`tag === ['"]${tag}['"]|['"]${tag}['"]`));
   }
 
-  assert.match(traversal, /manualTag === 'image-background'/);
+  assert.match(handlers, /tag === 'image-background'/);
 });
 
 test('UI exposes the approved section and page modes', () => {
@@ -74,6 +80,35 @@ test('UI exposes the approved section and page modes', () => {
   assert.match(source, /exportMode === "section"/);
   assert.match(source, /exportMode === "page"/);
   assert.match(source, /page_settings: \{\}/);
+});
+
+test('selection connector defines a stable frame registration record', () => {
+  const frame = {
+    id: '12:34',
+    name: '[CONTAINER] Hero',
+    type: 'FRAME'
+  };
+
+  assert.equal(FIGMENTOR_SELECTION_KEY, 'figmentor-selected-root');
+  assert.equal(isSupportedRootNode(frame), true);
+  assert.equal(isSupportedRootNode({ ...frame, type: 'TEXT' }), false);
+  assert.deepEqual(createSelectionRecord(frame, '2026-08-02T12:00:00.000Z'), {
+    version: 1,
+    nodeId: '12:34',
+    name: '[CONTAINER] Hero',
+    type: 'FRAME',
+    registeredAt: '2026-08-02T12:00:00.000Z'
+  });
+  assert.doesNotThrow(() => JSON.parse(serializeSelectionRecord(frame)));
+});
+
+test('Figma runtime listens for selection changes', () => {
+  const source = read('src/index.js');
+  const ui = read('ui.html');
+
+  assert.match(source, /figma\.on\('selectionchange'/);
+  assert.match(source, /frame-selection-synced/);
+  assert.match(ui, /frame-selection-synced/);
 });
 
 test('export contract annotates stable metadata and validates page output', () => {

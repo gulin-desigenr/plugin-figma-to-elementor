@@ -2,11 +2,11 @@ import { applyChildFillSizing, handleManualTag, mapText, mapImage, mapContainer 
 import { hasImageFill } from '../utils/nodes.js';
 
 export async function traverseNode(node, isRoot, maps = { colorMap: {}, typoMap: {} }, isInsideValidated = false) {
-  if (!node || typeof node.visible === 'undefined' || !node.visible) return null;
+  if (!node || node.visible === false) return null;
 
-  const manualTag = node.getPluginData("elementor-tag");
+  const manualTag = node.getPluginData?.("elementor-tag") || null;
 
-  if (manualTag === 'image-background' || manualTag === 'ignore') {
+  if (manualTag === 'ignore') {
     return null;
   }
 

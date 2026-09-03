@@ -2,13 +2,38 @@ import { traverseNode } from './traverse.js';
 import { extractBorders, extractShadows, extractTextStyle, extractBackground } from '../styles/index.js';
 import { figmaColorToRGBA } from '../utils/colors.js';
 import { sanitizeCssId } from '../utils/cssId.js';
-import { getIterableNodes, getLayoutDirection, getTextAlign, hasImageFill, getNodeRole } from '../utils/nodes.js';
+import { getIterableNodes, getLayoutDirection, getTextAlign, hasImageFill, getNodeRole, isFigmaMixed } from '../utils/nodes.js';
 import { applyTypographySettings } from '../utils/typography.js';
+import { applyAdvancedEffects, extractAdvancedEffects } from '../styles/effects.js';
 
 function applyOpacitySetting(settings, node) {
   if (node.opacity !== undefined && node.opacity < 1) {
     settings._opacity = String(Math.round(node.opacity * 100));
   }
+}
+
+function applySourceMetadata(settings, node, tag = null) {
+  if (!settings || !node?.id) return settings;
+  if (!settings.css_id) {
+    settings.css_id = sanitizeCssId(`figmentor-${tag || "element"}-${node.id}`) || "figmentor-element";
+  }
+  if (!node.__figmentorRest) return settings;
+  settings.figmentor_source_node_id = node.id;
+  const resolvedTag = tag || node.getPluginData?.("elementor-tag");
+  if (resolvedTag) settings.figmentor_source_tag = resolvedTag;
+  return settings;
+}
+
+function applyNodeEffects(settings, node, tag) {
+  if (!settings || !node || !tag) return settings;
+  const widgetType = tag === "accordeon" ? "nested-accordion" : tag === "container-carousel" ? "nested-carousel" : tag;
+  return applyAdvancedEffects(settings, extractAdvancedEffects(node, widgetType, settings.css_id));
+}
+
+function getFontAwesomeName(node) {
+  const value = String(node?.name || "").replace(/^\[icon\]\s*/i, "").trim();
+  const match = value.match(/^(fas|far|fab)\s+fa-[a-z0-9-]+/i);
+  return match ? match[0].toLowerCase() : null;
 }
 
 function getTextNodesFromNode(node) {
@@ -192,7 +217,7 @@ export function applyChildFillSizing(childNode, childResult) {
 }
 
 export async function handleManualTag(node, tag, isRoot, maps) {
-  if (tag === 'container' || tag === 'container-full' || tag === 'page-wrapper') {
+  if (tag === 'container' || tag === 'container-full' || tag === 'page-wrapper' || tag === 'image-background' || tag === 'background-image') {
     let children = [];
     const childIsRoot = (tag === 'page-wrapper');
     
@@ -211,7 +236,19 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       return children;
     }
 
-    return await mapContainer(node, children, isRoot, tag === 'container-full', maps);
+    const container = await mapContainer(
+      node,
+      children,
+      isRoot,
+      tag === 'container-full' || tag === 'image-background' || tag === 'background-image',
+      maps,
+      true
+    );
+    if (container) {
+      applySourceMetadata(container.settings, node, tag);
+      applyNodeEffects(container.settings, node, "container");
+    }
+    return container;
   }
 
   let textNodes = [];
@@ -317,10 +354,9 @@ export async function handleManualTag(node, tag, isRoot, maps) {
 
     if (vectorNodes.length > 0) {
       const vector = vectorNodes[0];
-      if (vector.name.startsWith("fas ") || vector.name.startsWith("fab ") || vector.name.startsWith("far ")) {
-        iconName = vector.name;
-      }
-      if (vector.fills && vector.fills !== figma.mixed && vector.fills.length > 0) {
+      const detectedIconName = getFontAwesomeName(vector);
+      if (detectedIconName) iconName = detectedIconName;
+      if (vector.fills && !isFigmaMixed(vector.fills) && vector.fills.length > 0) {
         if (vector.fills[0].type === "SOLID") {
           iconColor = figmaColorToRGBA(vector.fills[0].color, vector.fills[0].opacity);
         }
@@ -435,8 +471,9 @@ export async function handleManualTag(node, tag, isRoot, maps) {
 
       if (vectorNodes.length > 0) {
         const vector = vectorNodes[0];
-        if (vector.name.startsWith("fas ") || vector.name.startsWith("fab ") || vector.name.startsWith("far ")) {
-          settings.selected_icon = { value: vector.name, library: vector.name.startsWith("fab") ? "fa-brands" : "fa-solid" };
+        const detectedIconName = getFontAwesomeName(vector);
+        if (detectedIconName) {
+          settings.selected_icon = { value: detectedIconName, library: detectedIconName.startsWith("fab") ? "fa-brands" : detectedIconName.startsWith("far") ? "fa-regular" : "fa-solid" };
           if (textNodes.length > 0 && vector.x > textNodes[0].x) {
             settings.icon_align = "right";
           } else {
@@ -536,6 +573,8 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     }
 
     applyOpacitySetting(settings, node);
+    applySourceMetadata(settings, node, tag);
+    applyNodeEffects(settings, node, "nested-accordion");
 
     return {
       elType: "widget",
@@ -608,23 +647,23 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.slides_to_scroll = "1";
     settings.navigation = "both";
 
-    const cssId = sanitizeCssId(node.name);
-    if (cssId) settings.css_id = cssId;
     applyOpacitySetting(settings, node);
+    applySourceMetadata(settings, node, tag);
+    applyNodeEffects(settings, node, "nested-carousel");
     
     return { elType: "widget", widgetType: "nested-carousel", settings: settings, elements: elements };
   }
 
-  const cssId = sanitizeCssId(node.name);
-  if (cssId) settings.css_id = cssId;
   applyOpacitySetting(settings, node);
+  applySourceMetadata(settings, node, tag);
+  applyNodeEffects(settings, node, tag);
 
   return { elType: "widget", widgetType: tag, settings: settings };
 }
 
-export async function mapContainer(node, children, isRoot, isForcedFull, maps) {
+export async function mapContainer(node, children, isRoot, isForcedFull, maps, allowEmpty = false) {
   try {
-    if (!children || children.length === 0) return null;
+    if (!children || (children.length === 0 && !allowEmpty)) return null;
     const bgSettings = await extractBackground(node, maps);
     const direction = getLayoutDirection(node);
 
@@ -700,8 +739,8 @@ export async function mapContainer(node, children, isRoot, isForcedFull, maps) {
     extractShadows(node, settings, false);
     applyOpacitySetting(settings, node);
 
-    const cssId = sanitizeCssId(node.name);
-    if (cssId) settings.css_id = cssId;
+    applySourceMetadata(settings, node);
+    applyNodeEffects(settings, node, "container");
 
     return { elType: "container", settings: settings, elements: children };
   } catch (err) {
@@ -731,8 +770,8 @@ export async function mapText(node, maps) {
 
     extractShadows(node, settings, true);
 
-    const cssId = sanitizeCssId(node.name);
-    if (cssId) settings.css_id = cssId;
+    applySourceMetadata(settings, node);
+    applyNodeEffects(settings, node, widgetType);
 
     if (widgetType === "heading") {
       settings.title = node.characters;
@@ -756,8 +795,8 @@ export async function mapImage(node) {
   extractShadows(node, settings, true, "image");
   applyOpacitySetting(settings, node);
 
-  const cssId = sanitizeCssId(node.name);
-  if (cssId) settings.css_id = cssId;
+  applySourceMetadata(settings, node);
+  applyNodeEffects(settings, node, "image");
 
   return { elType: "widget", widgetType: "image", settings: settings };
 }

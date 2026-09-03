@@ -1,6 +1,16 @@
 import { figmaColorToRGBA } from '../utils/colors.js';
 import { mapFontWeight } from '../utils/typography.js';
-import { getSafeFontFamily } from '../utils/nodes.js';
+import { getSafeFontFamily, isFigmaMixed } from '../utils/nodes.js';
+
+async function resolveStyleName(styleId, maps) {
+  if (!styleId) return null;
+  if (maps?.styleNameMap?.[styleId]) return maps.styleNameMap[styleId];
+  if (globalThis.figma?.getStyleByIdAsync) {
+    const style = await globalThis.figma.getStyleByIdAsync(styleId);
+    return style?.name || null;
+  }
+  return null;
+}
 
 export function extractBorders(node, settings, isWidget = false, widgetType = "") {
   let radiusKey = isWidget ? "_border_radius" : "border_radius";
@@ -21,13 +31,13 @@ export function extractBorders(node, settings, isWidget = false, widgetType = ""
   }
 
   if (node.cornerRadius !== undefined) {
-    if (node.cornerRadius === figma.mixed) {
+    if (isFigmaMixed(node.cornerRadius)) {
       settings[radiusKey] = {
         unit: "px",
-        top: String(node.topLeftRadius !== figma.mixed ? node.topLeftRadius || 0 : 0),
-        right: String(node.topRightRadius !== figma.mixed ? node.topRightRadius || 0 : 0),
-        bottom: String(node.bottomRightRadius !== figma.mixed ? node.bottomRightRadius || 0 : 0),
-        left: String(node.bottomLeftRadius !== figma.mixed ? node.bottomLeftRadius || 0 : 0),
+        top: String(!isFigmaMixed(node.topLeftRadius) ? node.topLeftRadius || 0 : 0),
+        right: String(!isFigmaMixed(node.topRightRadius) ? node.topRightRadius || 0 : 0),
+        bottom: String(!isFigmaMixed(node.bottomRightRadius) ? node.bottomRightRadius || 0 : 0),
+        left: String(!isFigmaMixed(node.bottomLeftRadius) ? node.bottomLeftRadius || 0 : 0),
         isLinked: false
       };
     } else if (node.cornerRadius > 0) {
@@ -42,7 +52,7 @@ export function extractBorders(node, settings, isWidget = false, widgetType = ""
     }
   }
 
-  if (node.strokes && node.strokes.length > 0 && node.strokeWeight !== figma.mixed && node.strokeWeight > 0) {
+  if (node.strokes && node.strokes.length > 0 && !isFigmaMixed(node.strokeWeight) && node.strokeWeight > 0) {
     const stroke = node.strokes[0];
     if (stroke.type === "SOLID") {
       settings[borderKey] = "solid";
@@ -87,22 +97,22 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
   let globalColorId = null;
   let globalTypoId = null;
 
-  if (node.fills && node.fills !== figma.mixed && node.fills.length > 0) {
+  if (node.fills && !isFigmaMixed(node.fills) && node.fills.length > 0) {
     if (node.fills[0].type === "SOLID") {
       color = figmaColorToRGBA(node.fills[0].color, node.fills[0].opacity);
       
       if (node.fillStyleId) {
-        const style = await figma.getStyleByIdAsync(node.fillStyleId);
-        if (style && maps.colorMap && maps.colorMap[style.name]) {
-          globalColorId = maps.colorMap[style.name];
+        const styleName = await resolveStyleName(node.fillStyleId, maps);
+        if (styleName && maps.colorMap && maps.colorMap[styleName]) {
+          globalColorId = maps.colorMap[styleName];
         }
       }
     }
   }
 
-  const size = (node.fontSize !== undefined && node.fontSize !== figma.mixed) ? node.fontSize : 16;
+  const size = (node.fontSize !== undefined && !isFigmaMixed(node.fontSize)) ? node.fontSize : 16;
   let weight = "400";
-  if (node.fontName !== undefined && node.fontName !== figma.mixed) {
+  if (node.fontName !== undefined && !isFigmaMixed(node.fontName)) {
     weight = mapFontWeight(node.fontName.style);
   }
 
@@ -110,7 +120,7 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
   const fontFamily = getSafeFontFamily(node);
 
   let lineHeight = null;
-  if (node.lineHeight !== undefined && node.lineHeight !== figma.mixed) {
+  if (node.lineHeight !== undefined && !isFigmaMixed(node.lineHeight)) {
     if (node.lineHeight.unit !== "AUTO") {
       lineHeight = {
         size: node.lineHeight.value,
@@ -120,7 +130,7 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
   }
 
   let letterSpacing = null;
-  if (node.letterSpacing !== undefined && node.letterSpacing !== figma.mixed) {
+  if (node.letterSpacing !== undefined && !isFigmaMixed(node.letterSpacing)) {
     if (node.letterSpacing.value !== 0) {
       letterSpacing = {
         size: node.letterSpacing.value,
@@ -130,7 +140,7 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
   }
 
   let textTransform = null;
-  if (node.textCase !== undefined && node.textCase !== figma.mixed) {
+  if (node.textCase !== undefined && !isFigmaMixed(node.textCase)) {
     const caseMap = {
       UPPER: "uppercase",
       LOWER: "lowercase",
@@ -141,7 +151,7 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
   }
 
   let textDecoration = null;
-  if (node.textDecoration !== undefined && node.textDecoration !== figma.mixed) {
+  if (node.textDecoration !== undefined && !isFigmaMixed(node.textDecoration)) {
     const decorMap = {
       UNDERLINE: "underline",
       STRIKETHROUGH: "line-through"
@@ -150,16 +160,16 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
   }
 
   let fontStyle = null;
-  if (node.fontName !== undefined && node.fontName !== figma.mixed) {
+  if (node.fontName !== undefined && !isFigmaMixed(node.fontName)) {
     if (node.fontName.style.includes("Italic")) {
       fontStyle = "italic";
     }
   }
 
   if (node.textStyleId) {
-    const style = await figma.getStyleByIdAsync(node.textStyleId);
-    if (style && maps.typoMap && maps.typoMap[style.name]) {
-      globalTypoId = maps.typoMap[style.name];
+    const styleName = await resolveStyleName(node.textStyleId, maps);
+    if (styleName && maps.typoMap && maps.typoMap[styleName]) {
+      globalTypoId = maps.typoMap[styleName];
     }
   }
 
@@ -181,7 +191,7 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
 export async function extractBackground(node, maps = { colorMap: {}, typoMap: {} }) {
   let result = {};
 
-  if (node.fills && node.fills !== figma.mixed && node.fills.length > 0) {
+  if (node.fills && !isFigmaMixed(node.fills) && node.fills.length > 0) {
 
     const solidFill = node.fills.find(f => f.type === "SOLID" && f.visible !== false);
     if (solidFill) {
@@ -189,9 +199,9 @@ export async function extractBackground(node, maps = { colorMap: {}, typoMap: {}
       let globalColorId = null;
 
       if (node.fillStyleId) {
-        const style = await figma.getStyleByIdAsync(node.fillStyleId);
-        if (style && maps.colorMap && maps.colorMap[style.name]) {
-          globalColorId = maps.colorMap[style.name];
+        const styleName = await resolveStyleName(node.fillStyleId, maps);
+        if (styleName && maps.colorMap && maps.colorMap[styleName]) {
+          globalColorId = maps.colorMap[styleName];
         }
       }
 

@@ -425,6 +425,7 @@
     <div class="view active" id="view-tags">
 
         <div class="section-title">Layout (Estrutura)</div>
+        <button class="btn-primary" id="register-frame" style="margin-bottom: 9px;">Registrar frame selecionado</button>
         <div class="btn-grid-1" style="margin-bottom: 7px;">
             <button class="btn-tag border-left-orange" id="tag-page-wrapper" onclick="applyTag('page-wrapper')">Página (Wrapper)</button>
         </div>
@@ -569,6 +570,10 @@
             parent.postMessage({ pluginMessage: { type: 'apply-role', role: role } }, '*');
         }
 
+        document.getElementById('register-frame').onclick = () => {
+            parent.postMessage({ pluginMessage: { type: 'register-frame' } }, '*');
+        };
+
         // ─── Parse global variable map (col : val) ────────────────
         function parseMap(text) {
             const map = {};
@@ -639,6 +644,34 @@
                 document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
                 document.getElementById('tab-export').classList.add('active');
                 document.getElementById('view-export').classList.add('active');
+            }
+
+            if (msg.type === 'frame-registered') {
+                const frame = msg.data || {};
+                const output = document.getElementById('output');
+                output.value = [
+                    'Frame registrado para a extensão Chrome.',
+                    `Nome: ${frame.name || '(sem nome)'}`,
+                    `Node ID: ${frame.nodeId || '(indisponível)'}`,
+                    `Tipo: ${frame.type || '(indisponível)'}`,
+                    `Registrado em: ${frame.registeredAt || '(indisponível)'}`
+                ].join('\n');
+            }
+
+            if (msg.type === 'frame-selection-synced') {
+                const frame = msg.data || {};
+                const output = document.getElementById('output');
+                output.value = [
+                    'Seleção atual sincronizada para a extensão Chrome.',
+                    `Nome: ${frame.name || '(sem nome)'}`,
+                    `Node ID: ${frame.nodeId || '(indisponível)'}`,
+                    `Tipo: ${frame.type || '(indisponível)'}`,
+                    `Sincronizado em: ${frame.registeredAt || '(indisponível)'}`
+                ].join('\n');
+            }
+
+            if (msg.type === 'frame-registration-error') {
+                document.getElementById('output').value = `Erro ao registrar frame: ${msg.message}`;
             }
 
             if (msg.type === 'export-error') {
