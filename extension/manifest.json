@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Figmentor Bridge",
+  "version": "0.2.1",
+  "description": "Converte frames do Figma, envia assets e salva páginas Elementor como rascunho persistente.",
+  "action": {
+    "default_title": "Abrir Figmentor Bridge"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://api.figma.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
+  ]
+}

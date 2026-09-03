@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figmentor Bridge</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg: #111018;
+      --panel: #191622;
+      --field: #211c2b;
+      --border: #433b52;
+      --muted: #aaa3b7;
+      --text: #f7f4fb;
+      --accent: #7184e3;
+      --accent-strong: #8395ee;
+      --success: #83d2a5;
+      --danger: #ffaaa9;
+    }
+
+    * { box-sizing: border-box; }
+    body { width: 390px; min-height: 100vh; margin: 0; padding: 18px; background: var(--bg); color: var(--text); }
+    header { margin-bottom: 20px; }
+    .brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    h1 { margin: 0; font-size: 19px; letter-spacing: -.02em; }
+    h2 { margin: 0 0 7px; font-size: 16px; }
+    p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .connection { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
+    .connection::before { width: 7px; height: 7px; border-radius: 50%; background: #716b7b; content: ""; }
+    .connection.connected { color: var(--success); }
+    .connection.connected::before { background: var(--success); }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 17px; }
+    .step { position: relative; padding-top: 9px; border-top: 2px solid var(--border); color: #756e82; font-size: 10px; line-height: 1.25; }
+    .step.active { border-color: var(--accent); color: var(--text); }
+    .step.complete { border-color: var(--success); color: var(--success); }
+    .step-number { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; margin-right: 4px; border-radius: 50%; background: var(--border); color: var(--text); font-size: 10px; }
+    .step.active .step-number { background: var(--accent); }
+    .step.complete .step-number { background: var(--success); color: #101c16; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .screen-heading { margin-bottom: 18px; }
+    .screen-heading p { max-width: 330px; }
+    label { display: block; margin: 14px 0 6px; color: #ddd8e6; font-size: 12px; }
+    input, select, textarea { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: var(--field); color: var(--text); font: inherit; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid rgb(113 132 227 / 35%); border-color: var(--accent); }
+    input[type="password"] { letter-spacing: .08em; }
+    textarea { min-height: 125px; resize: vertical; font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    button { width: 100%; margin-top: 12px; border: 0; border-radius: 6px; padding: 11px 10px; cursor: pointer; background: var(--accent); color: #fff; font: inherit; font-size: 12px; font-weight: 650; }
+    button:hover:not(:disabled) { background: var(--accent-strong); }
+    button.secondary { background: #342e43; }
+    button.ghost { margin-top: 9px; padding: 7px 5px; background: transparent; color: var(--muted); font-size: 11px; }
+    button:disabled { opacity: .45; cursor: default; }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .hint { margin-top: 9px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .status { margin-top: 15px; padding: 10px; border-radius: 6px; background: #211d2a; color: #d8d2e2; font-size: 12px; line-height: 1.45; white-space: pre-wrap; }
+    .status.error { color: var(--danger); }
+    .status.success { color: var(--success); }
+    .summary { display: none; margin-top: 13px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; color: #e3deeb; font-size: 11px; line-height: 1.55; white-space: pre-wrap; }
+    .summary.visible { display: block; }
+    .section-card { margin-top: 14px; padding: 12px; border: 1px solid var(--border); border-radius: 7px; background: rgb(33 29 42 / 65%); }
+    .section-card strong { display: block; margin-bottom: 5px; font-size: 12px; }
+    .section-card p { font-size: 11px; }
+    .downloads { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .downloads button { margin-top: 8px; font-size: 11px; }
+    .divider { height: 1px; margin: 18px 0 3px; background: #2d2837; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>Figmentor Bridge</h1>
+      <span id="connection-state" class="connection">Não conectado</span>
+    </div>
+    <div class="steps" aria-label="Etapas do workflow">
+      <div id="step-token" class="step active"><span class="step-number">1</span>Token</div>
+      <div id="step-figma" class="step"><span class="step-number">2</span>Figma</div>
+      <div id="step-elementor" class="step"><span class="step-number">3</span>Elementor</div>
+    </div>
+  </header>
+
+  <main>
+    <section id="screen-token" class="screen active">
+      <div class="screen-heading">
+        <h2>Conectar ao Figma</h2>
+        <p>Insira seu Personal Access Token para permitir que a extensão leia o arquivo selecionado.</p>
+      </div>
+
+      <label for="token">Token pessoal do Figma</label>
+      <input id="token" type="password" autocomplete="off" placeholder="Cole o token aqui">
+      <p class="hint">Para detectar a seleção automaticamente, gere o token com as permissões <code>file_content:read</code> e <code>selections:read</code>. O token fica salvo apenas no armazenamento local da extensão.</p>
+      <button id="continue-token">Salvar token e continuar</button>
+      <button id="clear-token" class="ghost">Apagar token salvo</button>
+      <div id="token-status" class="status">Aguardando o token do Figma.</div>
+    </section>
+
+    <section id="screen-figma" class="screen">
+      <div class="screen-heading">
+        <h2>Preparar o Figma</h2>
+        <p>Escolha o frame, leia a estrutura e prepare o JSON e o manifesto de assets.</p>
+      </div>
+
+      <label for="figma-url">URL do arquivo ou link para seleção</label>
+      <input id="figma-url" type="url" placeholder="https://www.figma.com/design/...">
+
+      <label for="plugin-id">Namespace dos dados</label>
+      <input id="plugin-id" value="figmentor">
+
+      <label for="export-mode">Destino do JSON</label>
+      <select id="export-mode">
+        <option value="page">Página</option>
+        <option value="section">Seção</option>
+      </select>
+
+      <button id="use-figma-selection" class="secondary">Detectar seleção atual do Figma</button>
+      <button id="read-frame">Ler frame registrado ou indicado pela URL</button>
+      <div id="summary" class="summary"></div>
+      <div id="figma-status" class="status">Aguardando a leitura do Figma.</div>
+
+      <label for="json-output">JSON preparado</label>
+      <textarea id="json-output" readonly placeholder="O JSON aparecerá aqui."></textarea>
+      <div class="downloads">
+        <button id="download-json" class="secondary" disabled>Baixar JSON</button>
+        <button id="download-manifest" class="secondary" disabled>Baixar manifesto</button>
+        <button id="download-report" class="secondary" disabled>Baixar relatório</button>
+      </div>
+
+      <div class="button-row">
+        <button id="back-to-token" class="ghost">Voltar</button>
+        <button id="continue-elementor" disabled>Continuar para Elementor</button>
+      </div>
+    </section>
+
+    <section id="screen-elementor" class="screen">
+      <div class="screen-heading">
+        <h2>Aplicar no Elementor</h2>
+        <p>Use a aba do WordPress já aberta para enviar os assets e inserir o conteúdo preparado.</p>
+      </div>
+
+      <div class="section-card">
+        <strong>Origem preparada</strong>
+        <p id="elementor-source">Leia um frame no Figma para continuar.</p>
+      </div>
+
+      <label for="elementor-mode">Inserir como</label>
+      <select id="elementor-mode">
+        <option value="page">Página</option>
+        <option value="section">Seção ao final da página</option>
+      </select>
+
+      <button id="detect-wordpress" class="secondary">Detectar aba WordPress</button>
+      <button id="insert-elementor" disabled>Inserir no Elementor</button>
+      <button id="retry-assets" class="secondary" disabled>Repetir somente assets falhos</button>
+      <p class="hint">A inserção ficará disponível quando o JSON estiver preparado e uma sessão válida do WordPress for detectada.</p>
+      <div id="elementor-status" class="status">Aguardando a aba do WordPress.</div>
+      <div id="upload-report" class="summary"></div>
+
+      <div class="divider"></div>
+      <button id="back-to-figma" class="ghost">Voltar para o Figma</button>
+    </section>
+  </main>
+
+  <script type="module" src="dist/popup.js"></script>
+</body>
+</html>

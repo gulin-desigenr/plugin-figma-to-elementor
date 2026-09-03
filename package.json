@@ -5,7 +5,9 @@
   "type": "module",
   "main": "dist/code.js",
   "scripts": {
-    "build": "esbuild src/index.js --bundle --outfile=dist/code.js",
+    "build:figma": "esbuild src/index.js --bundle --outfile=dist/code.js",
+    "build:extension": "esbuild extension/popup.js --bundle --format=esm --outfile=extension/dist/popup.js",
+    "build": "npm run build:figma && npm run build:extension",
     "test": "node --test",
     "check": "npm run build && npm test"
   },
