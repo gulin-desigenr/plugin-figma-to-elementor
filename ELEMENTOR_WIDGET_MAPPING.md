@@ -9,6 +9,11 @@ tags:
 
 Este documento exibe a anatomia exata das chaves (Control IDs) esperadas pelo Elementor no momento da importação do JSON. Este mapeamento foi levantado analisando o código-fonte PHP oficial dos widgets base do Elementor.
 
+Na arquitetura da Fase 02, o mesmo mapeamento é usado pelo plugin Figma e pelo
+bundle da extensão Chrome. A extensão resolve assets e injeta IDs/URLs reais
+antes de enviar somente `content` e `page_settings` ao Elementor. Metadados
+Figmentor ficam separados no sidecar `document.figmentor`.
+
 Qualquer alteração ou novo widget adicionado ao `code.js` do Figmentor **deve** respeitar estritamente essas chaves dentro do objeto `settings`. Chaves inexistentes ou mal formatadas farão com que o Elementor trave silenciosamente (White Screen no painel de edição).
 
 ---
@@ -32,6 +37,10 @@ O Container é a fundação do layout. Substituiu as antigas Seções e Colunas.
 | Padding | `padding` | Object (T, R, B, L, unit) | `{ top: 40, right: 20, bottom: 40, left: 20, unit: "px" }` |
 | Cor de Fundo | `background_color` | String (Hex/RGBA) | `"rgba(255,255,255,1)"` |
 | Tipo de Fundo | `background_background` | `"classic"`, `"gradient"`, `"video"` | `"classic"` (obrigatório para ativar a cor) |
+| Imagem de Fundo | `background_image` | Object (id, url, size) | `{ id: 605, url: "https://site/.../hero.webp", size: "full" }` |
+| Posição do Fundo | `background_position` | String | `"center center"` |
+| Repetição | `background_repeat` | String | `"no-repeat"` |
+| Tamanho do Fundo | `background_size` | String | `"cover"` |
 
 ---
 
@@ -70,22 +79,25 @@ O Container é a fundação do layout. Substituiu as antigas Seções e Colunas.
 
 | Figma/Figmentor Setting | Elementor Control ID | Tipo / Opções Válidas | Exemplo de Valor |
 |---|---|---|---|
-| Objeto da Imagem | `image` | Object (url, id, size) | `{ url: "", id: "", size: "full" }` |
+| Objeto da Imagem | `image` | Object (id, url, size) | `{ id: 606, url: "https://site/.../logo.webp", size: "full" }` |
 | Alinhamento | `align` | `left`, `center`, `right` | `"center"` |
+
+Na Fase 02, `id` e `url` são preenchidos depois do upload na biblioteca de
+mídia. `assetRef` nunca deve aparecer dentro de `image`.
 
 ### 3.2 Caixa de Imagem (Image Box)
 **Nome do Widget:** `image-box`
 
 | Figma/Figmentor Setting | Elementor Control ID | Tipo | Observação |
 |---|---|---|---|
-| Objeto da Imagem | `image` | Object | `{ url: "" }` |
+| Objeto da Imagem | `image` | Object | `{ id: 606, url: "https://site/.../image.webp", size: "full" }` |
 | Título | `title_text` | String | O Elementor falha se você passar apenas `title`. Deve ser `title_text`. |
 | Descrição | `description_text` | String | Idem ao acima. |
 | Cor do Título | `title_color` | String | |
 | Cor da Descrição | `description_color` | String | |
 | **Ativadores de Typo** | `title_typography_typography`<br>`description_typography_typography` | `"custom"` | Devem ser engatilhados separadamente. |
 
-### 3.3 Caixa de Ícone (Icon Box) - *Falta Implementar*
+### 3.3 Caixa de Ícone (Icon Box)
 **Nome do Widget:** `icon-box`
 
 | Figma/Figmentor Setting | Elementor Control ID | Tipo | Observação |
@@ -95,6 +107,23 @@ O Container é a fundação do layout. Substituiu as antigas Seções e Colunas.
 | Título | `title_text` | String | Mesmo padrão do Image Box. |
 | Descrição | `description_text` | String | Mesmo padrão do Image Box. |
 | Cor Primária | `primary_color` | String (Hex/RGBA) | Cor do ícone |
+
+Font Awesome identificado pelo nome usa a forma nativa acima. SVG personalizado
+usa o formato de mídia do Elementor:
+
+```json
+{
+  "selected_icon": {
+    "value": { "id": 700, "url": "https://site/.../icone.svg" },
+    "library": "svg"
+  }
+}
+```
+
+O upload pode ser recusado pelo WordPress quando SVG não está permitido. Nesse
+caso o asset permanece falho e retryável, mas o Elementor recebe o placeholder
+explícito `{ value: "fas fa-check", library: "fa-solid" }`. Nunca enviar um
+`selected_icon` com `library: "svg"` e `value.id`/`value.url` vazios.
 
 ---
 
@@ -124,12 +153,18 @@ O Container é a fundação do layout. Substituiu as antigas Seções e Colunas.
 ]
 ```
 
-### 4.2 Carrossel de Imagens (Image Carousel) - *Falta Implementar*
+Cada item pode usar Font Awesome ou um objeto SVG nativo no respectivo
+`selected_icon`. A extensão associa o vetor ao item correto por `nodeId`.
+Enquanto o SVG personalizado não tiver mídia WordPress confirmada, o item usa
+explicitamente `fas fa-check`; a falha e a relação com o vetor original ficam
+no sidecar `document.figmentor`.
+
+### 4.2 Carrossel de Imagens (Image Carousel)
 **Nome do Widget:** `image-carousel`
 
 | Figma/Figmentor Setting | Elementor Control ID | Tipo / Opções Válidas | Observação |
 |---|---|---|---|
-| Galeria | `carousel` | Array de Objetos de Imagem | Array de `{ id: "", url: "" }` |
+| Galeria | `carousel` | Array de Objetos de Imagem | Array de `{ id: 606, url: "https://site/.../slide.webp" }` |
 | Slides Per View | `slides_to_show` | Número (em string) | Ex: `"3"` |
 | Slides To Scroll | `slides_to_scroll` | Número (em string) | Ex: `"1"` |
 | Navegação | `navigation` | `"both"`, `"arrows"`, `"dots"`, `"none"` | Setas ou pontinhos de paginação. |
@@ -196,7 +231,40 @@ Controles que recaem sobre a aba "Avançado", válidos para quase todos os widge
 
 - **Bordas**: `border_border` (`"solid"`), `border_width` (Obj), `border_color` (Hex/RGBA), `border_radius` (Obj).
   - *Atenção:* Em alguns widgets (como `image`) as keys recebem o prefixo correspondente: `image_border_radius`.
-- **Sombras**: `_box_shadow_type` (`"yes"`), `_box_shadow` (Obj com `horizontal`, `vertical`, `blur`, `spread`, `color`).
+- **Sombras**: `_box_shadow_box_shadow_type` (`"yes"`), `_box_shadow_box_shadow` (Obj com `horizontal`, `vertical`, `blur`, `spread`, `color`). Em imagens, o prefixo é `image_box_shadow_`.
 - **Margens**: `margin` (mesmo objeto unitário do padding).
 
 > **Atenção (Elementor Developers):** As chaves de controles avançados do layoutWrapper, como custom posicionamento e Sombras globais, são frequentemente prefixadas por underscore (`_width`, `_box_shadow`). As nativas do widget ficam sem prefixo.
+
+---
+
+## Metadados Figmentor e validação
+
+`assetRef` é uma referência interna de orquestração, não um Control ID do
+Elementor. O contrato correto é:
+
+```json
+{
+  "content": [
+    {
+      "id": "element-id",
+      "settings": {
+        "image": { "id": 606, "url": "https://site/.../logo.webp", "size": "full" }
+      }
+    }
+  ],
+  "figmentor": {
+    "elements": {
+      "element-id": {
+        "assets": [
+          { "assetRef": "61:69:image", "nodeId": "61:69", "nativeField": "image" }
+        ]
+      }
+    }
+  }
+}
+```
+
+Antes do envio, `document.figmentor` fica na extensão para auditoria e somente o
+documento nativo é serializado no `save_builder`. O validador rejeita
+`assetRef` dentro de `image`, `background_image`, `carousel` ou `selected_icon`.

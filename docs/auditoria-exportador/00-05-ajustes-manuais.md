@@ -15,3 +15,9 @@ O relatório deve diferenciar perda do exportador de uma alteração intencional
 - Ajustes manuais não são tratados como bugs automaticamente.
 - Toda divergência sem fonte nativa é marcada para revisão humana.
 - O JSON final pode ser comparado sem perder a origem da decisão.
+
+## Estado após a Fase 02
+
+**Parcial.** O sidecar `document.figmentor` registra node, uso e assetRef, e o
+relatório diferencia sucesso, falha e ação recomendada. A classificação completa
+de origem para cada propriedade visual ainda não foi implementada.

@@ -15,3 +15,10 @@ Cada fixture deve conter entrada simulada do Figma, plugin data, JSON esperado e
 - Existe comando reproduzível para executar os testes.
 - Há pelo menos uma fixture por classe de elemento.
 - Falhas indicam caminho JSON e regra responsável.
+
+## Estado após a Fase 02
+
+**Concluída para o escopo da fase.** `npm run check` gera os dois bundles e roda
+47 testes cobrindo plugin, adapter REST, contrato, assets, WebP, WordPress,
+Elementor, draft e persistência. A comparação visual automatizada permanece
+como evolução futura.

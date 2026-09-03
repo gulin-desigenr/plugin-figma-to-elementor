@@ -16,3 +16,10 @@ Corrigir a conversão de letter-spacing percentual para `em`. Evitar duplicaçã
 - Quebras de parágrafo são renderizadas corretamente.
 - Famílias tipográficas são preservadas quando disponíveis.
 - O conteúdo semântico permanece igual ao Figma.
+
+## Estado após a Fase 02
+
+**Funcional com limitações.** Família, peso, tamanho, line-height,
+letter-spacing, transformação, decoração, alinhamento e cores são transportados
+pelo motor compartilhado. Runs mistos e conteúdo rico continuam sujeitos a
+fallback e validação específica.

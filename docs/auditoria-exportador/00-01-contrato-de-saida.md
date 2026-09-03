@@ -58,5 +58,12 @@ Ambos os arquivos foram importados com sucesso no Elementor. O teste confirma
 que os envelopes `type: "page"` e `type: "container"` são aceitos no fluxo de
 uso definido, e que `page_settings: {}` não impede a importação da página.
 
-Os assets de imagem continuam dependendo de preenchimento manual no Elementor,
-conforme o escopo aprovado para esta fase.
+Essa validação pertence à Fase 01 e permanece como histórico.
+
+## Estado após a Fase 02
+
+**Concluída.** O contrato continua aceitando `page` e `container`, mas agora é
+normalizado e validado também pela extensão. Imagens, backgrounds, carrosséis e
+ícones usam campos nativos; `assetRef` fica no sidecar `document.figmentor`.
+Página substitui o conteúdo e seção é anexada ao final. O sucesso só é confirmado
+depois de `draft`, reload e verificação dos IDs persistidos.

@@ -44,8 +44,11 @@ refactor: extrair funções de estilo para módulo separado
 ### Ao adicionar um novo widget
 1. Adicionar handler em `src/core/handlers.js` dentro de `handleManualTag()`
 2. Adicionar botão correspondente em `ui.html`
-3. Atualizar tabela de tags no `README.md`
-4. Executar `npm run build` para atualizar `dist/code.js`
+3. Atualizar o binding de assets em `extension/src/elementor.js`, quando aplicável
+4. Atualizar descoberta/relatório em `extension/src/assets.js`, quando aplicável
+5. Adicionar testes do plugin e da extensão
+6. Atualizar a tabela de tags no `README.md` e o schema em `ELEMENTOR_WIDGET_MAPPING.md`
+7. Executar `npm run build` para atualizar os dois bundles
 
 ### Documentação de funções (JSDoc)
 ```javascript
@@ -62,12 +65,32 @@ function extractBorders(node, settings, isWidget = false, widgetType = "") {
 ## 🧪 Teste antes de Merge
 
 1. Execute `npm run check`
-2. Abra o plugin no Figma Desktop
-3. Crie um frame com todos os tipos de widget suportados
-4. Aplique tags manualmente
-5. Exporte o JSON
-6. Importe no Elementor e verifique:
+2. Confirme que `dist/code.js` e `extension/dist/popup.js` foram regenerados
+3. Abra o plugin no Figma Desktop
+4. Crie um frame com todos os tipos de widget suportados
+5. Aplique tags e registre a raiz
+6. Na extensão, teste seleção atual e frame registrado
+7. Gere o documento nos modos página e seção
+8. Insira usando uma sessão WordPress de teste e verifique:
    - Layout direction correto
    - Cores, fontes e tamanhos preservados
    - Bordas e sombras aplicadas
    - Containers com largura correta
+   - IDs e URLs reais em imagens/backgrounds
+   - Continuação e relatório depois de um asset falho
+   - Status `draft`
+   - Persistência depois do reload
+
+### Regra de responsabilidade
+
+- O plugin Figma trata tags, papéis, plugin data e frame registrado.
+- O motor em `src/core/` e `src/styles/` é compartilhado; não crie um mapper
+  paralelo simplificado dentro da extensão.
+- A extensão trata API REST do Figma, assets, WordPress e Elementor.
+- Metadados Figmentor ficam no sidecar e nunca misturados aos controles nativos
+  `image`, `background_image`, `carousel` ou `selected_icon`.
+- Uma falha de asset deve ser reportada e permitir retry, sem abortar o documento.
+- Nunca enviar `selected_icon` com `library: "svg"` sem `value.id` e `value.url`
+  válidos. Em caso de upload SVG pendente ou falho, usar o placeholder explícito
+  `fas fa-check`, registrar a falha no sidecar/relatório e manter o retry disponível.
+- Não reporte sucesso até confirmar `draft` e persistência após reload.

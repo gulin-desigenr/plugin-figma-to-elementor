@@ -16,3 +16,11 @@ Não forçar `nowrap` para todos os containers horizontais. Tratar gap negativo 
 - Containers `FILL` geram 100% corretamente.
 - Larguras fixas permanecem fixas.
 - Padding e gap têm unidade e nível corretos.
+
+## Estado após a Fase 02
+
+**Concluída no contrato, com validação visual contínua.** A extensão reutiliza o
+traversal do plugin por meio do adapter REST e preserva page-wrapper, containers,
+container-full, hierarquia, sizing, direção, wrap, alinhamentos, padding e gap.
+O aceite real confirmou a persistência da árvore; ajustes visuais de imagens não
+alteram o aceite estrutural.

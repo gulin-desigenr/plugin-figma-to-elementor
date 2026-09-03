@@ -15,3 +15,9 @@ Ampliar a extração de sombras para distinguir sombra simples, múltiplas camad
 - O grupo de badges da instrutora permanece sobreposto corretamente.
 - Sombras simples continuam funcionando.
 - Efeitos complexos não desaparecem silenciosamente.
+
+## Estado após a Fase 02
+
+**Parcial.** A estrutura, offsets permitidos pelo contrato e drop shadow simples
+são mapeados. Crop, composição e posicionamento de algumas imagens/backgrounds
+foram identificados pelo aceite humano como a principal frente de refinamento.

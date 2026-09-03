@@ -16,3 +16,9 @@ Garantir unicidade global de `css_id`. Prefixar IDs que começam por número e a
 - Não há `css_id` duplicado no documento.
 - O JSON passa no validador estrutural.
 - A exportação repetida do mesmo frame produz IDs estáveis.
+
+## Estado após a Fase 02
+
+**Concluída.** IDs são normalizados, únicos e verificados; `isInner` acompanha a
+hierarquia; `css_id` tem unicidade global. O validador também rejeita mídia
+nativa malformada e metadados Figmentor misturados aos settings Elementor.

@@ -15,3 +15,11 @@ Separar estilo nativo, CSS e rasterização. Não converter um gradiente em cor 
 - Botões e títulos com gradiente conservam o gradiente.
 - Gradientes de seção são preservados ou explicitamente sinalizados.
 - A solução não quebra backgrounds sólidos existentes.
+
+## Estado após a implementação da 00.03
+
+**Implementada tecnicamente; validação visual no Elementor pendente.**
+Backgrounds sólidos, bordas, radius e sombras simples continuam nativos.
+Gradientes lineares/radiais/angular/diamond e efeitos compostos são preservados
+em CSS escopado por ID, com flags para paints que não possuem equivalente CSS.
+Imagens de background continuam no fluxo nativo/raster de assets.

@@ -17,3 +17,14 @@ Implementar breakpoints somente quando houver dados suficientes e preservar conf
 - Nenhuma regra mobile é criada por inferência silenciosa.
 - Cada ajuste responsivo tem uma fonte identificável.
 - O comportamento sem frame mobile está documentado.
+
+## Estado após a Fase 02
+
+**Pendente.** A Fase 02 preserva o desktop lido do Figma e não inventa regras
+mobile/tablet. A arquitetura suporta evolução do mapper compartilhado, mas a
+política responsiva ainda precisa de frames ou regras humanas aprovadas.
+
+Essa tarefa continuará sendo a política para valores comprovados no Figma. A
+tarefa futura [01.12](./01-12-responsividade-por-politica-base.md) tratará do
+caso complementar em que o usuário aprova um perfil base sem fornecer frame
+mobile/tablet.

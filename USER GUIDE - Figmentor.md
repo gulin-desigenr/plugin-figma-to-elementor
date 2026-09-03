@@ -2,153 +2,303 @@
 tags:
   - documentação
   - figmentor
+  - bridge
+fase: 02
+status: aprovada
 ---
 
-# 1. VISÃO GERAL DO PLUGIN
+# Guia de uso — Figmentor Bridge
 
-O Figmentor é um plugin nativo do Figma desenhado para analisar a Abstract Syntax Tree (AST) de layouts construídos com Auto Layout (ou layouts livres com inteligência espacial) e convertê-los em templates JSON estritamente compatíveis com a estrutura de dados proprietária do construtor de páginas Elementor (v0.4 Schema). O motor utiliza um sistema de "Manual Tagging" via `getPluginData` e `setPluginData` para mapear nós do Figma para chaves de widgets e containers do Elementor.
+## 1. Visão geral
 
-O problema principal resolvido é o overhead técnico de recriar estruturas Flexbox (DOM) e transcrever propriedades CSS estruturais e tipográficas do design para o Elementor. A promessa central do produto passa a ser a traducao estrutural do layout, nao a reproducao completa de midia ou iconografia.
+O Figmentor traduz layouts do Figma para conteúdo nativo do Elementor. Desde a
+Fase 02, o produto é dividido em:
 
-**O que o plugin NAO faz:** Ele nao realiza upload de assets digitais reais (imagens, SVGs, videos) e nao trata icones como parte do fluxo principal. Midias e iconografia devem ser aplicadas manualmente no Elementor.
+- **plugin Figma mínimo:** aplica tags e papéis, grava plugin data e registra o
+  frame selecionado;
+- **extensão Chrome:** lê a API do Figma, gera o documento, processa assets, usa
+  a sessão WordPress aberta, salva no Elementor e verifica o rascunho depois de
+  recarregar.
 
-**Stack Técnica:**
-- Linguagem: Vanilla JavaScript (ES6+), HTML, CSS.
-- API: Figma Plugin API.
-- Output: JSON estático (`application/json`).
-- Ambiente: Offline-first (executa localmente no Figma).
+O objetivo é reduzir a reconstrução manual de hierarquia, Flexbox, spacing,
+tipografia, cores e mídia. A extensão informa limitações; ela não deve apresentar
+uma perda de asset como sucesso completo.
 
-## 2. ARQUITETURA E FUNCIONAMENTO INTERNO
-
-A arquitetura do Figmentor baseia-se em um percurso recursivo profundo na árvore de nós (`traverseNode`).
-
-**Pipeline de Processamento:**
-1. **Verificação de Tag Manual:** O algoritmo checa se o usuário rotulou o nó com uma tag específica (`elementor-tag`), invocando a `handleManualTag` que processa nós complexos agregando os filhos.
-2. **Identificação Automática:** Se nao ha tag manual, verifica se e um no de Texto puro (`mapText`) e aplica fallbacks estruturais controlados.
-3. **Extração de CSS e Geometria:** Funções dedicadas extraem Typography, Backgrounds, Borders, e Shadows.
-4. **Inteligência Espacial e Auto Layout:** Para containers, o `getLayoutDirection` identifica propriedades de Flexbox e gap nativas do Figma. Caso o grupo não possua Auto Layout, um fallback heurístico analisa a variação no eixo Y para inferir se o comportamento esperado é `row` ou `column`.
-5. **Flattening Estrutural:** Nós do tipo `FRAME` sem layoutMode e que não são a raiz da seleção não geram um nível no JSON (suprimindo a div), apenas repassam seus filhos para otimização da árvore DOM resultante no Elementor.
-
-**Diagrama de Fluxo de Dados:**
+## 2. Arquitetura
 
 ```text
-[Figma Document]
-  ├── Node Selection
-  │    └── UI: postMessage({ type: 'apply-tag' }) -> node.setPluginData()
-  │
-  ├── Export Trigger
-  │    └── src/core/traverse.js: traverseNode(selection[0], isRoot=true)
-  │         ├── Fallback: mapText / mapImage 
-  │         ├── Tag Check: handleManualTag
-  │         ├── CSS Extractor: Background, Borders, Shadows, Typography
-  │         ├── Spatial Intel: getLayoutDirection
-  │         └── Map to Elementor Schema (mapContainer / mapWidget)
-  │
-[JSON Compilation]
-  └── Export V0.4 Object -> Blob Generation -> elementor-template-[timestamp].json
+[Figma Plugin]
+  tags + roles + sharedPluginData + seleção registrada
+       ↓
+[Figma REST API]
+       ↓
+[Adapter REST]
+       ↓
+[Motor compartilhado: traverse + handlers + styles]
+       ↓
+[Documento Elementor + sidecar Figmentor]
+       ↓
+[Assets: WebP / SVG / Font Awesome]
+       ↓
+[WordPress Media REST API]
+       ↓
+[Elementor AJAX: get_document_config + save_builder]
+       ↓
+[Draft + reload + verificação]
 ```
 
-## 3. INSTALAÇÃO E CONFIGURAÇÃO
+O adapter em `extension/src/figma-rest-adapter.js` apresenta os nós REST ao
+mesmo motor usado pelo plugin. Assim, a extensão não possui um segundo mapper
+simplificado.
 
-### 3.1 Pré-requisitos
-- Figma Desktop App ou versão Web suportada.
-- Acesso de edição ao design (necessário para injezir `PluginData`).
-- Elementor com o recurso Flexbox Container ativo para importar o JSON gerado.
+## 3. Pré-requisitos
 
-### 3.2 Instalação local
-1. Clone o repositório contendo `manifest.json`, `dist/code.js` e `ui.html`.
-2. Abra o Figma Desktop App.
-3. Navegue até **Plugins > Development > Import plugin from manifest...**
-4. Selecione o `manifest.json`.
+- Figma Desktop ou Web com permissão para editar o arquivo;
+- token pessoal do Figma com `file_content:read`;
+- permissão `selections:read` para detectar a seleção atual automaticamente;
+- Chrome ou Chromium com a extensão carregada sem compactação;
+- WordPress e Elementor abertos e autenticados em uma aba `wp-admin`;
+- permissão do WordPress para cada tipo de mídia que será enviado.
 
-### 3.3 Configurações Embutidas (Hardcoded)
-Para maximizar a compatibilidade de parsing do Elementor, o código adota padrões seguros consolidados:
-- **Largura do Root (Boxed):** Limitado artificialmente a `1140px` (padrão desktop).
-- **Fallback de Fonte:** Configurado para `16px` e peso `400` caso a consulta original resulte em `figma.mixed`.
-- **Mapeamento de Peso Numérico:** Dicionário regex-based (`mapFontWeight`) traduz variantes nominais ("Demi Bold", "Hairline") em peso numérico real (600, 100).
+## 4. Instalação
 
-## 4. FLUXO DE USO COMPLETO
+### 4.1 Build
 
-### 4.1 Exportar uma seção
-1. Escolha `Criar uma seção` na tela inicial.
-2. Selecione o `Frame` principal e aplique a tag `Seção (1140px Boxed)`.
-3. Selecione containers internos de layout e rotule-os como `Container Filho (100% Full)`.
-4. Assinale blocos semânticos aplicando as respectivas tags (`heading`, `text-editor`, etc.).
-5. Selecione novamente apenas o frame principal.
-6. Clique em **GERAR E BAIXAR JSON**.
-7. No painel de importação do Elementor, envie o arquivo exportado como container.
+Na raiz do projeto:
 
-### 4.2 Exportar uma página com várias seções
-1. Escolha `Criar uma página` na tela inicial.
-2. Selecione o `Frame` pai de todo o layout e aplique a tag `Página (Wrapper)`.
-3. Marque cada seção interna como `Seção (1140px Boxed)`.
-4. Use `Container Filho (100% Full)` para estruturas internas quando necessário.
-5. Assinale blocos semânticos aplicando as respectivas tags.
-6. Selecione novamente apenas o frame principal.
-7. Clique em **GERAR E BAIXAR JSON**.
-8. No painel de importação do Elementor, envie o arquivo exportado como página.
+```bash
+npm ci
+npm run check
+```
 
-O modo Página não define configurações gerais de layout, fundo ou tipografia.
-O arquivo usa `page_settings: {}` para permitir que o WordPress, o Elementor e o
-Hello Elementor mantenham suas configurações padrão.
+O comando gera `dist/code.js` e `extension/dist/popup.js` e executa os testes.
 
-### 4.3 Validação de importação no WordPress
+### 4.2 Plugin Figma
 
-Os dois modos de exportação foram testados manualmente dentro do WordPress:
+1. Abra o Figma Desktop.
+2. Vá a **Plugins → Development → Import plugin from manifest**.
+3. Escolha o `manifest.json` da raiz.
+4. Execute o plugin em **Plugins → Development**.
 
-- o JSON de página foi importado com sucesso no Elementor;
-- o JSON de seção foi importado com sucesso no Elementor.
+### 4.3 Extensão Chrome
 
-Isso confirma o funcionamento do contrato de saída para os dois envelopes. A
-importação estrutural funciona, mas imagens, SVGs, mockups e outros assets ainda
-devem ser preenchidos manualmente no Elementor.
+1. Abra `chrome://extensions`.
+2. Ative o modo desenvolvedor.
+3. Clique em **Carregar sem compactação**.
+4. Selecione a pasta `extension/`.
+5. Depois de um novo build, clique em **Recarregar** no card da extensão.
 
-### 4.4 Restricao deliberada de midia e iconografia
-1. Imagens, SVGs, mockups, texturas e icones nao fazem parte do fluxo estrutural principal do Figmentor.
-2. O JSON exportado deve ser entendido como base estrutural do layout.
-3. O upload e a escolha final de imagens e icones acontecem manualmente no Elementor.
-4. O JSON deve priorizar spacing, tipografia, cores, dimensoes e hierarquia estrutural.
+## 5. Preparar o Figma
 
-## 5. MAPEAMENTO DE ELEMENTOS E TAGS (FIGMA → ELEMENTOR)
+### 5.1 Página
 
-| Elemento/Tag Figma | Widget/Elemento Elementor | Estrutura de Chaves Injetadas (Settings) | Limitações Atuais |
-|---|---|---|---|
-| `container` | `container` | `content_width: "boxed"`, width: `{ size: 1140 }` | Recomendado apenas em Root. |
-| `container-full` | `container` | `content_width: "full"`, width: `{ size: 100, unit: "%" }` | Herda paddings e layout-direction. |
-| `heading` | `heading` | `title`, `title_color`, `typography_typography: "custom"` | Lê todos os caracteres de texto subjacentes. |
-| `text-editor` | `text-editor` | `editor`, `text_color` | Une múltiplos nós `<br>`. Fallback para textos < 32px. |
-| `image-box` | `image-box` | `title_text`, `description_text`, tipografias | Uso legado. Nao faz parte do fluxo estrutural recomendado. |
-| `icon-list` | `icon-list` | `icon_list` (Array of objects com texto individualizados) | Uso legado. Iconografia fica fora do fluxo principal. |
-| `image` | `image` | `image: { url: "", id: "" }`, `_width` | Uso legado. Midia deve ser aplicada manualmente depois. |
+1. Escolha **Criar uma página** no plugin.
+2. Marque a raiz com `page-wrapper`.
+3. Marque cada seção principal com `container`.
+4. Use `container-full` nos containers internos que devem ocupar 100%.
+5. Aplique tags de widget e papéis internos.
+6. Selecione novamente a raiz. O plugin registra essa seleção.
 
-*Widgets fora do escopo principal:* `image`, `image-box`, `icon-list`, `icon-box`, `image-carousel` e fluxos dependentes de iconografia ou assets reais.
+`page-wrapper` é um pseudo-wrapper: organiza a página no Figma, mas seus filhos
+são incorporados diretamente no `content` do Elementor.
 
-## 6. COMPORTAMENTO DE ESTILOS E PARSING
+### 5.2 Seção
 
-- **Cores (Fills):** Rotina `extractTextStyle` analisa `node.fills[0]`. Converte RGB para um rgba() compátivel. O sistema reporta falha caso a cor esteja segmentada de maneira mista (`figma.mixed`).
-- **Backgrounds:** `extractBackground` checa shapes no container pai. Injeta `background_background: "classic"` ativando a propriedade nativa do Control System do Elementor. O foco aqui e background estrutural nativo, nao upload de imagem.
-- **Tipografia:** Captura `fontSize` e injeta flag forçada `typography_typography: "custom"`. Retorna para o standard de `16px/400` se houver colisão de estilos mistos no nó.
-- **Geometria / Espaçamento:** Extração literal de `paddingTop` e similares via objeto iterável de dimensões no JSON. Se detectado Figma AutoLayout, recupera a propriedade `itemSpacing` e aplica nos eixos (`gap.column/row`).
-- **Borders & Radius [NOVO]:** A função `extractBorders` mapeia pesos nativos de traço (`strokeWeight`), cor de preenchimento (`rgba`) e arredondamento individual com suporte à detecção customizada das 4 pontas ou formato redondo integral, acoplando as strings `"solid"` apropriadas.
-- **Sombras Analíticas [NOVO]:** A função `extractShadows` interpreta instâncias `DROP_SHADOW` válidas aplicando um switch com eixos X/Y (`horizontal`/`vertical`), raio (`blur`), expansão (`spread`) e transparência de overlay no `box_shadow`.
+1. Escolha **Criar uma seção**.
+2. Marque o frame raiz com `container`.
+3. Aplique tags e papéis nos descendentes.
+4. Selecione novamente a raiz para registrá-la.
 
-## 7. RESOLUÇÃO DE PROBLEMAS COMUNS (TROUBLESHOOTING)
+No destino, a extensão lê o documento existente e acrescenta a seção ao final.
 
-- **Sintoma:** O layout no Elementor expande a 100% da viewport, perdendo o alinhamento central em navegadores ultrawide.
-  - **Causa:** O nó raiz (Root) não estava tagueado como `container` ou a seleção no momento da exportação foi feita nos filhos, perdendo as diretivas `boxed` centrais.
+## 6. Tags e papéis
 
-- **Sintoma:** Painel lateral de edição do Elementor não carrega, UI quebrada (tela em branco de load infinito).
-  - **Causa/Solução:** JSON construiu Control IDs errados (Geralmente marcando elementos heterogêneos muito extensos unicamente como "text-editor").
+### Tags estruturais e widgets
 
-- **Sintoma:** Propriedades de texto não herdam mudanças, mostrando `figma.mixed` ao invés de código real, revertendo para Fonte padrão cinza.
-  - **Solução:** O script não desmembra texto multi-estilo no mesmo layer nativo. Você precisa desdobrar elementos fracionados em novos nós separados de textos agrupados.
+| Tag | Resultado |
+|---|---|
+| `page-wrapper` | raiz lógica de página, achatada em `content` |
+| `container` | Flexbox container boxed/estrutural |
+| `container-full` | Flexbox container full-width |
+| `heading` | Heading |
+| `text-editor` | Text Editor |
+| `image` | Image com mídia nativa |
+| `image-background` | background de container |
+| `image-box` | Image Box |
+| `icon-box` | Icon Box |
+| `icon-list` | Icon List |
+| `button` | Button |
+| `accordion` | Accordion clássico |
+| `accordeon` | Nested Accordion |
+| `image-carousel` | Image Carousel |
+| `container-carousel` | Nested Carousel experimental |
+| `ignore` | omite o nó |
 
-## 8. ROADMAP DE DESENVOLVIMENTO
+### Papéis internos
 
-Consulte o arquivo `README.md` para as etapas futuras macro do projeto.
+- `title_text`;
+- `description_text`;
+- `icon`;
+- `image`.
 
-**Foco em Correcao e evolucao estrutural (WIP):**
-- Refinar a paridade de spacing, sizing e tipografia entre Auto Layout e Elementor.
-- Melhorar a fidelidade estrutural de containers, wrappers e hierarquia de blocos.
-- Reforcar o fluxo entre exportador e upload manual do JSON.
-- Manter midia e iconografia fora da promessa central do produto.
+O plugin grava os papéis em `elementor_role` e mantém prefixos nos nomes, como
+`[TITLE]`, `[DESCRIPTION]`, `[ICON]` e `[IMAGE]`.
+
+## 7. Executar o Bridge
+
+1. Abra o painel lateral **Figmentor Bridge**.
+2. Informe o token pessoal do Figma.
+3. Informe a URL do arquivo Figma.
+4. Clique em **Detectar seleção atual do Figma**.
+5. Se a rota de seleção não estiver disponível, use o frame registrado pelo
+   plugin ou uma URL com `node-id`.
+6. Clique em **Ler frame registrado ou indicado pela URL**.
+7. Confira o nome da origem, modo e quantidade de assets.
+8. Avance para Elementor.
+9. Selecione **Página** ou **Seção**.
+10. Clique em **Detectar aba WordPress**.
+11. Confira o post detectado e confirme **Inserir no Elementor**.
+
+O botão de inserção só fica disponível quando o documento e a sessão WordPress
+estão válidos.
+
+## 8. Assets
+
+### 8.1 Imagens e backgrounds
+
+A extensão solicita um PNG ao Figma e procura combinações de escala e qualidade
+para produzir WebP com alvo máximo de 150 KB. O resultado enviado ao Elementor
+usa o formato nativo:
+
+```json
+{
+  "id": 606,
+  "url": "https://site/wp-content/uploads/.../arquivo.webp",
+  "size": "full"
+}
+```
+
+Se o teto não for atingível, o melhor candidato é preservado e a ocorrência é
+reportada sem interromper o restante do fluxo.
+
+### 8.2 Ícones
+
+- Um nome reconhecido como Font Awesome gera `selected_icon` nativo.
+- Um vetor personalizado é exportado e enviado como SVG real.
+- O WordPress pode bloquear SVG. Nesse caso, o item falha, permanece no relatório
+  e fica disponível para retry. Enquanto o upload não for confirmado, o
+  Elementor recebe o placeholder explícito `fas fa-check` em vez de um SVG vazio.
+  O relatório informa que o placeholder foi aplicado e identifica o vetor original.
+
+### 8.3 Retry
+
+Falhas não cancelam os assets seguintes. Depois de corrigir limite, MIME,
+permissão ou configuração do servidor, clique em **Repetir somente assets
+falhos**. O retry não consegue contornar sozinho uma política ativa do WordPress.
+
+## 9. Metadados e contrato Elementor
+
+Campos renderizados (`image`, `background_image`, `carousel`, `selected_icon`)
+contêm apenas valores aceitos pelo Elementor. A rastreabilidade (`assetRef`,
+`nodeId`, tipo e estado) fica em `document.figmentor`, separada dos settings
+nativos.
+
+Antes da inserção, a extensão valida:
+
+- envelope de página ou container;
+- IDs únicos e `isInner`;
+- containers, widgets e `widgetType`;
+- `css_id` globalmente único;
+- formato das mídias nativas;
+- ausência de `assetRef` misturado aos controles nativos.
+
+## 10. Salvamento como rascunho
+
+A extensão usa endpoint e nonces expostos pela página administrativa. Ela não
+depende de `window.elementor`, `window.elementorCommon` ou
+`window.elementorFrontend`.
+
+Durante a inserção:
+
+1. valida a sessão;
+2. envia os assets;
+3. força o post para `draft` pela REST API do WordPress;
+4. lê o documento Elementor atual;
+5. substitui a página ou anexa a seção;
+6. salva com `save_builder`;
+7. exige resposta positiva e status `draft`;
+8. recarrega a aba;
+9. verifica novamente os IDs de elementos e mídias.
+
+Não considere sucesso se a interface confirmar somente JSON ou upload. A
+mensagem esperada termina com a confirmação de persistência após recarregar.
+
+## 11. Relatório
+
+Cada asset mostra:
+
+- nome e `nodeId` Figma;
+- elemento/uso (`image`, `background`, `icon-box`, `icon-list` etc.);
+- sucesso com ID de mídia ou falha com ação recomendada;
+- disponibilidade para retry.
+
+O relatório pode ser baixado e deve acompanhar qualquer diagnóstico de perda
+visual.
+
+## 12. Solução de problemas
+
+### Seleção atual não detectada
+
+- mantenha o plugin Figma aberto;
+- confirme `selections:read` no token;
+- selecione uma única raiz válida;
+- use o frame registrado ou uma URL com `node-id` como fallback.
+
+### Botão de inserir desabilitado
+
+- conclua a leitura do frame;
+- abra o editor Elementor em uma aba autenticada;
+- clique em **Detectar aba WordPress**;
+- conceda a permissão de host solicitada pela extensão.
+
+### SVG falha
+
+Confirme se o WordPress aceita `image/svg+xml` para o usuário atual. Instalar ou
+configurar suporte seguro a SVG é uma decisão do site. Depois da correção, use o
+retry. Não converta automaticamente o vetor para PNG se a exigência é SVG real.
+
+### Status retorna `publish`
+
+Recarregue a versão atual da extensão. A Fase 02 altera o post explicitamente
+para `draft` antes do `save_builder` e recusa sucesso sem confirmação.
+
+### Imagem existe, mas está visualmente incorreta
+
+Confira crop, dimensões do widget/container, `background_position`,
+`background_size`, bordas e a composição do node exportado. O upload correto não
+garante, sozinho, paridade visual.
+
+## 13. Evidência de aceite da Fase 02
+
+Em 2026-08-03, o fluxo real concluiu:
+
+```text
+Assets enviados: 8/19
+Elementor salvo como rascunho (6 elemento(s)).
+Persistência confirmada após recarregar (50 IDs verificados).
+```
+
+As mídias 605–612 foram criadas. Onze SVGs foram recusados pelo WordPress e
+continuaram no relatório. O resultado foi aprovado para a Fase 02, com o
+refinamento visual de imagens e a política de SVG registrados como limitações.
+
+## 14. Próximas frentes
+
+- fidelidade de crop, composição e posicionamento de imagens/backgrounds;
+- diagnóstico mais específico para rejeição de SVG no servidor;
+- aceite visual dos gradientes, fills, strokes e sombras compostas da tarefa
+  00.03 em uma instalação Elementor real;
+- responsividade baseada em frames/regras aprovadas;
+- validação visual sistemática dos widgets complexos.
+
+Veja [docs/FASE-02-BRIDGE.md](docs/FASE-02-BRIDGE.md) para o registro técnico.

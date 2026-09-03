@@ -1,20 +1,38 @@
-# Auditoria Técnica do Exportador Figma → Elementor
+# Auditoria Técnica do Figmentor Bridge
 
 ## Objetivo
 
-Auditar o Figmentor como um compilador: identificar em qual etapa nasce cada problema e corrigir de forma reproduzível, com fixtures, JSON esperado e testes de regressão.
+Auditar o Figmentor como um compilador e um pipeline de persistência: identificar
+em qual etapa nasce cada problema e corrigir de forma reproduzível, com fixtures,
+JSON esperado, relatório de assets e testes de regressão.
 
 ```text
-Árvore de nós Figma
+Plugin Figma: tags + pluginData + frame registrado
+→ Figma REST API
+→ Adapter de nós REST
 → Traversal
 → Interpretação semântica
 → Mapeamento para Elementor
-→ Sanitização
-→ JSON final
-→ Importação/renderização
+→ Normalização e validação
+→ Manifesto e exportação de assets
+→ WebP/SVG e WordPress Media
+→ JSON Elementor com IDs/URLs reais
+→ save_builder como draft
+→ Reload e verificação de persistência
 ```
 
 Esta auditoria deve servir como base para desenvolvimento direcionado, evitando planos genéricos que não estejam ligados a uma divergência concreta.
+
+## Estado após a Fase 02
+
+A arquitetura plugin mínimo + extensão Chrome foi aprovada em 2026-08-03. O
+motor de `src/core/` e `src/styles/` é compartilhado entre os dois bundles. O
+fluxo integrado salvou um rascunho e confirmou 50 IDs após reload.
+
+O aceite não significa paridade visual total: 8 de 19 assets foram enviados e
+11 SVGs foram recusados pelo WordPress; crop, composição e posicionamento de
+algumas imagens ainda exigem refinamento. Veja
+[`docs/FASE-02-BRIDGE.md`](docs/FASE-02-BRIDGE.md).
 
 ## Camadas da auditoria
 
@@ -82,7 +100,7 @@ JSON atual
 Diferenças encontradas
 ```
 
-### 3. Invariantes do JSON
+### 3. Invariantes do documento e do JSON
 
 Além de comparar valores, validar regras estruturais:
 
@@ -93,6 +111,12 @@ Além de comparar valores, validar regras estruturais:
 - nenhum `css_id` pode conter acentos, espaços ou caracteres inválidos;
 - nenhum campo obrigatório pode ser `undefined`;
 - propriedades removidas pela sanitização precisam estar justificadas.
+- `image`, `background_image` e itens de `carousel` precisam usar `id`/`url`
+  nativos do WordPress;
+- `selected_icon` precisa distinguir Font Awesome de biblioteca `svg`;
+- `assetRef` não pode ser misturado a campos nativos do Elementor;
+- IDs de elementos e mídias esperados precisam existir após o reload;
+- a resposta do servidor precisa confirmar `draft`.
 
 ### 4. Auditoria do traversal
 
@@ -101,7 +125,7 @@ Arquivo principal: `src/core/traverse.js`.
 Perguntas:
 
 - nós invisíveis são ignorados corretamente?
-- `ignore` e `image-background` sempre desaparecem?
+- `ignore` desaparece e `image-background` vira background nativo?
 - filhos sem tag são processados ou descartados?
 - o resultado muda quando o frame raiz está ou não tagueado?
 - frames sem Auto Layout são achatados corretamente?
@@ -109,7 +133,9 @@ Perguntas:
 - resultados `null` podem chegar ao JSON final?
 - arrays retornados por `page-wrapper` são incorporados corretamente?
 
-Ponto de risco conhecido: filhos sem tag podem ser ignorados quando não estão dentro de uma estrutura considerada validada. Isso deve ser testado explicitamente.
+Ponto de risco conhecido: o adapter REST precisa expor propriedades equivalentes
+às da Plugin API. Qualquer novo campo usado pelo motor compartilhado deve ganhar
+uma fixture REST para impedir perda silenciosa.
 
 ### 5. Auditoria dos mapeadores
 
@@ -186,28 +212,39 @@ convertido incorretamente
 não suportado
 ```
 
-### 7. Recursos incompletos
+### 7. Assets, ícones e recursos incompletos
 
-Não classificar automaticamente como bug os recursos que são placeholders por decisão de produto:
+Na Fase 02, URLs vazias deixaram de ser a estratégia aprovada. Auditar:
 
-- imagens com `url: ""`;
-- carrosséis sem URL de imagem;
-- ícones derivados de nomes de vetores;
-- gradientes não exportados;
-- assets que dependem de upload manual.
+- descoberta do node correto;
+- render Figma em PNG ou SVG;
+- WebP com alvo de 150 KB e caso em que o teto é impossível;
+- resposta real do WordPress e presença de `id`/`source_url`;
+- associação ao elemento correto;
+- Font Awesome nativo versus vetor SVG;
+- continuação, relatório e retry após falha;
+- persistência de mídia depois do reload.
+- `icon-list` e `icon-box` nunca podem receber `selected_icon` com
+  `library: "svg"` sem `value.id` e `value.url` válidos;
+- SVG pendente ou recusado deve usar placeholder Font Awesome explícito,
+  manter a falha no sidecar/relatório e continuar editável no Elementor.
 
 Para cada um, decidir se deve ser:
 
 ```text
-suportado agora
-mantido como placeholder
-removido da UI
-marcado explicitamente como não suportado
+campo nativo Elementor
+sidecar Figmentor
+asset rasterizado
+SVG real
+Font Awesome nativo
+falha retryável
+limitação do servidor
+placeholder Elementor válido
 ```
 
-### 8. Auditoria da interface
+### 8. Auditoria das interfaces
 
-Comparar cada controle da UI com o backend.
+Comparar cada controle do plugin e da extensão com o backend correspondente.
 
 Os toggles abaixo existem visualmente, mas precisam de auditoria específica:
 
@@ -215,6 +252,33 @@ Os toggles abaixo existem visualmente, mas precisam de auditoria específica:
 - `toggle-flexbox`.
 
 Registrar controles sem efeito como problemas de interface desconectada.
+
+Na extensão, validar também:
+
+- fases Token, Figma e Elementor;
+- seleção atual e fallback do frame registrado;
+- habilitação do botão somente com documento e sessão válidos;
+- confirmação humana antes de upload/save;
+- relatório e download;
+- retry somente dos falhos;
+- mensagem final diferenciando upload, draft e persistência.
+
+### 9. Auditoria WordPress e Elementor
+
+Arquivos principais: `extension/src/wordpress.js` e
+`extension/src/elementor.js`.
+
+Verificar:
+
+- contexto, endpoint e nonces detectados na página administrativa;
+- ausência de dependência de globais internas do editor;
+- envelope real do `elementor_ajax`;
+- `get_document_config` antes e depois do save;
+- modo página substituindo e modo seção anexando;
+- transição REST explícita do post para `draft`;
+- tratamento de resposta HTTP, `body.code`, ID e URL da mídia;
+- validação do `save_builder` por ação;
+- reload e nova leitura para confirmar elementos e mídias.
 
 ## Classificação de problemas
 
@@ -266,8 +330,11 @@ Teste de regressão:
 3. Containers: width, `FILL`, padding, gap e alinhamentos.
 4. Tipografia e cores: valores, unidades, estilos mistos e globais.
 5. Widgets complexos: button, accordion, nested accordion e carrosséis.
-6. Assets: imagens, ícones, SVGs e gradientes.
-7. Interface: toggles, loading, mensagens, cópia e download.
+6. Assets: imagens, backgrounds, ícones, SVGs, WebP e relatório.
+7. WordPress: sessão, upload, draft e erros reais do servidor.
+8. Elementor: payload, página vazia, append de seção e save_builder.
+9. Persistência: reload e comparação dos IDs esperados.
+10. Interfaces: toggles, loading, mensagens, confirmação e retry.
 
 ## Ciclo de desenvolvimento focado
 
@@ -283,4 +350,3 @@ Teste de regressão:
 ```
 
 O primeiro conjunto de testes deve cobrir `traverseNode()`, `handleManualTag()`, `mapContainer()`, `mapText()` e a sanitização do output, pois essas funções controlam a maior parte do resultado final.
-

@@ -22,4 +22,24 @@ Definir o contrato entre exportação e upload. Quando o upload não estiver dis
 
 - Todo asset do Figma tem um destino definido.
 - Placeholders são identificados explicitamente.
-- Nenhum ícone real é substituído silenciosamente por um ícone genérico.
+- Nenhum ícone real é substituído silenciosamente. Se o SVG falhar, um
+  placeholder explícito e válido pode ser usado, desde que a falha, o node e a
+  ação de retry apareçam no relatório.
+
+## Decisão aprovada na Fase 02
+
+- O plugin Figma só registra referências; a extensão Chrome executa exportação,
+  conversão, upload e patch do documento.
+- Raster é renderizado pelo Figma, convertido para WebP com alvo de 150 KB e
+  enviado à biblioteca WordPress.
+- SVG personalizado é enviado como SVG real; Font Awesome permanece nativo.
+- Background composto pode ser rasterizado como uma única composição do node.
+- `assetRef` e metadados ficam no sidecar, separados dos controles Elementor.
+- Falha não interrompe o lote: gera relatório e permite retry somente dos falhos.
+- SVG pendente ou recusado nunca pode ser serializado como
+  `library: "svg"` com `id`/`url` vazios. `icon-list` e `icon-box` usam
+  explicitamente `fas fa-check` enquanto a mídia original não estiver confirmada.
+
+**Estado:** concluída com limitação externa. No aceite real, 8 de 19 assets foram
+enviados e 11 SVGs foram recusados pela política do WordPress. O comportamento
+de continuação, relatório, placeholder seguro e rascunho persistente foi aprovado.
