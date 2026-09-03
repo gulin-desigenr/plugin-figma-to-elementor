@@ -5,8 +5,8 @@
 > confirmada após recarregar.
 
 ![Fase](https://img.shields.io/badge/Fase%2002-aprovada-success)
-![Plugin Figma](https://img.shields.io/badge/plugin-1.2.0-purple)
-![Extensão Chrome](https://img.shields.io/badge/bridge-0.2.1-blue)
+![Plugin Figma](https://img.shields.io/badge/plugin-2.0.0-purple)
+![Extensão Chrome](https://img.shields.io/badge/bridge-1.0.0-blue)
 
 ## Estado atual
 

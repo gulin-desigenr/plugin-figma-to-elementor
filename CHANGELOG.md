@@ -1,6 +1,8 @@
 # Changelog
 
-## [Unreleased] — Fase 02 aprovada em 2026-08-03
+## [Unreleased]
+
+## [2.0.0] - 2026-09-03
 
 ### Fixed
 

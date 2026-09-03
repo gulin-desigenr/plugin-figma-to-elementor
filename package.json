@@ -1,6 +1,7 @@
 {
   "name": "figma-to-elementor",
-  "version": "1.2.0",
+  "version": "2.0.0",
+  "private": true,
   "description": "Figma to Elementor Plugin",
   "type": "module",
   "main": "dist/code.js",
@@ -12,8 +13,8 @@
     "check": "npm run build && npm test"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Pedro Gulin",
+  "license": "UNLICENSED",
   "devDependencies": {
     "esbuild": "^0.27.4"
   },
