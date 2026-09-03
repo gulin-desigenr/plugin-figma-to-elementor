@@ -1861,7 +1861,7 @@ function validateNativeMedia(value, path, errors) {
     return;
   }
   if (containsAssetRef(value)) errors.push(`${path} n\xE3o pode conter assetRef do Figmentor.`);
-  if (!(typeof value.url === "string" && (typeof value.id === "string" || typeof value.id === "number"))) {
+  if (!(value.url && value.id && typeof value.url === "string" && (typeof value.id === "string" || typeof value.id === "number"))) {
     errors.push(`${path} deve conter id e url nativos.`);
   }
 }

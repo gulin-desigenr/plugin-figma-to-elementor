@@ -10,6 +10,7 @@
 - Adicionado placeholder explícito `fas fa-check` para SVG pendente ou falho,
   mantendo a falha no relatório e o retry disponível.
 - Adicionada validação semântica para rejeitar ícones SVG sem `id` e `url`.
+- Adicionada validação semântica para rejeitar mídia nativa (imagem e background) sem `id` e `url`.
 - Adicionados testes de regressão para `icon-list`, SVG falho e placeholder.
 
 ### Added

@@ -303,7 +303,10 @@ test('extension flattens page wrapper output and maps backgrounds to native cont
   };
 
   const document = await buildElementorDocument(root, 'page', pluginId);
-  const validation = validateElementorDocument(document, 'page');
+  const patched = patchElementorAssets(document, {
+    assets: [{ assetRef: 'figmentor-3-2-background', status: 'uploaded', mediaId: 10, mediaUrl: 'https://site.test/hero.webp' }]
+  });
+  const validation = validateElementorDocument(patched, 'page');
 
   assert.equal(validation.valid, true);
   assert.equal(document.content.every(item => !Array.isArray(item)), true);
@@ -480,6 +483,49 @@ test('semantic validation rejects empty SVG icons before Elementor save', () => 
   const result = validateElementorDocument(invalid, 'page');
   assert.equal(result.valid, false);
   assert.match(result.errors.join('\n'), /SVG sem id e url/);
+});
+
+test('semantic validation rejects empty native media before Elementor save', () => {
+  const invalidImage = {
+    version: '0.4',
+    title: 'Invalid image',
+    type: 'page',
+    page_settings: {},
+    content: [{
+      id: 'w123456',
+      elType: 'widget',
+      widgetType: 'image',
+      isInner: false,
+      settings: {
+        image: { id: '', url: '' }
+      },
+      elements: []
+    }]
+  };
+
+  const invalidBackground = {
+    version: '0.4',
+    title: 'Invalid background',
+    type: 'page',
+    page_settings: {},
+    content: [{
+      id: 'c123456',
+      elType: 'container',
+      isInner: false,
+      settings: {
+        background_image: { id: '', url: '' }
+      },
+      elements: []
+    }]
+  };
+
+  const imageResult = validateElementorDocument(invalidImage, 'page');
+  assert.equal(imageResult.valid, false);
+  assert.match(imageResult.errors.join('\n'), /deve conter id e url nativos/);
+
+  const backgroundResult = validateElementorDocument(invalidBackground, 'page');
+  assert.equal(backgroundResult.valid, false);
+  assert.match(backgroundResult.errors.join('\n'), /deve conter id e url nativos/);
 });
 
 test('asset failures produce a detailed report and retry selects only failed assets', () => {
