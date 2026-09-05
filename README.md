@@ -1,192 +1,247 @@
-# 🎨 Figmentor — Figma to Elementor
+# Figmentor — Figma to Elementor
 
-> Plugin Figma que converte seus designs diretamente em JSON compatível com Elementor, preservando layout, estilos, tipografia e estrutura.
+> Bridge local para traduzir um frame do Figma em conteúdo Elementor, enviar
+> assets pela sessão WordPress aberta e salvar um rascunho cuja persistência é
+> confirmada após recarregar.
 
-![Status](https://img.shields.io/badge/status-MVP%20v0.4-blue)
-![Figma](https://img.shields.io/badge/plataforma-Figma-purple)
-![Elementor](https://img.shields.io/badge/destino-Elementor-red)
+![Fase](https://img.shields.io/badge/Fase%2002-aprovada-success)
+![Plugin Figma](https://img.shields.io/badge/plugin-2.0.0-purple)
+![Extensão Chrome](https://img.shields.io/badge/bridge-1.0.0-blue)
 
----
+## Estado atual
 
-## 📋 Sumário
+A Fase 02 foi concluída e aprovada em 2026-08-03. O produto não é mais um
+plugin monolítico que depende apenas de download e importação manual de JSON.
+Ele possui dois runtimes:
 
-- [O que faz](#-o-que-faz)
-- [Como funciona](#-como-funciona)
-- [Instalação](#-instalação)
-- [Tags Suportadas](#-tags-suportadas)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Estrutura do JSON Exportado](#-estrutura-do-json-exportado)
-- [Branches](#-branches)
-- [Roadmap](#-roadmap)
-- [Contribuição](#-contribuição)
-- [Licença](#-licença)
+- o **plugin Figma mínimo** aplica tags, salva `pluginData`/`sharedPluginData` e
+  registra o frame;
+- a **extensão Chrome Figmentor Bridge** lê a API do Figma, executa o mesmo motor
+  estrutural, processa assets, usa a sessão WordPress aberta, salva pelo
+  Elementor e confirma o rascunho após reload.
 
----
+O registro técnico e a evidência de aceite estão em
+[docs/FASE-02-BRIDGE.md](docs/FASE-02-BRIDGE.md).
 
-## ✨ O que faz
+## Pipeline
 
-O Figmentor permite que você:
+```text
+Figma Plugin
+  → tags, papéis e frame registrado
+  → Figma REST API
+  → adapter REST
+  → traversal/handlers/styles compartilhados
+  → JSON Elementor validado
+  → assets WebP/SVG
+  → WordPress Media REST API
+  → Elementor elementor_ajax/save_builder
+  → draft
+  → reload e verificação de persistência
+```
 
-1. **Tagueie** elementos no Figma com widgets do Elementor (heading, image, container, etc.)
-2. **Exporte** toda a estrutura como um JSON compatível com Elementor
-3. **Importe** o JSON diretamente no Elementor para recriar o layout
+O motor compartilhado preserva `page-wrapper`, containers, `container-full`,
+hierarquia, `isInner`, layout, padding, gap, tipografia, cores, bordas, sombras e
+os widgets suportados. A extensão não mantém um mapper simplificado próprio.
 
-### O que é preservado na conversão
+## Responsabilidades
 
-| Propriedade | Status |
+| Componente | Responsabilidade |
 |---|---|
-| Layout (direction, gap, padding) | ✅ |
-| Cores de fundo | ✅ |
-| Tipografia (tamanho, peso, cor) | ✅ |
-| Bordas e border-radius | ✅ |
-| Sombras (drop shadow) | ✅ |
-| Larguras (fixed/fill) | ✅ |
-| Imagens (estrutura) | ✅ (URL manual) |
+| Plugin Figma | Aplicar tags/papéis, persistir dados e registrar a seleção |
+| `src/core/` e `src/styles/` | Converter a árvore para elementos e settings Elementor |
+| Adapter REST | Oferecer ao motor compartilhado uma interface equivalente à Plugin API |
+| Extensão Chrome | Orquestrar Figma, assets, WordPress, Elementor e relatório |
+| WordPress | Armazenar mídia e manter o post como rascunho |
+| Elementor | Salvar o conteúdo com `save_builder` |
 
----
+## Instalação local
 
-## 🔄 Como funciona
+### Pré-requisitos
 
+- Node.js e npm;
+- Figma Desktop com permissão de edição no arquivo;
+- token pessoal do Figma com `file_content:read` e, para seleção automática,
+  `selections:read`;
+- Chrome/Chromium;
+- WordPress e Elementor abertos em uma sessão autenticada.
+
+### Build e testes
+
+```bash
+npm ci
+npm run check
 ```
-┌─────────────┐     ┌──────────────┐     ┌───────────────┐
-│  Figma       │────▶│  Figmentor   │────▶│  JSON         │
-│  Design      │     │  (tagging)   │     │  Elementor    │
-└─────────────┘     └──────────────┘     └───────────────┘
-```
 
-1. Abra o plugin no Figma
-2. Selecione elementos e aplique tags com os botões
-3. Selecione o frame principal
-4. Clique **"GERAR E BAIXAR JSON"**
-5. Importe o `.json` no Elementor
+`npm run check` gera os dois bundles e executa a suíte completa:
 
----
+- `dist/code.js`: plugin Figma;
+- `extension/dist/popup.js`: extensão Chrome.
 
-## 🚀 Instalação
+### Plugin Figma
 
-### Modo Desenvolvimento (Figma Desktop)
+1. Abra o Figma Desktop.
+2. Acesse **Plugins → Development → Import plugin from manifest**.
+3. Selecione o `manifest.json` da raiz.
+4. Abra o plugin, escolha Página ou Seção e aplique as tags.
+5. Selecione a raiz para que o plugin registre o frame.
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/gulin-desigenr/plugin-figma-to-elementor.git
-   ```
-2. Abra o **Figma Desktop**
-3. Vá em **Menu → Plugins → Development → Import plugin from manifest...**
-4. Selecione o arquivo `manifest.json` deste repositório
-5. O plugin aparecerá em **Plugins → Development**
+### Extensão Chrome
 
----
+1. Abra `chrome://extensions`.
+2. Ative o modo desenvolvedor.
+3. Clique em **Carregar sem compactação** e selecione `extension/`.
+4. Depois de qualquer alteração, rode `npm run build:extension` e clique em
+   **Recarregar** no card da extensão.
+5. Abra o painel lateral **Figmentor Bridge**.
 
-## 🏷️ Tags Suportadas
+## Fluxo de uso
 
-### Layout (Estrutura)
+1. No plugin Figma, aplique tags e selecione a raiz.
+2. Na extensão, informe o token e a URL do arquivo.
+3. Clique em **Detectar seleção atual do Figma**.
+4. Leia o frame registrado ou indicado pela URL.
+5. Revise o documento e avance para Elementor.
+6. Mantenha a página de edição do Elementor aberta e autenticada.
+7. Escolha **Página** para substituir o conteúdo ou **Seção** para acrescentar
+   o conteúdo ao final.
+8. Detecte a aba WordPress e confirme a inserção.
+9. Revise o relatório de assets. Use **Repetir somente assets falhos** depois de
+   corrigir a causa no servidor.
+10. Considere o fluxo concluído somente quando a extensão confirmar `draft` e
+    persistência após recarregar.
 
-| Tag | Descrição | Elementor |
+## Modos de saída
+
+### Página
+
+- a raiz usa `page-wrapper`;
+- o wrapper não vira elemento Elementor; seus filhos entram em `content`;
+- o envelope usa `type: "page"` e `page_settings: {}`;
+- o conteúdo existente da página é substituído;
+- o post é explicitamente alterado para rascunho.
+
+### Seção
+
+- a raiz usa `container`;
+- o envelope usa `type: "container"`;
+- o conteúdo atual é lido antes do save;
+- os novos elementos são anexados ao final.
+
+## Tags suportadas
+
+| Tag | Saída Elementor | Estado na Fase 02 |
 |---|---|---|
-| `container` | Seção com largura boxed (1140px) | Container boxed |
-| `container-full` | Container filho 100% full-width | Container full |
+| `page-wrapper` | filhos em `content` | Operacional em modo página |
+| `container` | Flexbox container | Operacional |
+| `container-full` | Container full-width | Operacional |
+| `heading` | Heading | Operacional |
+| `text-editor` | Text Editor | Operacional |
+| `image` | Image com mídia nativa | Operacional com limitações visuais |
+| `image-background` | Background nativo do container | Operacional com limitações visuais |
+| `image-box` | Image Box | Funcional com limitações |
+| `icon-box` | Icon Box | Font Awesome nativo; SVG depende do WordPress |
+| `icon-list` | Icon List | Font Awesome nativo; SVG depende do WordPress |
+| `button` | Button | Funcional com limitações |
+| `accordion` | Accordion | Funcional com limitações |
+| `accordeon` | Nested Accordion | Funcional com limitações |
+| `image-carousel` | Image Carousel | Mídias nativas; validação visual pendente |
+| `container-carousel` | Nested Carousel | Experimental |
+| `ignore` | nó omitido | Operacional |
 
-### Widgets de Conteúdo
+## Assets e metadados
 
-| Tag | Descrição | Elementor |
-|---|---|---|
-| `heading` | Título — texto com fonte ≥32px é auto-detectado | Heading widget |
-| `text-editor` | Bloco de texto — texto com fonte <32px é auto-detectado | Text Editor widget |
-| `image` | Imagem (detectada por fill type IMAGE) | Image widget |
-| `image-box` | Caixa de imagem com título e descrição | Image Box widget |
-| `icon-list` | Lista com ícones | Icon List widget |
-| `icon-box` | Caixa com ícone | Icon Box widget (⚠️ em desenvolvimento) |
-
-### Dinâmicos
-
-| Tag | Descrição | Status |
-|---|---|---|
-| `image-carousel` | Carrossel de imagens | ⚠️ Em desenvolvimento |
-| `container-carousel` | Carrossel de containers | ⚠️ Em desenvolvimento |
-
----
-
-## 📁 Estrutura do Projeto
-
-```
-plugin-figma-to-elementor/
-├── manifest.json        # Manifesto do plugin Figma
-├── code.js              # Backend — lógica de traversal e export
-├── ui.html              # Frontend — interface de tagging
-├── .gitignore           # Arquivos ignorados pelo Git
-├── .agents/
-│   └── rules.md         # Regras para agentes AI
-├── README.md            # Este arquivo
-├── CONTRIBUTING.md      # Guia de contribuição
-└── CHANGELOG.md         # Histórico de versões
-```
-
----
-
-## 📦 Estrutura do JSON Exportado
+Os campos renderizados usam o schema nativo do Elementor:
 
 ```json
 {
-  "version": "0.4",
-  "title": "Export V16 Width Fix - Nome do Frame",
-  "type": "container",
-  "content": [
-    {
-      "elType": "container",
-      "settings": {
-        "content_width": "boxed",
-        "flex_direction": "column",
-        "gap": { "column": 20, "row": 20, "unit": "px" },
-        "padding": { "top": 40, "right": 20, "bottom": 40, "left": 20, "unit": "px" }
-      },
-      "elements": [
-        {
-          "elType": "widget",
-          "widgetType": "heading",
-          "settings": {
-            "title": "Meu Título",
-            "title_color": "rgba(26,26,26,1)",
-            "typography_font_size": { "size": 48, "unit": "px" }
-          }
-        }
-      ]
-    }
-  ]
+  "image": { "id": 606, "url": "https://site/.../logo.webp", "size": "full" },
+  "background_image": { "id": 605, "url": "https://site/.../hero.webp", "size": "full" }
 }
 ```
 
----
+`assetRef`, `nodeId` e estado de processamento ficam no sidecar
+`document.figmentor`, separados dos settings enviados ao Elementor.
 
-## 🌿 Branches
+- Raster: convertido para WebP com alvo máximo de 150 KB.
+- Vetor personalizado: enviado como SVG real.
+- Font Awesome: mantido como `selected_icon` nativo.
+- Falha de asset: não aborta o documento; entra no relatório e pode ser repetida.
 
-| Branch | Propósito |
-|---|---|
-| `main` | Produção — código estável e testado |
-| `dev` | Desenvolvimento — integração de features |
-| `feature/*` | Features individuais |
-| `fix/*` | Correções de bugs |
+O WordPress pode bloquear SVG por política de MIME/segurança. O Figmentor não
+envia SVG vazio ao Elementor. Enquanto um vetor personalizado estiver pendente ou
+falhar no upload, `icon-box` e cada item de `icon-list` usam explicitamente o
+placeholder Font Awesome `fas fa-check`, enquanto a falha permanece no relatório
+e disponível para retry. O placeholder nunca é silencioso.
 
-> **Regra**: nunca commitar direto na `main`. Todo trabalho segue `feature/* → dev → main`.
+## Salvamento e confirmação
 
----
+A extensão descobre endpoint e nonces na página administrativa. Ela não depende
+de globais JavaScript internas do editor. O salvamento exige:
 
-## 🗺️ Roadmap
+1. sessão e contexto válidos;
+2. alteração REST explícita para `draft`;
+3. `get_document_config` antes do save;
+4. `save_builder` com resposta positiva;
+5. status `draft` confirmado;
+6. reload e nova leitura do documento;
+7. presença dos IDs esperados de elementos e mídias.
 
-- [x] v0.1 — Estrutura base e tagging manual
-- [x] v0.4 — Correção de propriedades mistas (`figma.mixed`)
-- [ ] v0.5 — Handlers para `icon-box`, `image-carousel`, `container-carousel`
-- [ ] v0.6 — Export de imagens como base64 ou URL
-- [ ] v0.7 — Suporte a gradientes e múltiplos fills
-- [ ] v1.0 — Importação direta via API do Elementor
+## Validação da Fase 02
 
----
+Validação automatizada: **47 testes aprovados**.
 
-## 🤝 Contribuição
+Validação integrada aprovada:
 
-Veja o [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes sobre como contribuir.
+- 19 assets descobertos;
+- 8 imagens/backgrounds enviados, mídias 605–612;
+- 11 SVGs recusados pelo WordPress e corretamente reportados;
+- 6 elementos superiores salvos;
+- rascunho confirmado;
+- persistência confirmada após reload, com 50 IDs verificados.
 
----
+## Limitações conhecidas
 
-## 📄 Licença
+- crop, composição, tamanho ou posicionamento de algumas imagens ainda requerem
+  refinamento;
+- SVG depende da permissão de upload do WordPress;
+- gradientes e efeitos compostos estão implementados tecnicamente em CSS
+  escopado, mas aguardam validação visual no Elementor real;
+- múltiplos fills, strokes e shadows usam a matriz nativa/CSS/flag da tarefa
+  00.03 e ainda aguardam validação visual;
+- responsividade exige frames ou regras aprovadas e não é inferida livremente;
+- widgets complexos ainda exigem validação visual caso a caso.
+
+A responsividade por perfil base, sem frame mobile/tablet, está especificada como
+tarefa futura em
+[`docs/auditoria-exportador/01-12-responsividade-por-politica-base.md`](docs/auditoria-exportador/01-12-responsividade-por-politica-base.md).
+
+## Estrutura do projeto
+
+```text
+.
+├── manifest.json                 # plugin Figma
+├── ui.html                       # UI de tags/registro/exportação local
+├── src/
+│   ├── index.js                  # entrada do plugin
+│   ├── core/                     # contrato, traversal, handlers e seleção
+│   ├── styles/                   # estilos Elementor
+│   └── utils/
+├── dist/code.js                  # bundle do plugin
+├── extension/
+│   ├── manifest.json             # Manifest V3
+│   ├── popup.html / popup.js     # painel e orquestração
+│   ├── src/                      # Figma REST, adapter, assets e WordPress
+│   └── dist/popup.js             # bundle da extensão
+├── tests/                        # testes do plugin e da extensão
+└── docs/                         # decisões, auditoria e registro da Fase 02
+```
+
+## Desenvolvimento
+
+Veja [CONTRIBUTING.md](CONTRIBUTING.md) e
+[ELEMENTOR_WIDGET_MAPPING.md](ELEMENTOR_WIDGET_MAPPING.md). O histórico das
+decisões e das tarefas está em [docs/auditoria-exportador](docs/auditoria-exportador/README.md).
+
+## Licença
 
 Projeto privado. Todos os direitos reservados.
