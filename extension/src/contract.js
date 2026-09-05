@@ -37,13 +37,15 @@ function containsAssetRef(value) {
   return Object.values(value).some(containsAssetRef);
 }
 
-function validateNativeMedia(value, path, errors) {
+function validateNativeMedia(value, path, errors, options = {}) {
   if (!isPlainObject(value)) {
     errors.push(`${path} deve ser um objeto de mídia nativo do Elementor.`);
     return;
   }
   if (containsAssetRef(value)) errors.push(`${path} não pode conter assetRef do Figmentor.`);
+  const { requireNativeMedia = true } = options;
   if (
+    requireNativeMedia &&
     !(
       value.url &&
       value.id &&
@@ -220,7 +222,7 @@ export function normalizeElementorDocument(
   };
 }
 
-function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
+function validateElement(element, path, errors, warnings, seenIds, seenCssIds, options = {}) {
   if (!isPlainObject(element)) {
     errors.push(`${path} deve ser um objeto.`);
     return;
@@ -255,7 +257,15 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
 
   if (Array.isArray(element.elements)) {
     element.elements.forEach((child, index) => {
-      validateElement(child, `${path}.elements[${index}]`, errors, warnings, seenIds, seenCssIds);
+      validateElement(
+        child,
+        `${path}.elements[${index}]`,
+        errors,
+        warnings,
+        seenIds,
+        seenCssIds,
+        options
+      );
     });
   }
 
@@ -269,12 +279,13 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
 
   if (isPlainObject(element.settings)) {
     if (element.settings.image !== undefined)
-      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors);
+      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors, options);
     if (element.settings.background_image !== undefined)
       validateNativeMedia(
         element.settings.background_image,
         `${path}.settings.background_image`,
-        errors
+        errors,
+        options
       );
     if (element.settings.selected_icon !== undefined)
       validateNativeIcon(element.settings.selected_icon, `${path}.settings.selected_icon`, errors);
@@ -326,7 +337,8 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
 
 export function validateElementorDocument(
   document,
-  mode = document?.type === "page" ? "page" : "section"
+  mode = document?.type === "page" ? "page" : "section",
+  options = {}
 ) {
   const errors = [];
   const warnings = [];
@@ -348,7 +360,7 @@ export function validateElementorDocument(
     const seenIds = new Set();
     const seenCssIds = new Set();
     document.content.forEach((element, index) => {
-      validateElement(element, `content[${index}]`, errors, warnings, seenIds, seenCssIds);
+      validateElement(element, `content[${index}]`, errors, warnings, seenIds, seenCssIds, options);
     });
   }
 

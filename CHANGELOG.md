@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- A validação estrita de mídia nativa introduzida em `f0502db` bloqueava indevidamente o passo de preparo do JSON, antes do upload existir; agora esse passo usa uma checagem relaxada e a validação final continua estrita.
+
 ## [2.0.0] - 2026-09-03
 
 ### Fixed

@@ -162,7 +162,7 @@ async function readFrame() {
     };
     const mode = $("export-mode").value;
     const document = await buildElementorDocument(root, mode, pluginId);
-    const validation = validateElementorDocument(document, mode);
+    const validation = validateElementorDocument(document, mode, { requireNativeMedia: false });
     if (!validation.valid) {
       throw new Error(
         `O JSON preparado não passou na validação do Elementor:\n${validation.errors.join("\n")}`

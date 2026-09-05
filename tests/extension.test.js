@@ -671,6 +671,57 @@ test("semantic validation rejects empty native media before Elementor save", () 
   assert.match(backgroundResult.errors.join("\n"), /deve conter id e url nativos/);
 });
 
+test("semantic validation allows placeholder native media during document preparation", () => {
+  const placeholderImage = {
+    version: "0.4",
+    title: "Placeholder image",
+    type: "page",
+    page_settings: {},
+    content: [
+      {
+        id: "w123456",
+        elType: "widget",
+        widgetType: "image",
+        isInner: false,
+        settings: {
+          image: { id: "", url: "", size: "full" }
+        },
+        elements: []
+      }
+    ]
+  };
+
+  const placeholderBackground = {
+    version: "0.4",
+    title: "Placeholder background",
+    type: "page",
+    page_settings: {},
+    content: [
+      {
+        id: "c123456",
+        elType: "container",
+        isInner: false,
+        settings: {
+          background_image: { id: "", url: "", size: "full" }
+        },
+        elements: []
+      }
+    ]
+  };
+
+  const imageResult = validateElementorDocument(placeholderImage, "page", {
+    requireNativeMedia: false
+  });
+  assert.equal(imageResult.valid, true);
+  assert.doesNotMatch(imageResult.errors.join("\n"), /deve conter id e url nativos/);
+
+  const backgroundResult = validateElementorDocument(placeholderBackground, "page", {
+    requireNativeMedia: false
+  });
+  assert.equal(backgroundResult.valid, true);
+  assert.doesNotMatch(backgroundResult.errors.join("\n"), /deve conter id e url nativos/);
+});
+
 test("asset failures produce a detailed report and retry selects only failed assets", () => {
   const manifest = {
     assets: [

@@ -1986,13 +1986,14 @@ function containsAssetRef(value) {
   if (Array.isArray(value)) return value.some(containsAssetRef);
   return Object.values(value).some(containsAssetRef);
 }
-function validateNativeMedia(value, path, errors) {
+function validateNativeMedia(value, path, errors, options = {}) {
   if (!isPlainObject(value)) {
     errors.push(`${path} deve ser um objeto de m\xEDdia nativo do Elementor.`);
     return;
   }
   if (containsAssetRef(value)) errors.push(`${path} n\xE3o pode conter assetRef do Figmentor.`);
-  if (!(value.url && value.id && typeof value.url === "string" && (typeof value.id === "string" || typeof value.id === "number"))) {
+  const { requireNativeMedia = true } = options;
+  if (requireNativeMedia && !(value.url && value.id && typeof value.url === "string" && (typeof value.id === "string" || typeof value.id === "number"))) {
     errors.push(`${path} deve conter id e url nativos.`);
   }
 }
@@ -2121,7 +2122,7 @@ function normalizeElementorDocument(document2, mode = document2?.type === "page"
     content
   };
 }
-function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
+function validateElement(element, path, errors, warnings, seenIds, seenCssIds, options = {}) {
   if (!isPlainObject(element)) {
     errors.push(`${path} deve ser um objeto.`);
     return;
@@ -2152,7 +2153,15 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
   }
   if (Array.isArray(element.elements)) {
     element.elements.forEach((child, index) => {
-      validateElement(child, `${path}.elements[${index}]`, errors, warnings, seenIds, seenCssIds);
+      validateElement(
+        child,
+        `${path}.elements[${index}]`,
+        errors,
+        warnings,
+        seenIds,
+        seenCssIds,
+        options
+      );
     });
   }
   const cssId = element.settings?.css_id;
@@ -2164,12 +2173,13 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
   }
   if (isPlainObject(element.settings)) {
     if (element.settings.image !== void 0)
-      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors);
+      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors, options);
     if (element.settings.background_image !== void 0)
       validateNativeMedia(
         element.settings.background_image,
         `${path}.settings.background_image`,
-        errors
+        errors,
+        options
       );
     if (element.settings.selected_icon !== void 0)
       validateNativeIcon(element.settings.selected_icon, `${path}.settings.selected_icon`, errors);
@@ -2206,7 +2216,7 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
     }
   }
 }
-function validateElementorDocument(document2, mode = document2?.type === "page" ? "page" : "section") {
+function validateElementorDocument(document2, mode = document2?.type === "page" ? "page" : "section", options = {}) {
   const errors = [];
   const warnings = [];
   const expectedType = mode === "page" ? "page" : "container";
@@ -2226,7 +2236,7 @@ function validateElementorDocument(document2, mode = document2?.type === "page" 
     const seenIds = /* @__PURE__ */ new Set();
     const seenCssIds = /* @__PURE__ */ new Set();
     document2.content.forEach((element, index) => {
-      validateElement(element, `content[${index}]`, errors, warnings, seenIds, seenCssIds);
+      validateElement(element, `content[${index}]`, errors, warnings, seenIds, seenCssIds, options);
     });
   }
   if (document2.figmentor !== void 0) {
@@ -3273,7 +3283,7 @@ Fallback do plugin: ${pluginError.message}`
     };
     const mode = $("export-mode").value;
     const document2 = await buildElementorDocument(root, mode, pluginId);
-    const validation = validateElementorDocument(document2, mode);
+    const validation = validateElementorDocument(document2, mode, { requireNativeMedia: false });
     if (!validation.valid) {
       throw new Error(
         `O JSON preparado n\xE3o passou na valida\xE7\xE3o do Elementor:
