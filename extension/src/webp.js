@@ -20,7 +20,12 @@ function encodeCanvas(canvas, quality) {
     return canvas.convertToBlob({ type: "image/webp", quality });
   }
   return new Promise((resolve, reject) => {
-    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("O navegador não conseguiu gerar o WebP.")), "image/webp", quality);
+    canvas.toBlob(
+      (blob) =>
+        blob ? resolve(blob) : reject(new Error("O navegador não conseguiu gerar o WebP.")),
+      "image/webp",
+      quality
+    );
   });
 }
 
@@ -112,4 +117,3 @@ export async function convertPngBlobToWebp(pngBlob, options = {}) {
     reason: `A melhor versão gerada ficou com ${best.bytes} bytes, acima do limite de ${maxBytes} bytes.`
   };
 }
-

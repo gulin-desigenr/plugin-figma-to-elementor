@@ -24,12 +24,19 @@ export function extractWordPressContext(probe = {}) {
     postId: probe.postId ? String(probe.postId) : null,
     nonce: typeof probe.nonce === "string" && probe.nonce ? probe.nonce : null,
     restRoot: normalizeRestRoot(probe.restRoot, origin),
-    elementorNonce: typeof probe.elementorNonce === "string" && probe.elementorNonce ? probe.elementorNonce : null,
-    elementorAjaxUrl: typeof probe.elementorAjaxUrl === "string" && probe.elementorAjaxUrl
-      ? probe.elementorAjaxUrl
-      : origin ? `${origin}/wp-admin/admin-ajax.php` : null,
+    elementorNonce:
+      typeof probe.elementorNonce === "string" && probe.elementorNonce
+        ? probe.elementorNonce
+        : null,
+    elementorAjaxUrl:
+      typeof probe.elementorAjaxUrl === "string" && probe.elementorAjaxUrl
+        ? probe.elementorAjaxUrl
+        : origin
+          ? `${origin}/wp-admin/admin-ajax.php`
+          : null,
     elementorVersion: probe.elementorVersion || null,
-    postStatus: typeof probe.postStatus === "string" ? probe.postStatus : probe.postStatus?.value || null,
+    postStatus:
+      typeof probe.postStatus === "string" ? probe.postStatus : probe.postStatus?.value || null,
     postType: probe.postType || "page",
     postRestBase: probe.postRestBase || (probe.postType === "post" ? "posts" : "pages")
   };
@@ -37,12 +44,16 @@ export function extractWordPressContext(probe = {}) {
 
 export function validateWordPressContext(context, options = {}) {
   if (!context?.isWordPress) throw new Error("A aba ativa não parece ser um painel WordPress.");
-  if (!context.nonce) throw new Error("Não foi possível encontrar o nonce REST do WordPress nesta aba.");
+  if (!context.nonce)
+    throw new Error("Não foi possível encontrar o nonce REST do WordPress nesta aba.");
   if (options.requireElementor !== false) {
     if (!context.isElementor) throw new Error("A aba ativa não parece ser o editor Elementor.");
-    if (!context.postId) throw new Error("Não foi possível identificar o post aberto no Elementor.");
+    if (!context.postId)
+      throw new Error("Não foi possível identificar o post aberto no Elementor.");
     if (!context.elementorNonce || !context.elementorAjaxUrl) {
-      throw new Error("Não foi possível encontrar o endpoint e o nonce de salvamento do Elementor.");
+      throw new Error(
+        "Não foi possível encontrar o endpoint e o nonce de salvamento do Elementor."
+      );
     }
   }
   return context;
@@ -87,24 +98,32 @@ export async function probeWordPressTab(tabId) {
         }
         return null;
       };
-      const parseAssignedObject = (scriptId, variableName) => (
-        parseAssignedText(document.getElementById(scriptId)?.textContent || "", variableName)
-      );
+      const parseAssignedObject = (scriptId, variableName) =>
+        parseAssignedText(document.getElementById(scriptId)?.textContent || "", variableName);
 
-      const common = window.elementorCommonConfig ||
-        parseAssignedObject("elementor-common-js-before", "elementorCommonConfig") || {};
-      const editor = window.ElementorConfig ||
-        parseAssignedObject("elementor-editor-js-before", "ElementorConfig") || {};
-      const wpApiScript = [...document.scripts]
-        .map(script => script.textContent || "")
-        .find(text => text.includes("wpApiSettings =")) || "";
-      const parsedWpApi = window.wpApiSettings || parseAssignedText(wpApiScript, "wpApiSettings") || {};
+      const common =
+        window.elementorCommonConfig ||
+        parseAssignedObject("elementor-common-js-before", "elementorCommonConfig") ||
+        {};
+      const editor =
+        window.ElementorConfig ||
+        parseAssignedObject("elementor-editor-js-before", "ElementorConfig") ||
+        {};
+      const wpApiScript =
+        [...document.scripts]
+          .map((script) => script.textContent || "")
+          .find((text) => text.includes("wpApiSettings =")) || "";
+      const parsedWpApi =
+        window.wpApiSettings || parseAssignedText(wpApiScript, "wpApiSettings") || {};
       const initialDocument = editor.initial_document || editor.document || {};
       const postFromUrl = new URL(location.href).searchParams.get("post");
-      const postType = initialDocument.post_type || String(initialDocument.type || "wp-page").replace(/^wp-/, "");
-      const status = initialDocument.status?.value ||
+      const postType =
+        initialDocument.post_type || String(initialDocument.type || "wp-page").replace(/^wp-/, "");
+      const status =
+        initialDocument.status?.value ||
         initialDocument.settings?.settings?.post_status ||
-        initialDocument.settings?.controls?.post_status?.default || null;
+        initialDocument.settings?.controls?.post_status?.default ||
+        null;
 
       return {
         href: location.href,
@@ -120,7 +139,10 @@ export async function probeWordPressTab(tabId) {
           document.querySelector("#elementor-editor-wrapper")
         ),
         postId: initialDocument.id || postFromUrl || null,
-        nonce: parsedWpApi?.nonce || document.querySelector('meta[name="wp-rest-nonce"]')?.content || null,
+        nonce:
+          parsedWpApi?.nonce ||
+          document.querySelector('meta[name="wp-rest-nonce"]')?.content ||
+          null,
         restRoot: parsedWpApi?.root || `${location.origin}/wp-json/`,
         elementorNonce: common.ajax?.nonce || null,
         elementorAjaxUrl: common.ajax?.url || `${location.origin}/wp-admin/admin-ajax.php`,
@@ -135,24 +157,33 @@ export async function probeWordPressTab(tabId) {
   return extractWordPressContext({ ...(results[0]?.result || {}), tabId });
 }
 
-export function buildElementorSavePayload(document, existingElements = [], mode = "page", existingSettings = {}) {
+export function buildElementorSavePayload(
+  document,
+  existingElements = [],
+  mode = "page",
+  existingSettings = {}
+) {
   const schemaMode = document?.type === "page" ? "page" : "section";
   const validation = validateElementorDocument(document, schemaMode);
   if (!validation.valid) {
-    throw new Error(`O documento não pode ser enviado ao Elementor:\n${validation.errors.join("\n")}`);
+    throw new Error(
+      `O documento não pode ser enviado ao Elementor:\n${validation.errors.join("\n")}`
+    );
   }
 
   const incomingElements = Array.isArray(document?.content) ? document.content : [];
-  const elements = mode === "section"
-    ? [...(Array.isArray(existingElements) ? existingElements : []), ...incomingElements]
-    : incomingElements;
+  const elements =
+    mode === "section"
+      ? [...(Array.isArray(existingElements) ? existingElements : []), ...incomingElements]
+      : incomingElements;
 
   return {
     status: "draft",
     elements,
-    settings: mode === "section"
-      ? { ...(existingSettings || {}), ...(document?.page_settings || {}) }
-      : { ...(document?.page_settings || {}) }
+    settings:
+      mode === "section"
+        ? { ...(existingSettings || {}), ...(document?.page_settings || {}) }
+        : { ...(document?.page_settings || {}) }
   };
 }
 
@@ -186,21 +217,38 @@ async function executeElementorAjax(tabId, context, requestId, action, data = {}
       });
       const text = await response.text();
       let json;
-      try { json = JSON.parse(text); } catch { json = null; }
-      return { ok: response.ok, status: response.status, json, text: json ? "" : text.slice(0, 500) };
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = null;
+      }
+      return {
+        ok: response.ok,
+        status: response.status,
+        json,
+        text: json ? "" : text.slice(0, 500)
+      };
     }
   });
 
   const transport = results[0]?.result;
   if (!transport?.ok || !transport.json) {
-    throw new Error(`O Elementor respondeu ${transport?.status || "sem status"}: ${transport?.text || "resposta inválida"}`);
+    throw new Error(
+      `O Elementor respondeu ${transport?.status || "sem status"}: ${transport?.text || "resposta inválida"}`
+    );
   }
   if (transport.json.success !== true) {
-    throw new Error(transport.json?.data?.message || "O endpoint do Elementor recusou a requisição.");
+    throw new Error(
+      transport.json?.data?.message || "O endpoint do Elementor recusou a requisição."
+    );
   }
   const actionResponse = transport.json?.data?.responses?.[requestId];
   if (!actionResponse || actionResponse.success !== true) {
-    const detail = actionResponse?.data?.message || actionResponse?.data || actionResponse?.message || "A ação do Elementor falhou.";
+    const detail =
+      actionResponse?.data?.message ||
+      actionResponse?.data ||
+      actionResponse?.message ||
+      "A ação do Elementor falhou.";
     throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
   }
   return actionResponse.data;
@@ -230,7 +278,11 @@ function collectElementIds(elements, result = []) {
 
 function collectMediaIds(value, result = []) {
   if (!value || typeof value !== "object") return result;
-  if ((typeof value.id === "number" || /^\d+$/.test(String(value.id || ""))) && typeof value.url === "string" && value.url) {
+  if (
+    (typeof value.id === "number" || /^\d+$/.test(String(value.id || ""))) &&
+    typeof value.url === "string" &&
+    value.url
+  ) {
     result.push(String(value.id));
   }
   for (const child of Object.values(value)) collectMediaIds(child, result);
@@ -240,10 +292,10 @@ function collectMediaIds(value, result = []) {
 export function verifyElementorPersistence(snapshot, expectedElements) {
   const actualIds = new Set(collectElementIds(snapshot?.elements));
   const expectedIds = collectElementIds(expectedElements);
-  const missingElementIds = expectedIds.filter(id => !actualIds.has(id));
+  const missingElementIds = expectedIds.filter((id) => !actualIds.has(id));
   const actualMediaIds = new Set(collectMediaIds(snapshot?.elements));
   const expectedMediaIds = [...new Set(collectMediaIds(expectedElements))];
-  const missingMediaIds = expectedMediaIds.filter(id => !actualMediaIds.has(id));
+  const missingMediaIds = expectedMediaIds.filter((id) => !actualMediaIds.has(id));
   return {
     persistent: missingElementIds.length === 0 && missingMediaIds.length === 0,
     elementCount: actualIds.size,
@@ -269,7 +321,9 @@ export async function insertElementorDocument(tabId, context, document, mode = "
   const schemaMode = document?.type === "page" ? "page" : "section";
   const validation = validateElementorDocument(document, schemaMode);
   if (!validation.valid) {
-    throw new Error(`O JSON final não pode ser enviado ao Elementor:\n${validation.errors.join("\n")}`);
+    throw new Error(
+      `O JSON final não pode ser enviado ao Elementor:\n${validation.errors.join("\n")}`
+    );
   }
 
   const draftResult = await ensureWordPressDraft(tabId, context);
@@ -283,17 +337,22 @@ export async function insertElementorDocument(tabId, context, document, mode = "
     "save_builder",
     payload
   );
-  const savedStatus = typeof saveResponse?.status === "string"
-    ? saveResponse.status
-    : saveResponse?.config?.document?.status?.value;
+  const savedStatus =
+    typeof saveResponse?.status === "string"
+      ? saveResponse.status
+      : saveResponse?.config?.document?.status?.value;
   if (savedStatus !== "draft") {
-    throw new Error(`O servidor não confirmou o status draft (retornou ${savedStatus || "indefinido"}).`);
+    throw new Error(
+      `O servidor não confirmou o status draft (retornou ${savedStatus || "indefinido"}).`
+    );
   }
 
   const after = await readElementorDocument(tabId, context);
   const verification = verifyElementorPersistence(after, payload.elements);
   if (!verification.persistent) {
-    throw new Error(`O conteúdo não foi confirmado após o salvamento. IDs ausentes: ${verification.missingElementIds.join(", ") || "nenhum"}; mídias ausentes: ${verification.missingMediaIds.join(", ") || "nenhuma"}.`);
+    throw new Error(
+      `O conteúdo não foi confirmado após o salvamento. IDs ausentes: ${verification.missingElementIds.join(", ") || "nenhum"}; mídias ausentes: ${verification.missingMediaIds.join(", ") || "nenhuma"}.`
+    );
   }
 
   return {
@@ -312,10 +371,12 @@ export async function ensureWordPressDraft(tabId, context) {
   const results = await chrome.scripting.executeScript({
     target: { tabId },
     world: "MAIN",
-    args: [{
-      url: `${context.restRoot}wp/v2/${context.postRestBase}/${context.postId}`,
-      nonce: context.nonce
-    }],
+    args: [
+      {
+        url: `${context.restRoot}wp/v2/${context.postRestBase}/${context.postId}`,
+        nonce: context.nonce
+      }
+    ],
     func: async ({ url, nonce }) => {
       const response = await fetch(url, {
         method: "POST",
@@ -338,29 +399,40 @@ export async function ensureWordPressDraft(tabId, context) {
   });
   const result = results[0]?.result;
   if (!result?.ok || result.status !== "draft") {
-    throw new Error(result?.message || `O WordPress não confirmou a mudança para rascunho (HTTP ${result?.httpStatus || "indefinido"}, status ${result?.status || "indefinido"}).`);
+    throw new Error(
+      result?.message ||
+        `O WordPress não confirmou a mudança para rascunho (HTTP ${result?.httpStatus || "indefinido"}, status ${result?.status || "indefinido"}).`
+    );
   }
   return result;
 }
 
-export async function reloadAndVerifyElementorDocument(tabId, context, expectedElements, options = {}) {
+export async function reloadAndVerifyElementorDocument(
+  tabId,
+  context,
+  expectedElements,
+  options = {}
+) {
   await chrome.tabs.reload(tabId);
   const timeoutMs = options.timeoutMs || 45000;
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     const tab = await chrome.tabs.get(tabId);
     if (tab.status === "complete") break;
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }
   const tab = await chrome.tabs.get(tabId);
-  if (tab.status !== "complete") throw new Error("A aba do Elementor não terminou de recarregar para a verificação.");
+  if (tab.status !== "complete")
+    throw new Error("A aba do Elementor não terminou de recarregar para a verificação.");
 
   const refreshedContext = await probeWordPressTab(tabId);
   validateWordPressContext(refreshedContext);
   const snapshot = await readElementorDocument(tabId, refreshedContext);
   const verification = verifyElementorPersistence(snapshot, expectedElements);
   if (!verification.persistent) {
-    throw new Error(`O conteúdo não persistiu após recarregar. IDs ausentes: ${verification.missingElementIds.join(", ") || "nenhum"}; mídias ausentes: ${verification.missingMediaIds.join(", ") || "nenhuma"}.`);
+    throw new Error(
+      `O conteúdo não persistiu após recarregar. IDs ausentes: ${verification.missingElementIds.join(", ") || "nenhum"}; mídias ausentes: ${verification.missingMediaIds.join(", ") || "nenhuma"}.`
+    );
   }
   return { verified: true, context: refreshedContext, verification };
 }
@@ -383,22 +455,31 @@ export async function uploadMediaToWordPress(tabId, context, blob, filename, mim
     target: { tabId },
     world: "MAIN",
     args: [{ restRoot: context.restRoot, nonce: context.nonce, filename, mimeType, base64 }],
-    func: async ({ restRoot, nonce, filename: uploadName, mimeType: uploadType, base64: encoded }) => {
+    func: async ({
+      restRoot,
+      nonce,
+      filename: uploadName,
+      mimeType: uploadType,
+      base64: encoded
+    }) => {
       const binary = atob(encoded);
-      const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+      const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
       const response = await fetch(`${restRoot}wp/v2/media`, {
         method: "POST",
         credentials: "include",
         headers: {
           "X-WP-Nonce": nonce,
-          "Content-Disposition": `attachment; filename=\"${uploadName.replace(/\"/g, "")}\"`,
+          "Content-Disposition": `attachment; filename="${uploadName.replace(/"/g, "")}"`,
           "Content-Type": uploadType
         },
         body: bytes
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok || body.code || !body.id) {
-        const detail = body.message || body.code || `resposta sem ID (${Object.keys(body).join(", ") || "vazia"})`;
+        const detail =
+          body.message ||
+          body.code ||
+          `resposta sem ID (${Object.keys(body).join(", ") || "vazia"})`;
         throw new Error(`Upload recusado pelo WordPress: ${detail} [HTTP ${response.status}]`);
       }
 

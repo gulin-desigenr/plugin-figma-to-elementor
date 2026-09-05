@@ -1,12 +1,23 @@
-import { applyChildFillSizing, handleManualTag, mapText, mapImage, mapContainer } from './handlers.js';
-import { hasImageFill } from '../utils/nodes.js';
+import {
+  applyChildFillSizing,
+  handleManualTag,
+  mapText,
+  mapImage,
+  mapContainer
+} from "./handlers.js";
+import { hasImageFill } from "../utils/nodes.js";
 
-export async function traverseNode(node, isRoot, maps = { colorMap: {}, typoMap: {} }, isInsideValidated = false) {
+export async function traverseNode(
+  node,
+  isRoot,
+  maps = { colorMap: {}, typoMap: {} },
+  isInsideValidated = false
+) {
   if (!node || node.visible === false) return null;
 
   const manualTag = node.getPluginData?.("elementor-tag") || null;
 
-  if (manualTag === 'ignore') {
+  if (manualTag === "ignore") {
     return null;
   }
 
@@ -26,13 +37,16 @@ export async function traverseNode(node, isRoot, maps = { colorMap: {}, typoMap:
   if ("children" in node) {
     let childrenJSON = [];
     for (const child of node.children) {
-      const data = applyChildFillSizing(child, await traverseNode(child, false, maps, passValidated));
+      const data = applyChildFillSizing(
+        child,
+        await traverseNode(child, false, maps, passValidated)
+      );
       if (data) {
         if (Array.isArray(data)) childrenJSON = childrenJSON.concat(data);
         else childrenJSON.push(data);
       }
     }
-    childrenJSON = childrenJSON.filter(item => item && typeof item === 'object' && item.elType);
+    childrenJSON = childrenJSON.filter((item) => item && typeof item === "object" && item.elType);
     if (!isRoot && node.layoutMode === "NONE") return childrenJSON;
     return await mapContainer(node, childrenJSON, isRoot, false, maps);
   }

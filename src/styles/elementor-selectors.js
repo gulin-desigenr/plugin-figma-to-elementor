@@ -16,9 +16,18 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
     root: ROOT,
     slots: {
       inner: { selector: ".e-con-inner", label: "container inner" },
-      backgroundVideo: { selector: ".elementor-background-video-container", label: "background video" },
-      backgroundVideoEmbed: { selector: ".elementor-background-video-embed", label: "embedded background video" },
-      backgroundVideoHosted: { selector: ".elementor-background-video-hosted", label: "hosted background video" },
+      backgroundVideo: {
+        selector: ".elementor-background-video-container",
+        label: "background video"
+      },
+      backgroundVideoEmbed: {
+        selector: ".elementor-background-video-embed",
+        label: "embedded background video"
+      },
+      backgroundVideoHosted: {
+        selector: ".elementor-background-video-hosted",
+        label: "hosted background video"
+      },
       shapeTop: { selector: ".elementor-shape.elementor-shape-top", label: "top shape" },
       shapeBottom: { selector: ".elementor-shape.elementor-shape-bottom", label: "bottom shape" },
       overlay: { selector: "::before", label: "container overlay" }
@@ -29,7 +38,14 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
     profile: ELEMENTOR_SELECTOR_PROFILE,
     root: ROOT,
     slots: { title: { selector: ".elementor-heading-title", label: "heading title" } },
-    classes: [".elementor-size-default", ".elementor-size-small", ".elementor-size-medium", ".elementor-size-large", ".elementor-size-xl", ".elementor-size-xxl"]
+    classes: [
+      ".elementor-size-default",
+      ".elementor-size-small",
+      ".elementor-size-medium",
+      ".elementor-size-large",
+      ".elementor-size-xl",
+      ".elementor-size-xxl"
+    ]
   },
   "text-editor": {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -40,7 +56,11 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       dropCap: { selector: ".elementor-drop-cap", label: "drop cap" },
       dropCapLetter: { selector: ".elementor-drop-cap-letter", label: "drop cap letter" }
     },
-    classes: [".elementor-drop-cap-view-default", ".elementor-drop-cap-view-stacked", ".elementor-drop-cap-view-framed"]
+    classes: [
+      ".elementor-drop-cap-view-default",
+      ".elementor-drop-cap-view-stacked",
+      ".elementor-drop-cap-view-framed"
+    ]
   },
   image: {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -48,7 +68,10 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
     slots: {
       image: { selector: "img", label: "image" },
       figure: { selector: "figure.wp-caption", label: "caption figure" },
-      caption: { selector: "figcaption.widget-image-caption.wp-caption-text", label: "image caption" }
+      caption: {
+        selector: "figcaption.widget-image-caption.wp-caption-text",
+        label: "image caption"
+      }
     },
     classes: [".elementor-clickable"]
   },
@@ -63,7 +86,15 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       title: { selector: ".elementor-image-box-title", label: "image box title" },
       description: { selector: ".elementor-image-box-description", label: "image box description" }
     },
-    classes: [".elementor-position-top", ".elementor-position-left", ".elementor-position-right", ".elementor-position-bottom", ".elementor-vertical-align-top", ".elementor-vertical-align-middle", ".elementor-vertical-align-bottom"]
+    classes: [
+      ".elementor-position-top",
+      ".elementor-position-left",
+      ".elementor-position-right",
+      ".elementor-position-bottom",
+      ".elementor-vertical-align-top",
+      ".elementor-vertical-align-middle",
+      ".elementor-vertical-align-bottom"
+    ]
   },
   "icon-box": {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -76,7 +107,16 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       title: { selector: ".elementor-icon-box-title", label: "icon box title" },
       description: { selector: ".elementor-icon-box-description", label: "icon box description" }
     },
-    classes: [".elementor-view-default", ".elementor-view-stacked", ".elementor-view-framed", ".elementor-shape-circle", ".elementor-shape-square", ".elementor-animation-grow", ".elementor-animation-shrink", ".elementor-animation-pulse"]
+    classes: [
+      ".elementor-view-default",
+      ".elementor-view-stacked",
+      ".elementor-view-framed",
+      ".elementor-shape-circle",
+      ".elementor-shape-square",
+      ".elementor-animation-grow",
+      ".elementor-animation-shrink",
+      ".elementor-animation-pulse"
+    ]
   },
   "icon-list": {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -88,7 +128,11 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       icon: { selector: ".elementor-icon-list-icon", label: "icon list icon" },
       text: { selector: ".elementor-icon-list-text", label: "icon list text" }
     },
-    classes: [".elementor-inline-items", ".elementor-icon-list--layout-traditional", ".elementor-icon-list--layout-inline"]
+    classes: [
+      ".elementor-inline-items",
+      ".elementor-icon-list--layout-traditional",
+      ".elementor-icon-list--layout-inline"
+    ]
   },
   button: {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -102,7 +146,17 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       text: { selector: ".elementor-button-text", label: "button text" }
     },
     states: { hover: ":hover", focus: ":focus" },
-    classes: [".elementor-size-xs", ".elementor-size-sm", ".elementor-size-md", ".elementor-size-lg", ".elementor-size-xl", ".elementor-size-xxl", ".elementor-animation-grow", ".elementor-animation-shrink", ".elementor-animation-pulse"]
+    classes: [
+      ".elementor-size-xs",
+      ".elementor-size-sm",
+      ".elementor-size-md",
+      ".elementor-size-lg",
+      ".elementor-size-xl",
+      ".elementor-size-xxl",
+      ".elementor-animation-grow",
+      ".elementor-animation-shrink",
+      ".elementor-animation-pulse"
+    ]
   },
   accordion: {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -127,9 +181,18 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       accordion: { selector: ".e-n-accordion", label: "nested accordion" },
       item: { selector: ".e-n-accordion-item", label: "nested accordion item" },
       title: { selector: ".e-n-accordion-item-title", label: "nested accordion title" },
-      titleHeader: { selector: ".e-n-accordion-item-title-header", label: "nested accordion title header" },
-      titleText: { selector: ".e-n-accordion-item-title-text", label: "nested accordion title text" },
-      titleIcon: { selector: ".e-n-accordion-item-title-icon", label: "nested accordion title icon" }
+      titleHeader: {
+        selector: ".e-n-accordion-item-title-header",
+        label: "nested accordion title header"
+      },
+      titleText: {
+        selector: ".e-n-accordion-item-title-text",
+        label: "nested accordion title text"
+      },
+      titleIcon: {
+        selector: ".e-n-accordion-item-title-icon",
+        label: "nested accordion title icon"
+      }
     },
     states: { opened: ".e-opened", closed: ".e-closed", nativeOpened: "[open]" },
     itemTarget: ".e-n-accordion-item:nth-of-type({index})"
@@ -150,14 +213,18 @@ export const ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       next: { selector: ".elementor-swiper-button-next", label: "next navigation" },
       pagination: { selector: ".swiper-pagination", label: "carousel pagination" },
       bullet: { selector: ".swiper-pagination-bullet", label: "carousel pagination bullet" },
-      activeBullet: { selector: ".swiper-pagination-bullet-active", label: "active pagination bullet" }
+      activeBullet: {
+        selector: ".swiper-pagination-bullet-active",
+        label: "active pagination bullet"
+      }
     },
     itemTarget: ".swiper-slide:nth-of-type({index})"
   },
   "nested-carousel": {
     profile: ELEMENTOR_SELECTOR_PROFILE,
     experimental: true,
-    reason: "O widget nested-carousel não está presente no core Elementor verificado; exige perfil alvo validado.",
+    reason:
+      "O widget nested-carousel não está presente no core Elementor verificado; exige perfil alvo validado.",
     root: ROOT,
     slots: {}
   }
@@ -177,7 +244,11 @@ export function scopeSelector(cssId, relativeSelector = "") {
   if (!cssId || typeof cssId !== "string" || !CSS_ID_PATTERN.test(cssId)) return null;
   const root = `#${cssId}`;
   if (!relativeSelector) return root;
-  if (relativeSelector.startsWith("::") || relativeSelector.startsWith(":") || relativeSelector.startsWith("[")) {
+  if (
+    relativeSelector.startsWith("::") ||
+    relativeSelector.startsWith(":") ||
+    relativeSelector.startsWith("[")
+  ) {
     return `${root}${relativeSelector}`;
   }
   return `${root} ${relativeSelector}`;

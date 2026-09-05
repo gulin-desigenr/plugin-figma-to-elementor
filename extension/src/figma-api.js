@@ -21,7 +21,7 @@ export function parseFigmaFileUrl(value) {
   }
 
   const segments = url.pathname.split("/").filter(Boolean);
-  const fileIndex = segments.findIndex(segment => ["design", "file", "proto"].includes(segment));
+  const fileIndex = segments.findIndex((segment) => ["design", "file", "proto"].includes(segment));
   const fileKey = fileIndex >= 0 ? segments[fileIndex + 1] : null;
 
   if (!fileKey) {
@@ -29,9 +29,7 @@ export function parseFigmaFileUrl(value) {
   }
 
   const rawNodeId = url.searchParams.get("node-id");
-  const nodeId = rawNodeId
-    ? rawNodeId.replace(/^(.+)-(\d+)$/, "$1:$2")
-    : null;
+  const nodeId = rawNodeId ? rawNodeId.replace(/^(.+)-(\d+)$/, "$1:$2") : null;
 
   return {
     fileKey,
@@ -66,7 +64,9 @@ async function figmaRequest(token, path) {
 
     if (response.status === 403) {
       if (/scope|permission|permiss/i.test(detail)) {
-        throw new Error("O token não tem a permissão necessária. Gere um novo token com file_content:read e selections:read.");
+        throw new Error(
+          "O token não tem a permissão necessária. Gere um novo token com file_content:read e selections:read."
+        );
       }
       throw new Error("O token do Figma não tem acesso a este arquivo ou a esta operação.");
     }
@@ -109,11 +109,13 @@ function selectionCandidates(payload) {
 function normalizeCurrentSelection(candidate, expectedFileKey) {
   if (!candidate || typeof candidate !== "object") return null;
 
-  const fileKey = getSelectionField(candidate, ["fileKey", "file_key"])
-    || getSelectionField(candidate.file, ["key", "fileKey", "file_key"])
-    || getSelectionField(candidate.file?.document, ["key", "fileKey", "file_key"]);
-  const nodeId = getSelectionField(candidate, ["nodeId", "node_id"])
-    || getSelectionField(candidate.node, ["id", "nodeId", "node_id"]);
+  const fileKey =
+    getSelectionField(candidate, ["fileKey", "file_key"]) ||
+    getSelectionField(candidate.file, ["key", "fileKey", "file_key"]) ||
+    getSelectionField(candidate.file?.document, ["key", "fileKey", "file_key"]);
+  const nodeId =
+    getSelectionField(candidate, ["nodeId", "node_id"]) ||
+    getSelectionField(candidate.node, ["id", "nodeId", "node_id"]);
 
   if (!nodeId) return null;
 
@@ -133,15 +135,21 @@ function normalizeCurrentSelection(candidate, expectedFileKey) {
 export async function readCurrentSelection(token, fileKey) {
   const response = await figmaRequest(token, "/selections");
   const candidates = selectionCandidates(response)
-    .map(candidate => normalizeCurrentSelection(candidate, fileKey))
+    .map((candidate) => normalizeCurrentSelection(candidate, fileKey))
     .filter(Boolean);
 
-  const selection = candidates.find(candidate => !candidate.fileKey || candidate.fileKey === fileKey);
+  const selection = candidates.find(
+    (candidate) => !candidate.fileKey || candidate.fileKey === fileKey
+  );
   if (!selection) {
     if (candidates.length > 0) {
-      throw new Error("A seleção atual pertence a outro arquivo Figma. Selecione um frame neste arquivo e tente novamente.");
+      throw new Error(
+        "A seleção atual pertence a outro arquivo Figma. Selecione um frame neste arquivo e tente novamente."
+      );
     }
-    throw new Error("A API do Figma não retornou um frame selecionado. Selecione um frame no Figma e tente novamente.");
+    throw new Error(
+      "A API do Figma não retornou um frame selecionado. Selecione um frame no Figma e tente novamente."
+    );
   }
 
   return selection;
@@ -203,12 +211,7 @@ export async function readRegisteredSelection(
   };
 }
 
-export async function readNode(
-  token,
-  fileKey,
-  nodeId,
-  dataNamespace = DEFAULT_FIGMENTOR_NAMESPACE
-) {
+export async function readNode(token, fileKey, nodeId) {
   if (!nodeId) throw new Error("O nodeId do frame registrado não está disponível.");
 
   const query = new URLSearchParams({

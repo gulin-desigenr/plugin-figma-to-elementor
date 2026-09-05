@@ -38,7 +38,7 @@ function assetMetadata(node, kind, nativeField) {
 
 function descendants(node, predicate) {
   const result = [];
-  walkNodes(node, child => {
+  walkNodes(node, (child) => {
     if (child !== node && predicate(child)) result.push(child);
   });
   return result;
@@ -49,8 +49,8 @@ function nativeImage() {
 }
 
 function bindIcon(settings, source, pluginId) {
-  const vectors = descendants(source, node => VECTOR_TYPES.has(node.type));
-  const explicit = vectors.find(node => getNodeRole(node, pluginId) === "icon");
+  const vectors = descendants(source, (node) => VECTOR_TYPES.has(node.type));
+  const explicit = vectors.find((node) => getNodeRole(node, pluginId) === "icon");
   const iconNode = explicit || vectors[0];
   if (!iconNode) return;
 
@@ -64,8 +64,8 @@ function bindIcon(settings, source, pluginId) {
   settings.figmentor_assets.selected_icon = assetMetadata(iconNode, "icon", "selected_icon");
 }
 
-function bindIconList(settings, source, pluginId) {
-  const vectors = descendants(source, node => VECTOR_TYPES.has(node.type));
+function bindIconList(settings, source) {
+  const vectors = descendants(source, (node) => VECTOR_TYPES.has(node.type));
   if (!Array.isArray(settings.icon_list) || !vectors.length) return;
 
   settings.figmentor_assets.icon_list = [];
@@ -106,7 +106,11 @@ function bindElementAssets(element, sourceMap, pluginId, sidecar) {
       settings.background_position = settings.background_position || "center center";
       settings.background_repeat = settings.background_repeat || "no-repeat";
       settings.background_size = settings.background_size || "cover";
-      settings.figmentor_assets.background_image = assetMetadata(source, "background", "background_image");
+      settings.figmentor_assets.background_image = assetMetadata(
+        source,
+        "background",
+        "background_image"
+      );
     }
 
     if (element.widgetType === "image-carousel" && Array.isArray(settings.carousel)) {
@@ -119,7 +123,7 @@ function bindElementAssets(element, sourceMap, pluginId, sidecar) {
     }
 
     if (["icon-box", "button"].includes(element.widgetType)) bindIcon(settings, source, pluginId);
-    if (element.widgetType === "icon-list") bindIconList(settings, source, pluginId);
+    if (element.widgetType === "icon-list") bindIconList(settings, source);
 
     sidecar[element.id] = {
       sourceNodeId: settings.figmentor_source_node_id,
@@ -132,7 +136,9 @@ function bindElementAssets(element, sourceMap, pluginId, sidecar) {
     delete settings.figmentor_assets;
   }
 
-  (element?.elements || []).forEach(child => bindElementAssets(child, sourceMap, pluginId, sidecar));
+  (element?.elements || []).forEach((child) =>
+    bindElementAssets(child, sourceMap, pluginId, sidecar)
+  );
 }
 
 function sanitizeUnsupportedPositioning(elements) {
@@ -148,7 +154,8 @@ function sanitizeUnsupportedPositioning(elements) {
         "_z_index",
         "offset_x",
         "offset_y"
-      ]) delete element.settings[key];
+      ])
+        delete element.settings[key];
     }
     sanitizeUnsupportedPositioning(element?.elements);
   }
@@ -178,20 +185,23 @@ export async function buildElementorDocument(root, mode, pluginId) {
   const content = Array.isArray(mapped) ? mapped : mapped ? [mapped] : [];
   sanitizeUnsupportedPositioning(content);
 
-  const document = normalizeElementorDocument({
-    version: "0.4",
-    title: `${type === "page" ? "Page" : "Container"} Export - ${root.name || root.id}`,
-    type,
-    ...(type === "page" ? { page_settings: {} } : {}),
-    content
-  }, mode);
+  const document = normalizeElementorDocument(
+    {
+      version: "0.4",
+      title: `${type === "page" ? "Page" : "Container"} Export - ${root.name || root.id}`,
+      type,
+      ...(type === "page" ? { page_settings: {} } : {}),
+      content
+    },
+    mode
+  );
 
   const sourceMap = new Map();
-  walkNodes(root, node => sourceMap.set(node.id, node));
+  walkNodes(root, (node) => sourceMap.set(node.id, node));
   const sidecar = {};
   const effectsSummary = summarizeEffects(document.content);
   const effects = collectEffectMetadata(document.content);
-  document.content.forEach(element => bindElementAssets(element, sourceMap, pluginId, sidecar));
+  document.content.forEach((element) => bindElementAssets(element, sourceMap, pluginId, sidecar));
   document.figmentor = {
     version: "0.3",
     selectorProfile: ELEMENTOR_SELECTOR_PROFILE,
@@ -242,8 +252,10 @@ function patchElement(element, assetMap, sidecar) {
       metadata.background_image = patchMetadata(metadata.background_image, assetMap);
     }
     if (Array.isArray(metadata.carousel)) {
-      metadata.carousel = metadata.carousel.map(item => patchMetadata(item, assetMap));
-      settings.carousel = metadata.carousel.map(item => uploadedMedia(assetMap.get(item.assetRef)));
+      metadata.carousel = metadata.carousel.map((item) => patchMetadata(item, assetMap));
+      settings.carousel = metadata.carousel.map((item) =>
+        uploadedMedia(assetMap.get(item.assetRef))
+      );
     }
     if (metadata.selected_icon) {
       const asset = assetMap.get(metadata.selected_icon.assetRef);
@@ -251,7 +263,7 @@ function patchElement(element, assetMap, sidecar) {
       metadata.selected_icon = patchMetadata(metadata.selected_icon, assetMap);
     }
     if (Array.isArray(metadata.icon_list) && Array.isArray(settings.icon_list)) {
-      metadata.icon_list = metadata.icon_list.map(item => patchMetadata(item, assetMap));
+      metadata.icon_list = metadata.icon_list.map((item) => patchMetadata(item, assetMap));
       for (const item of metadata.icon_list) {
         const asset = assetMap.get(item.assetRef);
         if (!settings.icon_list[item.index]) continue;
@@ -260,13 +272,13 @@ function patchElement(element, assetMap, sidecar) {
     }
   }
 
-  (element?.elements || []).forEach(child => patchElement(child, assetMap, sidecar));
+  (element?.elements || []).forEach((child) => patchElement(child, assetMap, sidecar));
 }
 
 export function patchElementorAssets(document, manifest) {
   const patched = JSON.parse(JSON.stringify(document));
-  const assetMap = new Map((manifest?.assets || []).map(asset => [asset.assetRef, asset]));
+  const assetMap = new Map((manifest?.assets || []).map((asset) => [asset.assetRef, asset]));
   const sidecar = patched.figmentor?.elements || {};
-  patched.content?.forEach(element => patchElement(element, assetMap, sidecar));
+  patched.content?.forEach((element) => patchElement(element, assetMap, sidecar));
   return patched;
 }

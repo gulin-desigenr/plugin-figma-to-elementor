@@ -10,13 +10,19 @@
     "build:extension": "esbuild extension/popup.js --bundle --format=esm --outfile=extension/dist/popup.js",
     "build": "npm run build:figma && npm run build:extension",
     "test": "node --test",
-    "check": "npm run build && npm test"
+    "check": "npm run build && npm test",
+    "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.js\" \"extension/**/*.js\" \"!extension/dist/**\" \"tests/**/*.js\" \"*.js\""
   },
   "keywords": [],
   "author": "Pedro Gulin",
   "license": "UNLICENSED",
   "devDependencies": {
-    "esbuild": "^0.27.4"
-  },
-  "dependencies": {}
+    "@eslint/js": "^9.39.5",
+    "esbuild": "^0.27.4",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^9.1.2",
+    "globals": "^15.15.0",
+    "prettier": "^3.9.6"
+  }
 }

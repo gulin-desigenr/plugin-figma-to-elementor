@@ -1,6 +1,6 @@
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch(error => console.error("Não foi possível habilitar o painel lateral.", error));
+  .catch((error) => console.error("Não foi possível habilitar o painel lateral.", error));
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "ping") {

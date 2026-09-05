@@ -1,10 +1,22 @@
-import { traverseNode } from './traverse.js';
-import { extractBorders, extractShadows, extractTextStyle, extractBackground } from '../styles/index.js';
-import { figmaColorToRGBA } from '../utils/colors.js';
-import { sanitizeCssId } from '../utils/cssId.js';
-import { getIterableNodes, getLayoutDirection, getTextAlign, hasImageFill, getNodeRole, isFigmaMixed } from '../utils/nodes.js';
-import { applyTypographySettings } from '../utils/typography.js';
-import { applyAdvancedEffects, extractAdvancedEffects } from '../styles/effects.js';
+import { traverseNode } from "./traverse.js";
+import {
+  extractBorders,
+  extractShadows,
+  extractTextStyle,
+  extractBackground
+} from "../styles/index.js";
+import { figmaColorToRGBA } from "../utils/colors.js";
+import { sanitizeCssId } from "../utils/cssId.js";
+import {
+  getIterableNodes,
+  getLayoutDirection,
+  getTextAlign,
+  hasImageFill,
+  getNodeRole,
+  isFigmaMixed
+} from "../utils/nodes.js";
+import { applyTypographySettings } from "../utils/typography.js";
+import { applyAdvancedEffects, extractAdvancedEffects } from "../styles/effects.js";
 
 function applyOpacitySetting(settings, node) {
   if (node.opacity !== undefined && node.opacity < 1) {
@@ -15,7 +27,8 @@ function applyOpacitySetting(settings, node) {
 function applySourceMetadata(settings, node, tag = null) {
   if (!settings || !node?.id) return settings;
   if (!settings.css_id) {
-    settings.css_id = sanitizeCssId(`figmentor-${tag || "element"}-${node.id}`) || "figmentor-element";
+    settings.css_id =
+      sanitizeCssId(`figmentor-${tag || "element"}-${node.id}`) || "figmentor-element";
   }
   if (!node.__figmentorRest) return settings;
   settings.figmentor_source_node_id = node.id;
@@ -26,12 +39,19 @@ function applySourceMetadata(settings, node, tag = null) {
 
 function applyNodeEffects(settings, node, tag) {
   if (!settings || !node || !tag) return settings;
-  const widgetType = tag === "accordeon" ? "nested-accordion" : tag === "container-carousel" ? "nested-carousel" : tag;
+  const widgetType =
+    tag === "accordeon"
+      ? "nested-accordion"
+      : tag === "container-carousel"
+        ? "nested-carousel"
+        : tag;
   return applyAdvancedEffects(settings, extractAdvancedEffects(node, widgetType, settings.css_id));
 }
 
 function getFontAwesomeName(node) {
-  const value = String(node?.name || "").replace(/^\[icon\]\s*/i, "").trim();
+  const value = String(node?.name || "")
+    .replace(/^\[icon\]\s*/i, "")
+    .trim();
   const match = value.match(/^(fas|far|fab)\s+fa-[a-z0-9-]+/i);
   return match ? match[0].toLowerCase() : null;
 }
@@ -39,7 +59,7 @@ function getFontAwesomeName(node) {
 function getTextNodesFromNode(node) {
   if (!node) return [];
   if (node.type === "TEXT") return [node];
-  if ("findAll" in node) return node.findAll(child => child.type === "TEXT");
+  if ("findAll" in node) return node.findAll((child) => child.type === "TEXT");
   return [];
 }
 
@@ -55,23 +75,26 @@ async function buildAccordionItems(node, maps) {
       continue;
     }
 
-    const explicitTitleNode = childTextNodes.find(textNode => getNodeRole(textNode) === "title_text");
-    const explicitDescriptionNode = childTextNodes.find(textNode => getNodeRole(textNode) === "description_text");
+    const explicitTitleNode = childTextNodes.find(
+      (textNode) => getNodeRole(textNode) === "title_text"
+    );
+    const explicitDescriptionNode = childTextNodes.find(
+      (textNode) => getNodeRole(textNode) === "description_text"
+    );
 
     const fallbackTitleNode = explicitTitleNode || childTextNodes[0];
     const fallbackContentNodes = explicitDescriptionNode
       ? [explicitDescriptionNode]
-      : childTextNodes.filter(textNode => textNode.id !== fallbackTitleNode.id);
+      : childTextNodes.filter((textNode) => textNode.id !== fallbackTitleNode.id);
 
-    const tabTitle = (
-      fallbackTitleNode &&
-      fallbackTitleNode.characters &&
-      fallbackTitleNode.characters.trim()
-    ) || `Item ${items.length + 1}`;
-    const tabContent = fallbackContentNodes
-      .map(textNode => textNode.characters.trim())
-      .filter(Boolean)
-      .join("<br>") || "Conteúdo do item";
+    const tabTitle =
+      (fallbackTitleNode && fallbackTitleNode.characters && fallbackTitleNode.characters.trim()) ||
+      `Item ${items.length + 1}`;
+    const tabContent =
+      fallbackContentNodes
+        .map((textNode) => textNode.characters.trim())
+        .filter(Boolean)
+        .join("<br>") || "Conteúdo do item";
 
     if (!titleStyle && fallbackTitleNode) {
       titleStyle = await extractTextStyle(fallbackTitleNode, maps);
@@ -110,49 +133,55 @@ async function buildAccordeonItems(node, maps) {
       continue;
     }
 
-    const explicitTitleNode = childTextNodes.find(textNode => getNodeRole(textNode) === "title_text");
-    const explicitDescriptionNode = childTextNodes.find(textNode => getNodeRole(textNode) === "description_text");
+    const explicitTitleNode = childTextNodes.find(
+      (textNode) => getNodeRole(textNode) === "title_text"
+    );
 
     const fallbackTitleNode = explicitTitleNode || childTextNodes[0];
-    const directChildren = "children" in child ? child.children.filter(item => item.visible) : [];
+    const directChildren = "children" in child ? child.children.filter((item) => item.visible) : [];
 
     let explicitContentNode = null;
     if ("findAll" in child) {
-      explicitContentNode = child.findAll(nodeItem => (
-        nodeItem.visible &&
-        nodeItem.id !== fallbackTitleNode.id &&
-        getNodeRole(nodeItem) === "description_text"
-      ))[0] || null;
+      explicitContentNode =
+        child.findAll(
+          (nodeItem) =>
+            nodeItem.visible &&
+            nodeItem.id !== fallbackTitleNode.id &&
+            getNodeRole(nodeItem) === "description_text"
+        )[0] || null;
     }
 
     let titleBranchNode = null;
     if (directChildren.length > 0 && fallbackTitleNode) {
-      titleBranchNode = directChildren.find(nodeItem => (
-        nodeItem.id === fallbackTitleNode.id ||
-        ("findOne" in nodeItem && nodeItem.findOne(descendant => descendant.id === fallbackTitleNode.id))
-      )) || null;
+      titleBranchNode =
+        directChildren.find(
+          (nodeItem) =>
+            nodeItem.id === fallbackTitleNode.id ||
+            ("findOne" in nodeItem &&
+              nodeItem.findOne((descendant) => descendant.id === fallbackTitleNode.id))
+        ) || null;
     }
 
     let contentNodes = [];
     if (explicitContentNode) {
       if ("children" in explicitContentNode && explicitContentNode.children.length > 0) {
-        contentNodes = explicitContentNode.children.filter(item => item.visible);
+        contentNodes = explicitContentNode.children.filter((item) => item.visible);
       } else {
         contentNodes = [explicitContentNode];
       }
     } else if (directChildren.length > 0) {
-      contentNodes = directChildren.filter(nodeItem => nodeItem.id !== (titleBranchNode && titleBranchNode.id));
+      contentNodes = directChildren.filter(
+        (nodeItem) => nodeItem.id !== (titleBranchNode && titleBranchNode.id)
+      );
     }
 
     if (contentNodes.length === 0) {
-      contentNodes = childTextNodes.filter(textNode => textNode.id !== fallbackTitleNode.id);
+      contentNodes = childTextNodes.filter((textNode) => textNode.id !== fallbackTitleNode.id);
     }
 
-    const tabTitle = (
-      fallbackTitleNode &&
-      fallbackTitleNode.characters &&
-      fallbackTitleNode.characters.trim()
-    ) || `Accordion #${items.length + 1}`;
+    const tabTitle =
+      (fallbackTitleNode && fallbackTitleNode.characters && fallbackTitleNode.characters.trim()) ||
+      `Accordion #${items.length + 1}`;
 
     if (!titleStyle && fallbackTitleNode) {
       titleStyle = await extractTextStyle(fallbackTitleNode, maps);
@@ -217,10 +246,16 @@ export function applyChildFillSizing(childNode, childResult) {
 }
 
 export async function handleManualTag(node, tag, isRoot, maps) {
-  if (tag === 'container' || tag === 'container-full' || tag === 'page-wrapper' || tag === 'image-background' || tag === 'background-image') {
+  if (
+    tag === "container" ||
+    tag === "container-full" ||
+    tag === "page-wrapper" ||
+    tag === "image-background" ||
+    tag === "background-image"
+  ) {
     let children = [];
-    const childIsRoot = (tag === 'page-wrapper');
-    
+    const childIsRoot = tag === "page-wrapper";
+
     if ("children" in node) {
       for (const child of node.children) {
         const res = applyChildFillSizing(child, await traverseNode(child, childIsRoot, maps, true));
@@ -230,9 +265,9 @@ export async function handleManualTag(node, tag, isRoot, maps) {
         }
       }
     }
-    
+
     // Checkpoint 6: Pseudo-Wrapper logic
-    if (tag === 'page-wrapper') {
+    if (tag === "page-wrapper") {
       return children;
     }
 
@@ -240,7 +275,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       node,
       children,
       isRoot,
-      tag === 'container-full' || tag === 'image-background' || tag === 'background-image',
+      tag === "container-full" || tag === "image-background" || tag === "background-image",
       maps,
       true
     );
@@ -253,14 +288,14 @@ export async function handleManualTag(node, tag, isRoot, maps) {
 
   let textNodes = [];
   if (node.type === "TEXT") textNodes.push(node);
-  else if ("findAll" in node) textNodes = node.findAll(n => n.type === "TEXT");
+  else if ("findAll" in node) textNodes = node.findAll((n) => n.type === "TEXT");
 
-  const texts = textNodes.map(t => t.characters);
-  const styles = await Promise.all(textNodes.map(t => extractTextStyle(t, maps)));
+  const texts = textNodes.map((t) => t.characters);
+  const styles = await Promise.all(textNodes.map((t) => extractTextStyle(t, maps)));
   const mainStyle = styles.length > 0 ? styles[0] : { color: "", size: 16, weight: "400" };
   const secStyle = styles.length > 1 ? styles[1] : mainStyle;
 
-  let settings = {};
+  const settings = {};
   let bgSettings = {};
 
   if (node.type !== "TEXT") {
@@ -268,7 +303,12 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     if (bgSettings.background_background) {
       settings._background_background = bgSettings.background_background;
       settings._background_color = bgSettings.background_color;
-      if (bgSettings.__globals__) settings.__globals__ = Object.assign({}, settings.__globals__ || {}, bgSettings.__globals__);
+      if (bgSettings.__globals__)
+        settings.__globals__ = Object.assign(
+          {},
+          settings.__globals__ || {},
+          bgSettings.__globals__
+        );
     }
   }
 
@@ -276,11 +316,11 @@ export async function handleManualTag(node, tag, isRoot, maps) {
   extractShadows(node, settings, true, tag);
 
   if (tag === "image-box") {
-    let titleNode = textNodes.find(n => getNodeRole(n) === 'title_text');
-    let descNode = textNodes.find(n => getNodeRole(n) === 'description_text');
+    const titleNode = textNodes.find((n) => getNodeRole(n) === "title_text");
+    const descNode = textNodes.find((n) => getNodeRole(n) === "description_text");
 
-    settings.title_text = titleNode ? titleNode.characters : (texts[0] || "Título");
-    let tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
+    settings.title_text = titleNode ? titleNode.characters : texts[0] || "Título";
+    const tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
     if (tStyle.color) settings.title_color = tStyle.color;
     if (tStyle.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};
@@ -293,7 +333,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     applyTypographySettings(settings, tStyle, "title_typography");
 
     settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
-    let dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
+    const dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
     if (dStyle.color) settings.description_color = dStyle.color;
     if (dStyle.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};
@@ -307,15 +347,14 @@ export async function handleManualTag(node, tag, isRoot, maps) {
 
     settings.text_align = getTextAlign(node);
     settings.image = { url: "", id: "" };
-  }
-  else if (tag === "icon-box") {
-    let titleNode = textNodes.find(n => getNodeRole(n) === 'title_text');
-    let descNode = textNodes.find(n => getNodeRole(n) === 'description_text');
+  } else if (tag === "icon-box") {
+    const titleNode = textNodes.find((n) => getNodeRole(n) === "title_text");
+    const descNode = textNodes.find((n) => getNodeRole(n) === "description_text");
 
-    settings.title_text = titleNode ? titleNode.characters : (texts[0] || "Título do Ícone");
+    settings.title_text = titleNode ? titleNode.characters : texts[0] || "Título do Ícone";
     settings.title = settings.title_text;
 
-    let tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
+    const tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
     if (tStyle.color) settings.title_color = tStyle.color;
     if (tStyle.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};
@@ -330,7 +369,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
     settings.description = settings.description_text;
 
-    let dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
+    const dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
     if (dStyle.color) settings.description_color = dStyle.color;
     if (dStyle.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};
@@ -347,9 +386,10 @@ export async function handleManualTag(node, tag, isRoot, maps) {
 
     let vectorNodes = [];
     if (node.type === "VECTOR" || node.type === "BOOLEAN_OPERATION") vectorNodes.push(node);
-    else if ("findAll" in node) vectorNodes = node.findAll(n => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
+    else if ("findAll" in node)
+      vectorNodes = node.findAll((n) => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
 
-    let specificIconVector = vectorNodes.find(n => getNodeRole(n) === 'icon');
+    const specificIconVector = vectorNodes.find((n) => getNodeRole(n) === "icon");
     if (specificIconVector) vectorNodes = [specificIconVector];
 
     if (vectorNodes.length > 0) {
@@ -363,15 +403,17 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       }
     }
 
-    settings.selected_icon = { value: iconName, library: iconName.startsWith("fab") ? "fa-brands" : "fa-solid" };
+    settings.selected_icon = {
+      value: iconName,
+      library: iconName.startsWith("fab") ? "fa-brands" : "fa-solid"
+    };
     if (iconColor) settings.primary_color = iconColor;
     settings.text_align = getTextAlign(node);
-  }
-  else if (tag === "icon-list") {
+  } else if (tag === "icon-list") {
     let listItems = texts;
     if (listItems.length === 0) listItems = ["Item Lista 1", "Item Lista 2", "Item Lista 3"];
 
-    settings.icon_list = listItems.map(t => ({
+    settings.icon_list = listItems.map((t) => ({
       text: t,
       selected_icon: { value: "fas fa-check", library: "fa-solid" }
     }));
@@ -390,8 +432,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       settings.__globals__.text_typography_typography = `globals/typography?id=${mainStyle.globalTypoId}`;
     }
     applyTypographySettings(settings, mainStyle, "text_typography");
-  }
-  else if (tag === "heading") {
+  } else if (tag === "heading") {
     settings.align = getTextAlign(node);
     settings.title = texts.join(" ");
     if (mainStyle.color) settings.title_color = mainStyle.color;
@@ -404,8 +445,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       settings.__globals__.typography_typography = `globals/typography?id=${mainStyle.globalTypoId}`;
     }
     applyTypographySettings(settings, mainStyle, "typography");
-  }
-  else if (tag === "text-editor") {
+  } else if (tag === "text-editor") {
     settings.align = getTextAlign(node);
     settings.editor = texts.join("<br>");
     if (mainStyle.color) settings.text_color = mainStyle.color;
@@ -418,9 +458,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       settings.__globals__.typography_typography = `globals/typography?id=${mainStyle.globalTypoId}`;
     }
     applyTypographySettings(settings, mainStyle, "typography");
-  }
-
-  else if (tag === "button") {
+  } else if (tag === "button") {
     try {
       settings.text = texts.join(" ") || "Clique Aqui";
 
@@ -447,9 +485,9 @@ export async function handleManualTag(node, tag, isRoot, maps) {
         delete settings._background_background;
       }
 
-      let paddingTop = node.paddingTop || 0;
-      let paddingBottom = node.paddingBottom || 0;
-      let sumPadding = paddingTop + paddingBottom;
+      const paddingTop = node.paddingTop || 0;
+      const paddingBottom = node.paddingBottom || 0;
+      const sumPadding = paddingTop + paddingBottom;
       if (sumPadding >= 40) settings.size = "lg";
       else if (sumPadding >= 20) settings.size = "md";
       else settings.size = "sm";
@@ -463,17 +501,24 @@ export async function handleManualTag(node, tag, isRoot, maps) {
 
       let vectorNodes = [];
       if ("findAll" in node) {
-        vectorNodes = node.findAll(n => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
+        vectorNodes = node.findAll((n) => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
       }
 
-      let specificIconVector = vectorNodes.find(n => getNodeRole(n) === 'icon');
+      const specificIconVector = vectorNodes.find((n) => getNodeRole(n) === "icon");
       if (specificIconVector) vectorNodes = [specificIconVector];
 
       if (vectorNodes.length > 0) {
         const vector = vectorNodes[0];
         const detectedIconName = getFontAwesomeName(vector);
         if (detectedIconName) {
-          settings.selected_icon = { value: detectedIconName, library: detectedIconName.startsWith("fab") ? "fa-brands" : detectedIconName.startsWith("far") ? "fa-regular" : "fa-solid" };
+          settings.selected_icon = {
+            value: detectedIconName,
+            library: detectedIconName.startsWith("fab")
+              ? "fa-brands"
+              : detectedIconName.startsWith("far")
+                ? "fa-regular"
+                : "fa-solid"
+          };
           if (textNodes.length > 0 && vector.x > textNodes[0].x) {
             settings.icon_align = "right";
           } else {
@@ -484,7 +529,7 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       }
 
       if (node.reactions && node.reactions.length > 0) {
-        const reaction = node.reactions.find(r => r.action && r.action.type === "URL");
+        const reaction = node.reactions.find((r) => r.action && r.action.type === "URL");
         if (reaction) {
           settings.link = { url: reaction.action.url, is_external: true };
         }
@@ -493,16 +538,18 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       console.error("Erro crítico extraindo button, ignorando componente:", err);
       return null;
     }
-  }
-  else if (tag === "accordion") {
+  } else if (tag === "accordion") {
     const { items, titleStyle, contentStyle } = await buildAccordionItems(node, maps);
 
-    settings.tabs = items.length > 0 ? items : [
-      {
-        tab_title: "Accordion #1",
-        tab_content: "Conteúdo do accordion"
-      }
-    ];
+    settings.tabs =
+      items.length > 0
+        ? items
+        : [
+            {
+              tab_title: "Accordion #1",
+              tab_content: "Conteúdo do accordion"
+            }
+          ];
 
     settings.selected_icon = { value: "fas fa-plus", library: "fa-solid" };
     settings.selected_active_icon = { value: "fas fa-minus", library: "fa-solid" };
@@ -534,20 +581,22 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     if (contentStyle) {
       applyTypographySettings(settings, contentStyle, "content_typography");
     }
-  }
-  else if (tag === "accordeon") {
+  } else if (tag === "accordeon") {
     const { items, elements, titleStyle } = await buildAccordeonItems(node, maps);
 
-    settings.items = items.length > 0 ? items : [
-      {
-        item_title: "Item #1",
-        element_css_id: ""
-      },
-      {
-        item_title: "Item #2",
-        element_css_id: ""
-      }
-    ];
+    settings.items =
+      items.length > 0
+        ? items
+        : [
+            {
+              item_title: "Item #1",
+              element_css_id: ""
+            },
+            {
+              item_title: "Item #2",
+              element_css_id: ""
+            }
+          ];
 
     settings.accordion_item_title_icon = { value: "fas fa-plus", library: "fa-solid" };
     settings.accordion_item_title_icon_active = { value: "fas fa-minus", library: "fa-solid" };
@@ -580,42 +629,48 @@ export async function handleManualTag(node, tag, isRoot, maps) {
       elType: "widget",
       widgetType: "nested-accordion",
       settings: settings,
-      elements: elements.length > 0 ? elements : [
-        {
-          elType: "container",
-          settings: {
-            _title: "item #1",
-            content_width: "full"
-          },
-          elements: []
-        },
-        {
-          elType: "container",
-          settings: {
-            _title: "item #2",
-            content_width: "full"
-          },
-          elements: []
-        }
-      ]
+      elements:
+        elements.length > 0
+          ? elements
+          : [
+              {
+                elType: "container",
+                settings: {
+                  _title: "item #1",
+                  content_width: "full"
+                },
+                elements: []
+              },
+              {
+                elType: "container",
+                settings: {
+                  _title: "item #2",
+                  content_width: "full"
+                },
+                elements: []
+              }
+            ]
     };
-  }
-  else if (tag === "image") {
+  } else if (tag === "image") {
     settings.image = { url: "", id: "" };
     settings._width = { size: node.width, unit: "px" };
-  }
-  else if (tag === "image-carousel") {
+  } else if (tag === "image-carousel") {
     const iterableNodes = getIterableNodes(node);
     const carouselItems = [];
-    
+
     for (const child of iterableNodes) {
-      if (child.type === "IMAGE" || hasImageFill(child) || child.type === "RECTANGLE" || child.type === "FRAME") {
+      if (
+        child.type === "IMAGE" ||
+        hasImageFill(child) ||
+        child.type === "RECTANGLE" ||
+        child.type === "FRAME"
+      ) {
         carouselItems.push({ id: child.id || "", url: "" });
       } else {
         carouselItems.push({ id: "", url: "" });
       }
     }
-    
+
     if (carouselItems.length === 0) carouselItems.push({ id: "", url: "" });
 
     settings.carousel = carouselItems;
@@ -623,21 +678,18 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     settings.slides_to_scroll = "1";
     settings.navigation = "both";
     settings.image_size = "full";
-  }
-  else if (tag === "container-carousel") {
+  } else if (tag === "container-carousel") {
     const iterableNodes = getIterableNodes(node);
-    let elements = [];
-    
+    const elements = [];
+
     for (const child of iterableNodes) {
       const res = applyChildFillSizing(child, await traverseNode(child, false, maps, true));
       if (res) {
         if (Array.isArray(res)) {
           elements.push({ elType: "container", settings: {}, elements: res });
-        }
-        else if (res.elType !== "container") {
+        } else if (res.elType !== "container") {
           elements.push({ elType: "container", settings: {}, elements: [res] });
-        }
-        else {
+        } else {
           elements.push(res);
         }
       }
@@ -650,8 +702,13 @@ export async function handleManualTag(node, tag, isRoot, maps) {
     applyOpacitySetting(settings, node);
     applySourceMetadata(settings, node, tag);
     applyNodeEffects(settings, node, "nested-carousel");
-    
-    return { elType: "widget", widgetType: "nested-carousel", settings: settings, elements: elements };
+
+    return {
+      elType: "widget",
+      widgetType: "nested-carousel",
+      settings: settings,
+      elements: elements
+    };
   }
 
   applyOpacitySetting(settings, node);
@@ -674,9 +731,9 @@ export async function mapContainer(node, children, isRoot, isForcedFull, maps, a
     } else if (isRoot) {
       containerWidth = { size: 100, unit: "%" };
     } else {
-      if (node.layoutSizingHorizontal === 'FIXED') {
+      if (node.layoutSizingHorizontal === "FIXED") {
         containerWidth = { size: node.width, unit: "px" };
-      } else if (node.layoutSizingHorizontal === 'FILL') {
+      } else if (node.layoutSizingHorizontal === "FILL") {
         containerWidth = { size: 100, unit: "%" };
       } else {
         containerWidth = { size: node.width, unit: "px" };
@@ -703,10 +760,10 @@ export async function mapContainer(node, children, isRoot, isForcedFull, maps, a
       align_content: alignContent,
       gap: { column: node.itemSpacing || 0, row: node.itemSpacing || 0, unit: "px" },
       padding: {
-        top: node.paddingTop || 0, 
-        right: isRoot ? 0 : (node.paddingRight || 0),
-        bottom: node.paddingBottom || 0, 
-        left: isRoot ? 0 : (node.paddingLeft || 0),
+        top: node.paddingTop || 0,
+        right: isRoot ? 0 : node.paddingRight || 0,
+        bottom: node.paddingBottom || 0,
+        left: isRoot ? 0 : node.paddingLeft || 0,
         unit: "px"
       }
     };
@@ -753,7 +810,7 @@ export async function mapText(node, maps) {
   try {
     const style = await extractTextStyle(node, maps);
     const widgetType = style.size >= 32 ? "heading" : "text-editor";
-    let settings = {
+    const settings = {
       align: getTextAlign(node)
     };
     applyTypographySettings(settings, style, "typography");
@@ -761,7 +818,8 @@ export async function mapText(node, maps) {
 
     if (style.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};
-      settings.__globals__[widgetType === "heading" ? "title_color" : "text_color"] = `globals/colors?id=${style.globalColorId}`;
+      settings.__globals__[widgetType === "heading" ? "title_color" : "text_color"] =
+        `globals/colors?id=${style.globalColorId}`;
     }
     if (style.globalTypoId) {
       settings.__globals__ = settings.__globals__ || {};
@@ -789,7 +847,7 @@ export async function mapText(node, maps) {
 
 export async function mapImage(node) {
   // Image widget alignment stays centered; actual positioning is controlled by the parent container.
-  let settings = { image: { url: "", id: "" }, align: "center" };
+  const settings = { image: { url: "", id: "" }, align: "center" };
 
   extractBorders(node, settings, true, "image");
   extractShadows(node, settings, true, "image");

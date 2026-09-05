@@ -62,7 +62,7 @@ function attachSearchMethods(node) {
       enumerable: false,
       value(predicate) {
         const result = [];
-        const visit = current => {
+        const visit = (current) => {
           for (const child of current.children || []) {
             if (predicate(child)) result.push(child);
             visit(child);
@@ -101,19 +101,23 @@ export function adaptRestNode(source, pluginId) {
     height: Number.isFinite(source.height) ? source.height : Number(bounds.height ?? bounds.y ?? 0),
     x: Number.isFinite(source.x) ? source.x : Number(source.absoluteBoundingBox?.x || 0),
     y: Number.isFinite(source.y) ? source.y : Number(source.absoluteBoundingBox?.y || 0),
-    cornerRadius: source.cornerRadius ?? (radii.length && radii.every(value => value === radii[0]) ? radii[0] : undefined),
+    cornerRadius:
+      source.cornerRadius ??
+      (radii.length && radii.every((value) => value === radii[0]) ? radii[0] : undefined),
     topLeftRadius: source.topLeftRadius ?? radii[0],
     topRightRadius: source.topRightRadius ?? radii[1],
     bottomRightRadius: source.bottomRightRadius ?? radii[2],
     bottomLeftRadius: source.bottomLeftRadius ?? radii[3],
-    fontName: source.fontName || (style.fontFamily ? { family: style.fontFamily, style: fontStyleName(style) } : undefined),
+    fontName:
+      source.fontName ||
+      (style.fontFamily ? { family: style.fontFamily, style: fontStyleName(style) } : undefined),
     fontSize: source.fontSize ?? style.fontSize,
     lineHeight: source.lineHeight || lineHeight(style),
     letterSpacing: source.letterSpacing || letterSpacing(style),
     textCase: source.textCase ?? style.textCase,
     textDecoration: source.textDecoration ?? style.textDecoration,
     textAlignHorizontal: source.textAlignHorizontal ?? style.textAlignHorizontal,
-    children: (source.children || []).map(child => adaptRestNode(child, pluginId))
+    children: (source.children || []).map((child) => adaptRestNode(child, pluginId))
   };
 
   Object.defineProperty(adapted, "getPluginData", {

@@ -60,8 +60,14 @@ function validateCustomCss(value, cssId, path, errors) {
   }
   const openBraces = (value.match(/{/g) || []).length;
   const closeBraces = (value.match(/}/g) || []).length;
-  if (/<\/?script\b|@import\b/i.test(value) || openBraces !== closeBraces || !value.includes(`#${cssId}`)) {
-    errors.push(`${path} deve ser CSS escopado pelo css_id, sem imports/scripts e com chaves balanceadas.`);
+  if (
+    /<\/?script\b|@import\b/i.test(value) ||
+    openBraces !== closeBraces ||
+    !value.includes(`#${cssId}`)
+  ) {
+    errors.push(
+      `${path} deve ser CSS escopado pelo css_id, sem imports/scripts e com chaves balanceadas.`
+    );
   }
 }
 
@@ -79,17 +85,15 @@ function annotateElements(elements, depth, parentPath, seenCssIds) {
     if (annotated.settings) {
       annotated.settings = {
         ...annotated.settings,
-        css_id: uniqueCssId(safeCssId(annotated.settings.css_id, `figmentor-${annotated.id}`), seenCssIds)
+        css_id: uniqueCssId(
+          safeCssId(annotated.settings.css_id, `figmentor-${annotated.id}`),
+          seenCssIds
+        )
       };
     }
 
     if (Array.isArray(annotated.elements)) {
-      annotated.elements = annotateElements(
-        annotated.elements,
-        depth + 1,
-        path,
-        seenCssIds
-      );
+      annotated.elements = annotateElements(annotated.elements, depth + 1, path, seenCssIds);
     }
 
     return annotated;
@@ -131,7 +135,10 @@ function validateElement(element, path, errors, seenIds, seenCssIds) {
     errors.push(`${path}.elements deve ser um array em containers.`);
   }
 
-  if (element.elType === "widget" && (!element.widgetType || typeof element.widgetType !== "string")) {
+  if (
+    element.elType === "widget" &&
+    (!element.widgetType || typeof element.widgetType !== "string")
+  ) {
     errors.push(`${path}.widgetType é obrigatório em widgets.`);
   }
 
@@ -143,7 +150,8 @@ function validateElement(element, path, errors, seenIds, seenCssIds) {
 
   const cssId = element.settings && element.settings.css_id;
   if (cssId) {
-    if (!CSS_ID_PATTERN.test(cssId)) errors.push(`${path}.settings.css_id deve ser um identificador CSS seguro.`);
+    if (!CSS_ID_PATTERN.test(cssId))
+      errors.push(`${path}.settings.css_id deve ser um identificador CSS seguro.`);
     if (seenCssIds.has(cssId)) {
       errors.push(`${path}.settings.css_id está duplicado.`);
     } else {

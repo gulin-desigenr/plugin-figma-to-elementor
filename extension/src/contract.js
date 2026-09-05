@@ -43,7 +43,14 @@ function validateNativeMedia(value, path, errors) {
     return;
   }
   if (containsAssetRef(value)) errors.push(`${path} não pode conter assetRef do Figmentor.`);
-  if (!(value.url && value.id && typeof value.url === "string" && (typeof value.id === "string" || typeof value.id === "number"))) {
+  if (
+    !(
+      value.url &&
+      value.id &&
+      typeof value.url === "string" &&
+      (typeof value.id === "string" || typeof value.id === "number")
+    )
+  ) {
     errors.push(`${path} deve conter id e url nativos.`);
   }
 }
@@ -59,7 +66,12 @@ function validateNativeIcon(value, path, errors) {
     }
     return;
   }
-  if (typeof value.library !== "string" || !value.library || typeof value.value !== "string" || !value.value.trim()) {
+  if (
+    typeof value.library !== "string" ||
+    !value.library ||
+    typeof value.value !== "string" ||
+    !value.value.trim()
+  ) {
     errors.push(`${path} deve conter value e library válidos.`);
   }
 }
@@ -72,7 +84,9 @@ function validateAssetMetadata(metadata, path, errors, warnings) {
   const entries = [];
   for (const [key, value] of Object.entries(metadata)) {
     const items = Array.isArray(value) ? value : [value];
-    items.forEach((item, index) => entries.push({ key, item, path: `${path}.${key}${Array.isArray(value) ? `[${index}]` : ""}` }));
+    items.forEach((item, index) =>
+      entries.push({ key, item, path: `${path}.${key}${Array.isArray(value) ? `[${index}]` : ""}` })
+    );
   }
   for (const entry of entries) {
     if (!isPlainObject(entry.item) || typeof entry.item.assetRef !== "string") {
@@ -82,7 +96,8 @@ function validateAssetMetadata(metadata, path, errors, warnings) {
     if (entry.item.status === "uploaded" && (!entry.item.mediaId || !entry.item.mediaUrl)) {
       errors.push(`${entry.path} está marcado como uploaded sem mediaId/mediaUrl.`);
     }
-    if (entry.item.status === "failed") warnings.push(`${entry.path} depende de ação manual ou retry.`);
+    if (entry.item.status === "failed")
+      warnings.push(`${entry.path} depende de ação manual ou retry.`);
   }
 }
 
@@ -138,12 +153,17 @@ function normalizeElements(value, depth, parentPath, seenCssIds, seenIds) {
 
     const index = result.length;
     const path = `${parentPath}.${index}`;
-    const legacyBackground = item.elType === "widget" &&
+    const legacyBackground =
+      item.elType === "widget" &&
       ["image-background", "background-image"].includes(item.widgetType);
     const normalized = {
       ...item,
       elType: legacyBackground || item.elType === "container" ? "container" : "widget",
-      widgetType: legacyBackground ? undefined : item.elType === "widget" ? normalizeWidgetType(item.widgetType) : undefined,
+      widgetType: legacyBackground
+        ? undefined
+        : item.elType === "widget"
+          ? normalizeWidgetType(item.widgetType)
+          : undefined,
       settings: isPlainObject(item.settings) ? { ...item.settings } : {},
       isInner: depth > 0
     };
@@ -152,15 +172,17 @@ function normalizeElements(value, depth, parentPath, seenCssIds, seenIds) {
     if (legacyBackground) normalized.settings.background_background ||= "classic";
 
     const requestedId = typeof item.id === "string" ? item.id : "";
-    normalized.id = ELEMENT_ID_PATTERN.test(requestedId) && !seenIds.has(requestedId)
-      ? requestedId
-      : createElementId(normalized, path);
+    normalized.id =
+      ELEMENT_ID_PATTERN.test(requestedId) && !seenIds.has(requestedId)
+        ? requestedId
+        : createElementId(normalized, path);
     while (seenIds.has(normalized.id)) {
       normalized.id = createElementId(normalized, `${path}.${seenIds.size}`);
     }
     seenIds.add(normalized.id);
 
-    const requestedCssId = typeof normalized.settings.css_id === "string" ? normalized.settings.css_id : "";
+    const requestedCssId =
+      typeof normalized.settings.css_id === "string" ? normalized.settings.css_id : "";
     const fallbackCssId = `figmentor-${normalized.id}`;
     normalized.settings.css_id = uniqueCssId(
       sanitizeStableCssId(requestedCssId, fallbackCssId),
@@ -168,13 +190,7 @@ function normalizeElements(value, depth, parentPath, seenCssIds, seenIds) {
     );
 
     if (normalized.elType === "container" || Array.isArray(item.elements)) {
-      normalized.elements = normalizeElements(
-        item.elements,
-        depth + 1,
-        path,
-        seenCssIds,
-        seenIds
-      );
+      normalized.elements = normalizeElements(item.elements, depth + 1, path, seenCssIds, seenIds);
     } else {
       normalized.elements = [];
     }
@@ -185,14 +201,21 @@ function normalizeElements(value, depth, parentPath, seenCssIds, seenIds) {
   return result;
 }
 
-export function normalizeElementorDocument(document, mode = document?.type === "page" ? "page" : "section") {
+export function normalizeElementorDocument(
+  document,
+  mode = document?.type === "page" ? "page" : "section"
+) {
   const type = mode === "page" ? "page" : "container";
   const content = normalizeElements(document?.content, 0, "content", new Set(), new Set());
   return {
     version: "0.4",
     title: typeof document?.title === "string" ? document.title : "Figmentor Export",
     type,
-    ...(type === "page" ? { page_settings: isPlainObject(document?.page_settings) ? { ...document.page_settings } : {} } : {}),
+    ...(type === "page"
+      ? {
+          page_settings: isPlainObject(document?.page_settings) ? { ...document.page_settings } : {}
+        }
+      : {}),
     content
   };
 }
@@ -218,12 +241,16 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
   if (!isPlainObject(element.settings)) errors.push(`${path}.settings deve ser um objeto.`);
 
   if (element.elType === "container") {
-    if (!Array.isArray(element.elements)) errors.push(`${path}.elements deve ser um array em containers.`);
+    if (!Array.isArray(element.elements))
+      errors.push(`${path}.elements deve ser um array em containers.`);
   } else {
     if (!SUPPORTED_WIDGET_TYPES.has(element.widgetType)) {
-      errors.push(`${path}.widgetType "${element.widgetType || ""}" não é um widget Elementor suportado.`);
+      errors.push(
+        `${path}.widgetType "${element.widgetType || ""}" não é um widget Elementor suportado.`
+      );
     }
-    if (!Array.isArray(element.elements)) errors.push(`${path}.elements deve ser um array em widgets.`);
+    if (!Array.isArray(element.elements))
+      errors.push(`${path}.elements deve ser um array em widgets.`);
   }
 
   if (Array.isArray(element.elements)) {
@@ -234,46 +261,73 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
 
   const cssId = element.settings?.css_id;
   if (cssId) {
-    if (!CSS_ID_PATTERN.test(cssId)) errors.push(`${path}.settings.css_id deve ser um identificador CSS seguro.`);
+    if (!CSS_ID_PATTERN.test(cssId))
+      errors.push(`${path}.settings.css_id deve ser um identificador CSS seguro.`);
     if (seenCssIds.has(cssId)) errors.push(`${path}.settings.css_id está duplicado.`);
     else seenCssIds.add(cssId);
   }
 
-
   if (isPlainObject(element.settings)) {
-    if (element.settings.image !== undefined) validateNativeMedia(element.settings.image, `${path}.settings.image`, errors);
-    if (element.settings.background_image !== undefined) validateNativeMedia(element.settings.background_image, `${path}.settings.background_image`, errors);
-    if (element.settings.selected_icon !== undefined) validateNativeIcon(element.settings.selected_icon, `${path}.settings.selected_icon`, errors);
-    if (element.settings.selected_active_icon !== undefined) validateNativeIcon(element.settings.selected_active_icon, `${path}.settings.selected_active_icon`, errors);
+    if (element.settings.image !== undefined)
+      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors);
+    if (element.settings.background_image !== undefined)
+      validateNativeMedia(
+        element.settings.background_image,
+        `${path}.settings.background_image`,
+        errors
+      );
+    if (element.settings.selected_icon !== undefined)
+      validateNativeIcon(element.settings.selected_icon, `${path}.settings.selected_icon`, errors);
+    if (element.settings.selected_active_icon !== undefined)
+      validateNativeIcon(
+        element.settings.selected_active_icon,
+        `${path}.settings.selected_active_icon`,
+        errors
+      );
     if (Array.isArray(element.settings.icon_list)) {
       element.settings.icon_list.forEach((item, index) => {
         if (!isPlainObject(item)) {
           errors.push(`${path}.settings.icon_list[${index}] deve ser um objeto.`);
           return;
         }
-        if (typeof item.text !== "string") errors.push(`${path}.settings.icon_list[${index}].text deve ser texto.`);
+        if (typeof item.text !== "string")
+          errors.push(`${path}.settings.icon_list[${index}].text deve ser texto.`);
         if (item.selected_icon !== undefined) {
-          validateNativeIcon(item.selected_icon, `${path}.settings.icon_list[${index}].selected_icon`, errors);
+          validateNativeIcon(
+            item.selected_icon,
+            `${path}.settings.icon_list[${index}].selected_icon`,
+            errors
+          );
         }
       });
     }
-    if (element.settings.figmentor_assets !== undefined || element.settings.figmentor_source_node_id !== undefined) {
-      errors.push(`${path}.settings contém metadados do Figmentor; use o sidecar document.figmentor.`);
+    if (
+      element.settings.figmentor_assets !== undefined ||
+      element.settings.figmentor_source_node_id !== undefined
+    ) {
+      errors.push(
+        `${path}.settings contém metadados do Figmentor; use o sidecar document.figmentor.`
+      );
     }
-    if (element.settings.custom_css !== undefined && (
-      typeof element.settings.custom_css !== "string" ||
-      element.settings.custom_css.length > 20000 ||
-      /<\/?script\b|@import\b/i.test(element.settings.custom_css) ||
-      (typeof element.settings.custom_css === "string" &&
-        (!element.settings.custom_css.includes(`#${element.settings.css_id}`) ||
-          (element.settings.custom_css.match(/{/g) || []).length !== (element.settings.custom_css.match(/}/g) || []).length))
-    )) {
+    if (
+      element.settings.custom_css !== undefined &&
+      (typeof element.settings.custom_css !== "string" ||
+        element.settings.custom_css.length > 20000 ||
+        /<\/?script\b|@import\b/i.test(element.settings.custom_css) ||
+        (typeof element.settings.custom_css === "string" &&
+          (!element.settings.custom_css.includes(`#${element.settings.css_id}`) ||
+            (element.settings.custom_css.match(/{/g) || []).length !==
+              (element.settings.custom_css.match(/}/g) || []).length)))
+    ) {
       errors.push(`${path}.settings.custom_css deve ser CSS texto válido e limitado a 20 KB.`);
     }
   }
 }
 
-export function validateElementorDocument(document, mode = document?.type === "page" ? "page" : "section") {
+export function validateElementorDocument(
+  document,
+  mode = document?.type === "page" ? "page" : "section"
+) {
   const errors = [];
   const warnings = [];
   const expectedType = mode === "page" ? "page" : "container";
@@ -282,7 +336,8 @@ export function validateElementorDocument(document, mode = document?.type === "p
     return { valid: false, errors: ["O documento exportado deve ser um objeto."] };
   }
   if (document.version !== "0.4") errors.push('version deve ser "0.4".');
-  if (document.type !== expectedType) errors.push(`type deve ser "${expectedType}" no modo ${mode}.`);
+  if (document.type !== expectedType)
+    errors.push(`type deve ser "${expectedType}" no modo ${mode}.`);
   if (!Array.isArray(document.content) || document.content.length === 0) {
     errors.push("content deve conter pelo menos um elemento.");
   }
@@ -307,7 +362,12 @@ export function validateElementorDocument(document, mode = document?.type === "p
           continue;
         }
         if (metadata.assets !== undefined) {
-          validateAssetMetadata(metadata.assets, `figmentor.elements.${elementId}.assets`, errors, warnings);
+          validateAssetMetadata(
+            metadata.assets,
+            `figmentor.elements.${elementId}.assets`,
+            errors,
+            warnings
+          );
         }
       }
     }

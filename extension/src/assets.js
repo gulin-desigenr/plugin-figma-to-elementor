@@ -7,14 +7,16 @@ function toNumber(value, fallback = 0) {
 }
 
 function slugify(value) {
-  return String(value || "asset")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\[[^\]]+\]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48) || "asset";
+  return (
+    String(value || "asset")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\[[^\]]+\]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "asset"
+  );
 }
 
 function readPluginData(node, key, pluginId) {
@@ -113,13 +115,19 @@ function createAssetRecord(node, path, pluginId, kind, sourceFormat, targetForma
 }
 
 export function getFontAwesomeIcon(node) {
-  const value = String(node?.name || "").replace(/^\[icon\]\s*/i, "").trim();
+  const value = String(node?.name || "")
+    .replace(/^\[icon\]\s*/i, "")
+    .trim();
   const match = value.match(/^(fas|far|fab)\s+fa-[a-z0-9-]+/i);
   if (!match) return null;
   const icon = match[0].toLowerCase();
   return {
     value: icon,
-    library: icon.startsWith("fab ") ? "fa-brands" : icon.startsWith("far ") ? "fa-regular" : "fa-solid"
+    library: icon.startsWith("fab ")
+      ? "fa-brands"
+      : icon.startsWith("far ")
+        ? "fa-regular"
+        : "fa-solid"
   };
 }
 
@@ -129,7 +137,7 @@ export function discoverAssets(root, pluginId) {
   const carouselChildIds = new Set();
   const iconTags = new Set(["icon-box", "icon-list", "button"]);
 
-  const add = record => {
+  const add = (record) => {
     if (seen.has(record.assetRef)) return;
     seen.add(record.assetRef);
     assets.push(record);
@@ -141,33 +149,32 @@ export function discoverAssets(root, pluginId) {
     const iconOwnerTag = iconTags.has(tag) ? tag : inheritedIconTag;
 
     if (tag === "image-carousel") {
-      const children = Array.isArray(node.children) && node.children.length > 0
-        ? node.children
-        : [node];
+      const children =
+        Array.isArray(node.children) && node.children.length > 0 ? node.children : [node];
       children.forEach((child, index) => {
         if (child?.id) carouselChildIds.add(child.id);
-        add(createAssetRecord(
-          child,
-          `${path}.${index}`,
-          pluginId,
-          "carousel",
-          "PNG",
-          "WEBP"
-        ));
+        add(createAssetRecord(child, `${path}.${index}`, pluginId, "carousel", "PNG", "WEBP"));
       });
     } else if (tag && ASSET_TAGS.has(tag) && !carouselChildIds.has(node.id)) {
-      const kind = tag === "image-background" || tag === "background-image"
-        ? "background"
-        : "image";
-      const targetFormat = kind === "image" || kind === "background" || kind === "carousel"
-        ? "WEBP"
-        : "WEBP";
+      const kind =
+        tag === "image-background" || tag === "background-image" ? "background" : "image";
+      const targetFormat =
+        kind === "image" || kind === "background" || kind === "carousel" ? "WEBP" : "WEBP";
       add(createAssetRecord(node, path, pluginId, kind, "PNG", targetFormat));
-    } else if (!insideRasterTag && !carouselChildIds.has(node.id) && Array.isArray(node.fills) && node.fills.some(fill => fill?.type === "IMAGE" && fill.visible !== false)) {
+    } else if (
+      !insideRasterTag &&
+      !carouselChildIds.has(node.id) &&
+      Array.isArray(node.fills) &&
+      node.fills.some((fill) => fill?.type === "IMAGE" && fill.visible !== false)
+    ) {
       add(createAssetRecord(node, path, pluginId, "image", "PNG", "WEBP"));
     }
 
-    if ((role === "icon" || iconOwnerTag) && VECTOR_TYPES.has(node.type) && !getFontAwesomeIcon(node)) {
+    if (
+      (role === "icon" || iconOwnerTag) &&
+      VECTOR_TYPES.has(node.type) &&
+      !getFontAwesomeIcon(node)
+    ) {
       const record = createAssetRecord(node, path, pluginId, "icon", "SVG", "SVG");
       record.fileName = `${slugify(node.name)}-${node.id.replace(/[^a-zA-Z0-9-]/g, "-")}.svg`;
       record.elementorWidget = iconOwnerTag || null;
@@ -175,7 +182,9 @@ export function discoverAssets(root, pluginId) {
     }
 
     const childInsideRaster = insideRasterTag || Boolean(tag && ASSET_TAGS.has(tag));
-    (node.children || []).forEach((child, index) => visit(child, `${path}.${index}`, iconOwnerTag, childInsideRaster));
+    (node.children || []).forEach((child, index) =>
+      visit(child, `${path}.${index}`, iconOwnerTag, childInsideRaster)
+    );
   };
 
   visit(root);
@@ -184,7 +193,7 @@ export function discoverAssets(root, pluginId) {
 }
 
 export function createAssetReport(manifest) {
-  return (manifest?.assets || []).map(asset => ({
+  return (manifest?.assets || []).map((asset) => ({
     assetRef: asset.assetRef,
     name: asset.elementName || asset.fileName,
     nodeId: asset.figmaNodeId,
@@ -193,16 +202,19 @@ export function createAssetReport(manifest) {
     mediaId: asset.mediaId || null,
     mediaUrl: asset.mediaUrl || null,
     reason: asset.error || null,
-    action: asset.status === "failed"
-      ? (asset.targetFormat === "SVG" ? "Envie o SVG manualmente ou use Repetir falhos." : "Revise o limite/conversão e use Repetir falhos.")
-      : null
+    action:
+      asset.status === "failed"
+        ? asset.targetFormat === "SVG"
+          ? "Envie o SVG manualmente ou use Repetir falhos."
+          : "Revise o limite/conversão e use Repetir falhos."
+        : null
   }));
 }
 
 export function selectAssetsForProcessing(manifest, onlyFailed = false) {
-  return (manifest?.assets || []).filter(asset => (
+  return (manifest?.assets || []).filter((asset) =>
     onlyFailed ? asset.status === "failed" : asset.status !== "uploaded"
-  ));
+  );
 }
 
 export function buildAssetManifest(root, pluginId, selection) {

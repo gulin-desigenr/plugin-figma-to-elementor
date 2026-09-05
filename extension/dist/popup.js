@@ -81,7 +81,9 @@ async function figmaRequest(token, path) {
     }
     if (response.status === 403) {
       if (/scope|permission|permiss/i.test(detail)) {
-        throw new Error("O token n\xE3o tem a permiss\xE3o necess\xE1ria. Gere um novo token com file_content:read e selections:read.");
+        throw new Error(
+          "O token n\xE3o tem a permiss\xE3o necess\xE1ria. Gere um novo token com file_content:read e selections:read."
+        );
       }
       throw new Error("O token do Figma n\xE3o tem acesso a este arquivo ou a esta opera\xE7\xE3o.");
     }
@@ -130,12 +132,18 @@ function normalizeCurrentSelection(candidate, expectedFileKey) {
 async function readCurrentSelection(token, fileKey) {
   const response = await figmaRequest(token, "/selections");
   const candidates = selectionCandidates(response).map((candidate) => normalizeCurrentSelection(candidate, fileKey)).filter(Boolean);
-  const selection = candidates.find((candidate) => !candidate.fileKey || candidate.fileKey === fileKey);
+  const selection = candidates.find(
+    (candidate) => !candidate.fileKey || candidate.fileKey === fileKey
+  );
   if (!selection) {
     if (candidates.length > 0) {
-      throw new Error("A sele\xE7\xE3o atual pertence a outro arquivo Figma. Selecione um frame neste arquivo e tente novamente.");
+      throw new Error(
+        "A sele\xE7\xE3o atual pertence a outro arquivo Figma. Selecione um frame neste arquivo e tente novamente."
+      );
     }
-    throw new Error("A API do Figma n\xE3o retornou um frame selecionado. Selecione um frame no Figma e tente novamente.");
+    throw new Error(
+      "A API do Figma n\xE3o retornou um frame selecionado. Selecione um frame no Figma e tente novamente."
+    );
   }
   return selection;
 }
@@ -180,7 +188,7 @@ async function readRegisteredSelection(token, fileKey, dataNamespace = DEFAULT_F
     ...selection
   };
 }
-async function readNode(token, fileKey, nodeId, dataNamespace = DEFAULT_FIGMENTOR_NAMESPACE) {
+async function readNode(token, fileKey, nodeId) {
   if (!nodeId) throw new Error("O nodeId do frame registrado n\xE3o est\xE1 dispon\xEDvel.");
   const query = new URLSearchParams({
     ids: nodeId,
@@ -341,14 +349,7 @@ function discoverAssets(root, pluginId) {
       const children = Array.isArray(node.children) && node.children.length > 0 ? node.children : [node];
       children.forEach((child, index) => {
         if (child?.id) carouselChildIds.add(child.id);
-        add(createAssetRecord(
-          child,
-          `${path}.${index}`,
-          pluginId,
-          "carousel",
-          "PNG",
-          "WEBP"
-        ));
+        add(createAssetRecord(child, `${path}.${index}`, pluginId, "carousel", "PNG", "WEBP"));
       });
     } else if (tag && ASSET_TAGS.has(tag) && !carouselChildIds.has(node.id)) {
       const kind = tag === "image-background" || tag === "background-image" ? "background" : "image";
@@ -364,7 +365,9 @@ function discoverAssets(root, pluginId) {
       add(record);
     }
     const childInsideRaster = insideRasterTag || Boolean(tag && ASSET_TAGS.has(tag));
-    (node.children || []).forEach((child, index) => visit(child, `${path}.${index}`, iconOwnerTag, childInsideRaster));
+    (node.children || []).forEach(
+      (child, index) => visit(child, `${path}.${index}`, iconOwnerTag, childInsideRaster)
+    );
   };
   visit(root);
   return assets;
@@ -383,7 +386,9 @@ function createAssetReport(manifest) {
   }));
 }
 function selectAssetsForProcessing(manifest, onlyFailed = false) {
-  return (manifest?.assets || []).filter((asset) => onlyFailed ? asset.status === "failed" : asset.status !== "uploaded");
+  return (manifest?.assets || []).filter(
+    (asset) => onlyFailed ? asset.status === "failed" : asset.status !== "uploaded"
+  );
 }
 function buildAssetManifest(root, pluginId, selection) {
   const assets = discoverAssets(root, pluginId);
@@ -417,21 +422,21 @@ function figmaColorToRGBA(color, opacity = 1) {
 // src/utils/typography.js
 function mapFontWeight(style) {
   const weights = {
-    "Thin": "100",
-    "Hairline": "100",
+    Thin: "100",
+    Hairline: "100",
     "Extra Light": "200",
     "Ultra Light": "200",
-    "Light": "300",
-    "Regular": "400",
-    "Normal": "400",
-    "Medium": "500",
+    Light: "300",
+    Regular: "400",
+    Normal: "400",
+    Medium: "500",
     "Semi Bold": "600",
     "Demi Bold": "600",
-    "Bold": "700",
+    Bold: "700",
     "Extra Bold": "800",
     "Ultra Bold": "800",
-    "Black": "900",
-    "Heavy": "900"
+    Black: "900",
+    Heavy: "900"
   };
   const match = Object.keys(weights).find((key) => style.includes(key));
   return weights[match] || "400";
@@ -508,7 +513,9 @@ function getTextAlign(node) {
     return mapTextAlign(node.textAlignHorizontal);
   }
   if ("findOne" in node) {
-    const textChild = node.findOne((child) => child.type === "TEXT" && child.textAlignHorizontal && !isFigmaMixed(child.textAlignHorizontal));
+    const textChild = node.findOne(
+      (child) => child.type === "TEXT" && child.textAlignHorizontal && !isFigmaMixed(child.textAlignHorizontal)
+    );
     if (textChild) {
       return mapTextAlign(textChild.textAlignHorizontal);
     }
@@ -683,7 +690,7 @@ async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} }) {
   };
 }
 async function extractBackground(node, maps = { colorMap: {}, typoMap: {} }) {
-  let result = {};
+  const result = {};
   if (node.fills && !isFigmaMixed(node.fills) && node.fills.length > 0) {
     const solidFill = node.fills.find((f) => f.type === "SOLID" && f.visible !== false);
     if (solidFill) {
@@ -705,54 +712,54 @@ async function extractBackground(node, maps = { colorMap: {}, typoMap: {} }) {
 
 // src/utils/cssId.js
 var accentMap = {
-  "\xE1": "a",
-  "\xE0": "a",
-  "\xE3": "a",
-  "\xE2": "a",
-  "\xE4": "a",
-  "\xE9": "e",
-  "\xE8": "e",
-  "\xEA": "e",
-  "\xEB": "e",
-  "\xED": "i",
-  "\xEC": "i",
-  "\xEE": "i",
-  "\xEF": "i",
-  "\xF3": "o",
-  "\xF2": "o",
-  "\xF5": "o",
-  "\xF4": "o",
-  "\xF6": "o",
-  "\xFA": "u",
-  "\xF9": "u",
-  "\xFB": "u",
-  "\xFC": "u",
-  "\xE7": "c",
-  "\xF1": "n",
-  "\xC1": "a",
-  "\xC0": "a",
-  "\xC3": "a",
-  "\xC2": "a",
-  "\xC4": "a",
-  "\xC9": "e",
-  "\xC8": "e",
-  "\xCA": "e",
-  "\xCB": "e",
-  "\xCD": "i",
-  "\xCC": "i",
-  "\xCE": "i",
-  "\xCF": "i",
-  "\xD3": "o",
-  "\xD2": "o",
-  "\xD5": "o",
-  "\xD4": "o",
-  "\xD6": "o",
-  "\xDA": "u",
-  "\xD9": "u",
-  "\xDB": "u",
-  "\xDC": "u",
-  "\xC7": "c",
-  "\xD1": "n"
+  \u00E1: "a",
+  \u00E0: "a",
+  \u00E3: "a",
+  \u00E2: "a",
+  \u00E4: "a",
+  \u00E9: "e",
+  \u00E8: "e",
+  \u00EA: "e",
+  \u00EB: "e",
+  \u00ED: "i",
+  \u00EC: "i",
+  \u00EE: "i",
+  \u00EF: "i",
+  \u00F3: "o",
+  \u00F2: "o",
+  \u00F5: "o",
+  \u00F4: "o",
+  \u00F6: "o",
+  \u00FA: "u",
+  \u00F9: "u",
+  \u00FB: "u",
+  \u00FC: "u",
+  \u00E7: "c",
+  \u00F1: "n",
+  \u00C1: "a",
+  \u00C0: "a",
+  \u00C3: "a",
+  \u00C2: "a",
+  \u00C4: "a",
+  \u00C9: "e",
+  \u00C8: "e",
+  \u00CA: "e",
+  \u00CB: "e",
+  \u00CD: "i",
+  \u00CC: "i",
+  \u00CE: "i",
+  \u00CF: "i",
+  \u00D3: "o",
+  \u00D2: "o",
+  \u00D5: "o",
+  \u00D4: "o",
+  \u00D6: "o",
+  \u00DA: "u",
+  \u00D9: "u",
+  \u00DB: "u",
+  \u00DC: "u",
+  \u00C7: "c",
+  \u00D1: "n"
 };
 function sanitizeCssId(name) {
   if (!name || typeof name !== "string") return "";
@@ -771,9 +778,18 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
     root: ROOT,
     slots: {
       inner: { selector: ".e-con-inner", label: "container inner" },
-      backgroundVideo: { selector: ".elementor-background-video-container", label: "background video" },
-      backgroundVideoEmbed: { selector: ".elementor-background-video-embed", label: "embedded background video" },
-      backgroundVideoHosted: { selector: ".elementor-background-video-hosted", label: "hosted background video" },
+      backgroundVideo: {
+        selector: ".elementor-background-video-container",
+        label: "background video"
+      },
+      backgroundVideoEmbed: {
+        selector: ".elementor-background-video-embed",
+        label: "embedded background video"
+      },
+      backgroundVideoHosted: {
+        selector: ".elementor-background-video-hosted",
+        label: "hosted background video"
+      },
       shapeTop: { selector: ".elementor-shape.elementor-shape-top", label: "top shape" },
       shapeBottom: { selector: ".elementor-shape.elementor-shape-bottom", label: "bottom shape" },
       overlay: { selector: "::before", label: "container overlay" }
@@ -784,7 +800,14 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
     profile: ELEMENTOR_SELECTOR_PROFILE,
     root: ROOT,
     slots: { title: { selector: ".elementor-heading-title", label: "heading title" } },
-    classes: [".elementor-size-default", ".elementor-size-small", ".elementor-size-medium", ".elementor-size-large", ".elementor-size-xl", ".elementor-size-xxl"]
+    classes: [
+      ".elementor-size-default",
+      ".elementor-size-small",
+      ".elementor-size-medium",
+      ".elementor-size-large",
+      ".elementor-size-xl",
+      ".elementor-size-xxl"
+    ]
   },
   "text-editor": {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -795,7 +818,11 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       dropCap: { selector: ".elementor-drop-cap", label: "drop cap" },
       dropCapLetter: { selector: ".elementor-drop-cap-letter", label: "drop cap letter" }
     },
-    classes: [".elementor-drop-cap-view-default", ".elementor-drop-cap-view-stacked", ".elementor-drop-cap-view-framed"]
+    classes: [
+      ".elementor-drop-cap-view-default",
+      ".elementor-drop-cap-view-stacked",
+      ".elementor-drop-cap-view-framed"
+    ]
   },
   image: {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -803,7 +830,10 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
     slots: {
       image: { selector: "img", label: "image" },
       figure: { selector: "figure.wp-caption", label: "caption figure" },
-      caption: { selector: "figcaption.widget-image-caption.wp-caption-text", label: "image caption" }
+      caption: {
+        selector: "figcaption.widget-image-caption.wp-caption-text",
+        label: "image caption"
+      }
     },
     classes: [".elementor-clickable"]
   },
@@ -818,7 +848,15 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       title: { selector: ".elementor-image-box-title", label: "image box title" },
       description: { selector: ".elementor-image-box-description", label: "image box description" }
     },
-    classes: [".elementor-position-top", ".elementor-position-left", ".elementor-position-right", ".elementor-position-bottom", ".elementor-vertical-align-top", ".elementor-vertical-align-middle", ".elementor-vertical-align-bottom"]
+    classes: [
+      ".elementor-position-top",
+      ".elementor-position-left",
+      ".elementor-position-right",
+      ".elementor-position-bottom",
+      ".elementor-vertical-align-top",
+      ".elementor-vertical-align-middle",
+      ".elementor-vertical-align-bottom"
+    ]
   },
   "icon-box": {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -831,7 +869,16 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       title: { selector: ".elementor-icon-box-title", label: "icon box title" },
       description: { selector: ".elementor-icon-box-description", label: "icon box description" }
     },
-    classes: [".elementor-view-default", ".elementor-view-stacked", ".elementor-view-framed", ".elementor-shape-circle", ".elementor-shape-square", ".elementor-animation-grow", ".elementor-animation-shrink", ".elementor-animation-pulse"]
+    classes: [
+      ".elementor-view-default",
+      ".elementor-view-stacked",
+      ".elementor-view-framed",
+      ".elementor-shape-circle",
+      ".elementor-shape-square",
+      ".elementor-animation-grow",
+      ".elementor-animation-shrink",
+      ".elementor-animation-pulse"
+    ]
   },
   "icon-list": {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -843,7 +890,11 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       icon: { selector: ".elementor-icon-list-icon", label: "icon list icon" },
       text: { selector: ".elementor-icon-list-text", label: "icon list text" }
     },
-    classes: [".elementor-inline-items", ".elementor-icon-list--layout-traditional", ".elementor-icon-list--layout-inline"]
+    classes: [
+      ".elementor-inline-items",
+      ".elementor-icon-list--layout-traditional",
+      ".elementor-icon-list--layout-inline"
+    ]
   },
   button: {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -857,7 +908,17 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       text: { selector: ".elementor-button-text", label: "button text" }
     },
     states: { hover: ":hover", focus: ":focus" },
-    classes: [".elementor-size-xs", ".elementor-size-sm", ".elementor-size-md", ".elementor-size-lg", ".elementor-size-xl", ".elementor-size-xxl", ".elementor-animation-grow", ".elementor-animation-shrink", ".elementor-animation-pulse"]
+    classes: [
+      ".elementor-size-xs",
+      ".elementor-size-sm",
+      ".elementor-size-md",
+      ".elementor-size-lg",
+      ".elementor-size-xl",
+      ".elementor-size-xxl",
+      ".elementor-animation-grow",
+      ".elementor-animation-shrink",
+      ".elementor-animation-pulse"
+    ]
   },
   accordion: {
     profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -882,9 +943,18 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       accordion: { selector: ".e-n-accordion", label: "nested accordion" },
       item: { selector: ".e-n-accordion-item", label: "nested accordion item" },
       title: { selector: ".e-n-accordion-item-title", label: "nested accordion title" },
-      titleHeader: { selector: ".e-n-accordion-item-title-header", label: "nested accordion title header" },
-      titleText: { selector: ".e-n-accordion-item-title-text", label: "nested accordion title text" },
-      titleIcon: { selector: ".e-n-accordion-item-title-icon", label: "nested accordion title icon" }
+      titleHeader: {
+        selector: ".e-n-accordion-item-title-header",
+        label: "nested accordion title header"
+      },
+      titleText: {
+        selector: ".e-n-accordion-item-title-text",
+        label: "nested accordion title text"
+      },
+      titleIcon: {
+        selector: ".e-n-accordion-item-title-icon",
+        label: "nested accordion title icon"
+      }
     },
     states: { opened: ".e-opened", closed: ".e-closed", nativeOpened: "[open]" },
     itemTarget: ".e-n-accordion-item:nth-of-type({index})"
@@ -905,7 +975,10 @@ var ELEMENTOR_SELECTOR_REGISTRY = Object.freeze({
       next: { selector: ".elementor-swiper-button-next", label: "next navigation" },
       pagination: { selector: ".swiper-pagination", label: "carousel pagination" },
       bullet: { selector: ".swiper-pagination-bullet", label: "carousel pagination bullet" },
-      activeBullet: { selector: ".swiper-pagination-bullet-active", label: "active pagination bullet" }
+      activeBullet: {
+        selector: ".swiper-pagination-bullet-active",
+        label: "active pagination bullet"
+      }
     },
     itemTarget: ".swiper-slide:nth-of-type({index})"
   },
@@ -997,14 +1070,18 @@ function angleFromHandles(handles = []) {
   return Math.round((radians * 180 / Math.PI + 360) % 360);
 }
 function gradientStops(paint) {
-  return (paint.gradientStops || []).map((stop) => `${alphaColor(stop.color, stop.color?.a * finite(paint.opacity, 1))} ${percent(stop.position)}`);
+  return (paint.gradientStops || []).map(
+    (stop) => `${alphaColor(stop.color, stop.color?.a * finite(paint.opacity, 1))} ${percent(stop.position)}`
+  );
 }
 function gradientToCss(paint) {
   const stops = gradientStops(paint);
   if (stops.length < 2) return null;
   if (paint.type === "GRADIENT_RADIAL") return `radial-gradient(circle, ${stops.join(", ")})`;
-  if (paint.type === "GRADIENT_ANGULAR") return `conic-gradient(from ${angleFromHandles(paint.gradientHandlePositions)}deg, ${stops.join(", ")})`;
-  if (paint.type === "GRADIENT_DIAMOND") return `radial-gradient(farthest-corner, ${stops.join(", ")})`;
+  if (paint.type === "GRADIENT_ANGULAR")
+    return `conic-gradient(from ${angleFromHandles(paint.gradientHandlePositions)}deg, ${stops.join(", ")})`;
+  if (paint.type === "GRADIENT_DIAMOND")
+    return `radial-gradient(farthest-corner, ${stops.join(", ")})`;
   return `linear-gradient(${angleFromHandles(paint.gradientHandlePositions)}deg, ${stops.join(", ")})`;
 }
 function paintToCss(paint) {
@@ -1026,7 +1103,8 @@ function nativeShadowPossible(effects) {
   return effects.length === 1 && shadows.length === 1;
 }
 function declaration(property, value) {
-  if (!CSS_SAFE_PROPERTIES.has(property) || value === null || value === void 0 || value === "") return null;
+  if (!CSS_SAFE_PROPERTIES.has(property) || value === null || value === void 0 || value === "")
+    return null;
   return `${property}: ${value};`;
 }
 function extractAdvancedEffects(node, widgetType, cssId) {
@@ -1045,17 +1123,29 @@ function extractAdvancedEffects(node, widgetType, cssId) {
   const solidPaints = paints.filter((paint) => paint.type === "SOLID");
   const gradientPaints = paints.map(gradientToCss).filter(Boolean);
   const cssPaints = paints.map(paintToCss).filter(Boolean);
-  const unsupportedPaints = paints.filter((paint) => !["SOLID", "GRADIENT_LINEAR", "GRADIENT_RADIAL", "GRADIENT_ANGULAR", "GRADIENT_DIAMOND"].includes(paint.type));
+  const unsupportedPaints = paints.filter(
+    (paint) => ![
+      "SOLID",
+      "GRADIENT_LINEAR",
+      "GRADIENT_RADIAL",
+      "GRADIENT_ANGULAR",
+      "GRADIENT_DIAMOND"
+    ].includes(paint.type)
+  );
   if (paints.length === 1 && solidPaints.length === 1 && !hasAdvancedEffect) {
     native.background = "solid";
   } else if (cssPaints.length > 0) {
     cssDeclarations.push(declaration("background", cssPaints.join(", ")));
-    if (solidPaints.length > 0 && gradientPaints.length > 0) cssDeclarations.push(declaration("background-blend-mode", "normal"));
+    if (solidPaints.length > 0 && gradientPaints.length > 0)
+      cssDeclarations.push(declaration("background-blend-mode", "normal"));
   }
-  if (unsupportedPaints.length > 0) flags.push(...unsupportedPaints.map((paint) => `paint:${paint.type}`));
-  if (paints.some((paint) => paint.type === "GRADIENT_DIAMOND")) flags.push("approximation:gradient-diamond-to-radial");
+  if (unsupportedPaints.length > 0)
+    flags.push(...unsupportedPaints.map((paint) => `paint:${paint.type}`));
+  if (paints.some((paint) => paint.type === "GRADIENT_DIAMOND"))
+    flags.push("approximation:gradient-diamond-to-radial");
   const shadows = effects.filter((effect) => ["DROP_SHADOW", "INNER_SHADOW"].includes(effect.type));
-  if (shadows.length > 0 && !native.shadow) cssDeclarations.push(declaration("box-shadow", shadows.map(shadowToCss).join(", ")));
+  if (shadows.length > 0 && !native.shadow)
+    cssDeclarations.push(declaration("box-shadow", shadows.map(shadowToCss).join(", ")));
   if (effects.some((effect) => effect.type === "LAYER_BLUR")) {
     const blur = effects.find((effect) => effect.type === "LAYER_BLUR");
     cssDeclarations.push(declaration("filter", `blur(${finite(blur.radius)}px)`));
@@ -1065,13 +1155,22 @@ function extractAdvancedEffects(node, widgetType, cssId) {
     cssDeclarations.push(declaration("backdrop-filter", `blur(${finite(blur.radius)}px)`));
     cssDeclarations.push(declaration("-webkit-backdrop-filter", `blur(${finite(blur.radius)}px)`));
   }
-  if (blendMode && blendMode !== "normal") cssDeclarations.push(declaration("mix-blend-mode", blendMode));
+  if (blendMode && blendMode !== "normal")
+    cssDeclarations.push(declaration("mix-blend-mode", blendMode));
   if (hasUnsupportedBlend) flags.push(`blend-mode:${node.blendMode}`);
-  const unsupportedEffects = effects.filter((effect) => !["DROP_SHADOW", "INNER_SHADOW", "LAYER_BLUR", "BACKGROUND_BLUR"].includes(effect.type));
-  if (unsupportedEffects.length > 0) flags.push(...unsupportedEffects.map((effect) => `effect:${effect.type}`));
-  if (effects.filter((effect) => effect.type === "LAYER_BLUR").length > 1) flags.push("multiple-layer-blur:first-layer-applied");
-  if (effects.filter((effect) => effect.type === "BACKGROUND_BLUR").length > 1) flags.push("multiple-background-blur:first-layer-applied");
-  if (node?.opacity !== void 0 && finite(node.opacity, 1) < 1) cssDeclarations.push(declaration("opacity", String(Math.max(0, Math.min(1, finite(node.opacity, 1))))));
+  const unsupportedEffects = effects.filter(
+    (effect) => !["DROP_SHADOW", "INNER_SHADOW", "LAYER_BLUR", "BACKGROUND_BLUR"].includes(effect.type)
+  );
+  if (unsupportedEffects.length > 0)
+    flags.push(...unsupportedEffects.map((effect) => `effect:${effect.type}`));
+  if (effects.filter((effect) => effect.type === "LAYER_BLUR").length > 1)
+    flags.push("multiple-layer-blur:first-layer-applied");
+  if (effects.filter((effect) => effect.type === "BACKGROUND_BLUR").length > 1)
+    flags.push("multiple-background-blur:first-layer-applied");
+  if (node?.opacity !== void 0 && finite(node.opacity, 1) < 1)
+    cssDeclarations.push(
+      declaration("opacity", String(Math.max(0, Math.min(1, finite(node.opacity, 1)))))
+    );
   const textGradient = gradientPaints.length > 0 && ["heading", "text-editor"].includes(widgetType);
   if (textGradient) {
     cssDeclarations.push(declaration("background-clip", "text"));
@@ -1084,7 +1183,8 @@ function extractAdvancedEffects(node, widgetType, cssId) {
   const customCss = cssDeclarations.length && cssId ? resolvedSelector ? `${resolvedSelector} {
   ${cssDeclarations.filter(Boolean).join("\n  ")}
 }` : "" : "";
-  if (cssDeclarations.length > 0 && !resolvedSelector) flags.push(cssId ? "invalid-css-id" : "missing-css-id");
+  if (cssDeclarations.length > 0 && !resolvedSelector)
+    flags.push(cssId ? "invalid-css-id" : "missing-css-id");
   if (definition?.experimental) flags.push("experimental-selector-profile");
   if (shadows.some((effect) => effect.type === "INNER_SHADOW")) flags.push("inner-shadow-css");
   const cssCount = cssDeclarations.filter(Boolean).length;
@@ -1181,8 +1281,12 @@ async function buildAccordionItems(node, maps) {
     if (childTextNodes.length === 0) {
       continue;
     }
-    const explicitTitleNode = childTextNodes.find((textNode) => getNodeRole2(textNode) === "title_text");
-    const explicitDescriptionNode = childTextNodes.find((textNode) => getNodeRole2(textNode) === "description_text");
+    const explicitTitleNode = childTextNodes.find(
+      (textNode) => getNodeRole2(textNode) === "title_text"
+    );
+    const explicitDescriptionNode = childTextNodes.find(
+      (textNode) => getNodeRole2(textNode) === "description_text"
+    );
     const fallbackTitleNode = explicitTitleNode || childTextNodes[0];
     const fallbackContentNodes = explicitDescriptionNode ? [explicitDescriptionNode] : childTextNodes.filter((textNode) => textNode.id !== fallbackTitleNode.id);
     const tabTitle = fallbackTitleNode && fallbackTitleNode.characters && fallbackTitleNode.characters.trim() || `Item ${items.length + 1}`;
@@ -1218,17 +1322,22 @@ async function buildAccordeonItems(node, maps) {
     if (childTextNodes.length === 0) {
       continue;
     }
-    const explicitTitleNode = childTextNodes.find((textNode) => getNodeRole2(textNode) === "title_text");
-    const explicitDescriptionNode = childTextNodes.find((textNode) => getNodeRole2(textNode) === "description_text");
+    const explicitTitleNode = childTextNodes.find(
+      (textNode) => getNodeRole2(textNode) === "title_text"
+    );
     const fallbackTitleNode = explicitTitleNode || childTextNodes[0];
     const directChildren = "children" in child ? child.children.filter((item) => item.visible) : [];
     let explicitContentNode = null;
     if ("findAll" in child) {
-      explicitContentNode = child.findAll((nodeItem) => nodeItem.visible && nodeItem.id !== fallbackTitleNode.id && getNodeRole2(nodeItem) === "description_text")[0] || null;
+      explicitContentNode = child.findAll(
+        (nodeItem) => nodeItem.visible && nodeItem.id !== fallbackTitleNode.id && getNodeRole2(nodeItem) === "description_text"
+      )[0] || null;
     }
     let titleBranchNode = null;
     if (directChildren.length > 0 && fallbackTitleNode) {
-      titleBranchNode = directChildren.find((nodeItem) => nodeItem.id === fallbackTitleNode.id || "findOne" in nodeItem && nodeItem.findOne((descendant) => descendant.id === fallbackTitleNode.id)) || null;
+      titleBranchNode = directChildren.find(
+        (nodeItem) => nodeItem.id === fallbackTitleNode.id || "findOne" in nodeItem && nodeItem.findOne((descendant) => descendant.id === fallbackTitleNode.id)
+      ) || null;
     }
     let contentNodes = [];
     if (explicitContentNode) {
@@ -1238,7 +1347,9 @@ async function buildAccordeonItems(node, maps) {
         contentNodes = [explicitContentNode];
       }
     } else if (directChildren.length > 0) {
-      contentNodes = directChildren.filter((nodeItem) => nodeItem.id !== (titleBranchNode && titleBranchNode.id));
+      contentNodes = directChildren.filter(
+        (nodeItem) => nodeItem.id !== (titleBranchNode && titleBranchNode.id)
+      );
     }
     if (contentNodes.length === 0) {
       contentNodes = childTextNodes.filter((textNode) => textNode.id !== fallbackTitleNode.id);
@@ -1332,23 +1443,28 @@ async function handleManualTag(node, tag, isRoot, maps) {
   const styles = await Promise.all(textNodes.map((t) => extractTextStyle(t, maps)));
   const mainStyle = styles.length > 0 ? styles[0] : { color: "", size: 16, weight: "400" };
   const secStyle = styles.length > 1 ? styles[1] : mainStyle;
-  let settings = {};
+  const settings = {};
   let bgSettings = {};
   if (node.type !== "TEXT") {
     bgSettings = await extractBackground(node, maps);
     if (bgSettings.background_background) {
       settings._background_background = bgSettings.background_background;
       settings._background_color = bgSettings.background_color;
-      if (bgSettings.__globals__) settings.__globals__ = Object.assign({}, settings.__globals__ || {}, bgSettings.__globals__);
+      if (bgSettings.__globals__)
+        settings.__globals__ = Object.assign(
+          {},
+          settings.__globals__ || {},
+          bgSettings.__globals__
+        );
     }
   }
   extractBorders(node, settings, true, tag);
   extractShadows(node, settings, true, tag);
   if (tag === "image-box") {
-    let titleNode = textNodes.find((n) => getNodeRole2(n) === "title_text");
-    let descNode = textNodes.find((n) => getNodeRole2(n) === "description_text");
+    const titleNode = textNodes.find((n) => getNodeRole2(n) === "title_text");
+    const descNode = textNodes.find((n) => getNodeRole2(n) === "description_text");
     settings.title_text = titleNode ? titleNode.characters : texts[0] || "T\xEDtulo";
-    let tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
+    const tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
     if (tStyle.color) settings.title_color = tStyle.color;
     if (tStyle.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};
@@ -1360,7 +1476,7 @@ async function handleManualTag(node, tag, isRoot, maps) {
     }
     applyTypographySettings(settings, tStyle, "title_typography");
     settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
-    let dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
+    const dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
     if (dStyle.color) settings.description_color = dStyle.color;
     if (dStyle.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};
@@ -1374,11 +1490,11 @@ async function handleManualTag(node, tag, isRoot, maps) {
     settings.text_align = getTextAlign(node);
     settings.image = { url: "", id: "" };
   } else if (tag === "icon-box") {
-    let titleNode = textNodes.find((n) => getNodeRole2(n) === "title_text");
-    let descNode = textNodes.find((n) => getNodeRole2(n) === "description_text");
+    const titleNode = textNodes.find((n) => getNodeRole2(n) === "title_text");
+    const descNode = textNodes.find((n) => getNodeRole2(n) === "description_text");
     settings.title_text = titleNode ? titleNode.characters : texts[0] || "T\xEDtulo do \xCDcone";
     settings.title = settings.title_text;
-    let tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
+    const tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
     if (tStyle.color) settings.title_color = tStyle.color;
     if (tStyle.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};
@@ -1391,7 +1507,7 @@ async function handleManualTag(node, tag, isRoot, maps) {
     applyTypographySettings(settings, tStyle, "title_typography");
     settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
     settings.description = settings.description_text;
-    let dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
+    const dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
     if (dStyle.color) settings.description_color = dStyle.color;
     if (dStyle.globalColorId) {
       settings.__globals__ = settings.__globals__ || {};
@@ -1406,8 +1522,9 @@ async function handleManualTag(node, tag, isRoot, maps) {
     let iconName = "fas fa-star";
     let vectorNodes = [];
     if (node.type === "VECTOR" || node.type === "BOOLEAN_OPERATION") vectorNodes.push(node);
-    else if ("findAll" in node) vectorNodes = node.findAll((n) => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
-    let specificIconVector = vectorNodes.find((n) => getNodeRole2(n) === "icon");
+    else if ("findAll" in node)
+      vectorNodes = node.findAll((n) => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
+    const specificIconVector = vectorNodes.find((n) => getNodeRole2(n) === "icon");
     if (specificIconVector) vectorNodes = [specificIconVector];
     if (vectorNodes.length > 0) {
       const vector = vectorNodes[0];
@@ -1419,7 +1536,10 @@ async function handleManualTag(node, tag, isRoot, maps) {
         }
       }
     }
-    settings.selected_icon = { value: iconName, library: iconName.startsWith("fab") ? "fa-brands" : "fa-solid" };
+    settings.selected_icon = {
+      value: iconName,
+      library: iconName.startsWith("fab") ? "fa-brands" : "fa-solid"
+    };
     if (iconColor) settings.primary_color = iconColor;
     settings.text_align = getTextAlign(node);
   } else if (tag === "icon-list") {
@@ -1493,9 +1613,9 @@ async function handleManualTag(node, tag, isRoot, maps) {
         delete settings._background_color;
         delete settings._background_background;
       }
-      let paddingTop = node.paddingTop || 0;
-      let paddingBottom = node.paddingBottom || 0;
-      let sumPadding = paddingTop + paddingBottom;
+      const paddingTop = node.paddingTop || 0;
+      const paddingBottom = node.paddingBottom || 0;
+      const sumPadding = paddingTop + paddingBottom;
       if (sumPadding >= 40) settings.size = "lg";
       else if (sumPadding >= 20) settings.size = "md";
       else settings.size = "sm";
@@ -1509,13 +1629,16 @@ async function handleManualTag(node, tag, isRoot, maps) {
       if ("findAll" in node) {
         vectorNodes = node.findAll((n) => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
       }
-      let specificIconVector = vectorNodes.find((n) => getNodeRole2(n) === "icon");
+      const specificIconVector = vectorNodes.find((n) => getNodeRole2(n) === "icon");
       if (specificIconVector) vectorNodes = [specificIconVector];
       if (vectorNodes.length > 0) {
         const vector = vectorNodes[0];
         const detectedIconName = getFontAwesomeName(vector);
         if (detectedIconName) {
-          settings.selected_icon = { value: detectedIconName, library: detectedIconName.startsWith("fab") ? "fa-brands" : detectedIconName.startsWith("far") ? "fa-regular" : "fa-solid" };
+          settings.selected_icon = {
+            value: detectedIconName,
+            library: detectedIconName.startsWith("fab") ? "fa-brands" : detectedIconName.startsWith("far") ? "fa-regular" : "fa-solid"
+          };
           if (textNodes.length > 0 && vector.x > textNodes[0].x) {
             settings.icon_align = "right";
           } else {
@@ -1650,7 +1773,7 @@ async function handleManualTag(node, tag, isRoot, maps) {
     settings.image_size = "full";
   } else if (tag === "container-carousel") {
     const iterableNodes = getIterableNodes(node);
-    let elements = [];
+    const elements = [];
     for (const child of iterableNodes) {
       const res = applyChildFillSizing(child, await traverseNode(child, false, maps, true));
       if (res) {
@@ -1669,7 +1792,12 @@ async function handleManualTag(node, tag, isRoot, maps) {
     applyOpacitySetting(settings, node);
     applySourceMetadata(settings, node, tag);
     applyNodeEffects(settings, node, "nested-carousel");
-    return { elType: "widget", widgetType: "nested-carousel", settings, elements };
+    return {
+      elType: "widget",
+      widgetType: "nested-carousel",
+      settings,
+      elements
+    };
   }
   applyOpacitySetting(settings, node);
   applySourceMetadata(settings, node, tag);
@@ -1754,7 +1882,7 @@ async function mapText(node, maps) {
   try {
     const style = await extractTextStyle(node, maps);
     const widgetType = style.size >= 32 ? "heading" : "text-editor";
-    let settings = {
+    const settings = {
       align: getTextAlign(node)
     };
     applyTypographySettings(settings, style, "typography");
@@ -1784,7 +1912,7 @@ async function mapText(node, maps) {
   }
 }
 async function mapImage(node) {
-  let settings = { image: { url: "", id: "" }, align: "center" };
+  const settings = { image: { url: "", id: "" }, align: "center" };
   extractBorders(node, settings, true, "image");
   extractShadows(node, settings, true, "image");
   applyOpacitySetting(settings, node);
@@ -1812,7 +1940,10 @@ async function traverseNode(node, isRoot, maps = { colorMap: {}, typoMap: {} }, 
   if ("children" in node) {
     let childrenJSON = [];
     for (const child of node.children) {
-      const data = applyChildFillSizing(child, await traverseNode(child, false, maps, passValidated));
+      const data = applyChildFillSizing(
+        child,
+        await traverseNode(child, false, maps, passValidated)
+      );
       if (data) {
         if (Array.isArray(data)) childrenJSON = childrenJSON.concat(data);
         else childrenJSON.push(data);
@@ -1888,7 +2019,9 @@ function validateAssetMetadata(metadata, path, errors, warnings) {
   const entries = [];
   for (const [key, value] of Object.entries(metadata)) {
     const items = Array.isArray(value) ? value : [value];
-    items.forEach((item, index) => entries.push({ key, item, path: `${path}.${key}${Array.isArray(value) ? `[${index}]` : ""}` }));
+    items.forEach(
+      (item, index) => entries.push({ key, item, path: `${path}.${key}${Array.isArray(value) ? `[${index}]` : ""}` })
+    );
   }
   for (const entry of entries) {
     if (!isPlainObject(entry.item) || typeof entry.item.assetRef !== "string") {
@@ -1898,7 +2031,8 @@ function validateAssetMetadata(metadata, path, errors, warnings) {
     if (entry.item.status === "uploaded" && (!entry.item.mediaId || !entry.item.mediaUrl)) {
       errors.push(`${entry.path} est\xE1 marcado como uploaded sem mediaId/mediaUrl.`);
     }
-    if (entry.item.status === "failed") warnings.push(`${entry.path} depende de a\xE7\xE3o manual ou retry.`);
+    if (entry.item.status === "failed")
+      warnings.push(`${entry.path} depende de a\xE7\xE3o manual ou retry.`);
   }
 }
 function stableHash(value) {
@@ -1966,13 +2100,7 @@ function normalizeElements(value, depth, parentPath, seenCssIds, seenIds) {
       seenCssIds
     );
     if (normalized.elType === "container" || Array.isArray(item.elements)) {
-      normalized.elements = normalizeElements(
-        item.elements,
-        depth + 1,
-        path,
-        seenCssIds,
-        seenIds
-      );
+      normalized.elements = normalizeElements(item.elements, depth + 1, path, seenCssIds, seenIds);
     } else {
       normalized.elements = [];
     }
@@ -1987,7 +2115,9 @@ function normalizeElementorDocument(document2, mode = document2?.type === "page"
     version: "0.4",
     title: typeof document2?.title === "string" ? document2.title : "Figmentor Export",
     type,
-    ...type === "page" ? { page_settings: isPlainObject(document2?.page_settings) ? { ...document2.page_settings } : {} } : {},
+    ...type === "page" ? {
+      page_settings: isPlainObject(document2?.page_settings) ? { ...document2.page_settings } : {}
+    } : {},
     content
   };
 }
@@ -2009,12 +2139,16 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
   }
   if (!isPlainObject(element.settings)) errors.push(`${path}.settings deve ser um objeto.`);
   if (element.elType === "container") {
-    if (!Array.isArray(element.elements)) errors.push(`${path}.elements deve ser um array em containers.`);
+    if (!Array.isArray(element.elements))
+      errors.push(`${path}.elements deve ser um array em containers.`);
   } else {
     if (!SUPPORTED_WIDGET_TYPES.has(element.widgetType)) {
-      errors.push(`${path}.widgetType "${element.widgetType || ""}" n\xE3o \xE9 um widget Elementor suportado.`);
+      errors.push(
+        `${path}.widgetType "${element.widgetType || ""}" n\xE3o \xE9 um widget Elementor suportado.`
+      );
     }
-    if (!Array.isArray(element.elements)) errors.push(`${path}.elements deve ser um array em widgets.`);
+    if (!Array.isArray(element.elements))
+      errors.push(`${path}.elements deve ser um array em widgets.`);
   }
   if (Array.isArray(element.elements)) {
     element.elements.forEach((child, index) => {
@@ -2023,29 +2157,49 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds) {
   }
   const cssId = element.settings?.css_id;
   if (cssId) {
-    if (!CSS_ID_PATTERN2.test(cssId)) errors.push(`${path}.settings.css_id deve ser um identificador CSS seguro.`);
+    if (!CSS_ID_PATTERN2.test(cssId))
+      errors.push(`${path}.settings.css_id deve ser um identificador CSS seguro.`);
     if (seenCssIds.has(cssId)) errors.push(`${path}.settings.css_id est\xE1 duplicado.`);
     else seenCssIds.add(cssId);
   }
   if (isPlainObject(element.settings)) {
-    if (element.settings.image !== void 0) validateNativeMedia(element.settings.image, `${path}.settings.image`, errors);
-    if (element.settings.background_image !== void 0) validateNativeMedia(element.settings.background_image, `${path}.settings.background_image`, errors);
-    if (element.settings.selected_icon !== void 0) validateNativeIcon(element.settings.selected_icon, `${path}.settings.selected_icon`, errors);
-    if (element.settings.selected_active_icon !== void 0) validateNativeIcon(element.settings.selected_active_icon, `${path}.settings.selected_active_icon`, errors);
+    if (element.settings.image !== void 0)
+      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors);
+    if (element.settings.background_image !== void 0)
+      validateNativeMedia(
+        element.settings.background_image,
+        `${path}.settings.background_image`,
+        errors
+      );
+    if (element.settings.selected_icon !== void 0)
+      validateNativeIcon(element.settings.selected_icon, `${path}.settings.selected_icon`, errors);
+    if (element.settings.selected_active_icon !== void 0)
+      validateNativeIcon(
+        element.settings.selected_active_icon,
+        `${path}.settings.selected_active_icon`,
+        errors
+      );
     if (Array.isArray(element.settings.icon_list)) {
       element.settings.icon_list.forEach((item, index) => {
         if (!isPlainObject(item)) {
           errors.push(`${path}.settings.icon_list[${index}] deve ser um objeto.`);
           return;
         }
-        if (typeof item.text !== "string") errors.push(`${path}.settings.icon_list[${index}].text deve ser texto.`);
+        if (typeof item.text !== "string")
+          errors.push(`${path}.settings.icon_list[${index}].text deve ser texto.`);
         if (item.selected_icon !== void 0) {
-          validateNativeIcon(item.selected_icon, `${path}.settings.icon_list[${index}].selected_icon`, errors);
+          validateNativeIcon(
+            item.selected_icon,
+            `${path}.settings.icon_list[${index}].selected_icon`,
+            errors
+          );
         }
       });
     }
     if (element.settings.figmentor_assets !== void 0 || element.settings.figmentor_source_node_id !== void 0) {
-      errors.push(`${path}.settings cont\xE9m metadados do Figmentor; use o sidecar document.figmentor.`);
+      errors.push(
+        `${path}.settings cont\xE9m metadados do Figmentor; use o sidecar document.figmentor.`
+      );
     }
     if (element.settings.custom_css !== void 0 && (typeof element.settings.custom_css !== "string" || element.settings.custom_css.length > 2e4 || /<\/?script\b|@import\b/i.test(element.settings.custom_css) || typeof element.settings.custom_css === "string" && (!element.settings.custom_css.includes(`#${element.settings.css_id}`) || (element.settings.custom_css.match(/{/g) || []).length !== (element.settings.custom_css.match(/}/g) || []).length))) {
       errors.push(`${path}.settings.custom_css deve ser CSS texto v\xE1lido e limitado a 20 KB.`);
@@ -2060,7 +2214,8 @@ function validateElementorDocument(document2, mode = document2?.type === "page" 
     return { valid: false, errors: ["O documento exportado deve ser um objeto."] };
   }
   if (document2.version !== "0.4") errors.push('version deve ser "0.4".');
-  if (document2.type !== expectedType) errors.push(`type deve ser "${expectedType}" no modo ${mode}.`);
+  if (document2.type !== expectedType)
+    errors.push(`type deve ser "${expectedType}" no modo ${mode}.`);
   if (!Array.isArray(document2.content) || document2.content.length === 0) {
     errors.push("content deve conter pelo menos um elemento.");
   }
@@ -2084,7 +2239,12 @@ function validateElementorDocument(document2, mode = document2?.type === "page" 
           continue;
         }
         if (metadata.assets !== void 0) {
-          validateAssetMetadata(metadata.assets, `figmentor.elements.${elementId}.assets`, errors, warnings);
+          validateAssetMetadata(
+            metadata.assets,
+            `figmentor.elements.${elementId}.assets`,
+            errors,
+            warnings
+          );
         }
       }
     }
@@ -2273,7 +2433,7 @@ function bindIcon(settings, source, pluginId) {
   settings.selected_icon = fallbackIcon();
   settings.figmentor_assets.selected_icon = assetMetadata(iconNode, "icon", "selected_icon");
 }
-function bindIconList(settings, source, pluginId) {
+function bindIconList(settings, source) {
   const vectors = descendants(source, (node) => VECTOR_TYPES2.has(node.type));
   if (!Array.isArray(settings.icon_list) || !vectors.length) return;
   settings.figmentor_assets.icon_list = [];
@@ -2307,7 +2467,11 @@ function bindElementAssets(element, sourceMap, pluginId, sidecar) {
       settings.background_position = settings.background_position || "center center";
       settings.background_repeat = settings.background_repeat || "no-repeat";
       settings.background_size = settings.background_size || "cover";
-      settings.figmentor_assets.background_image = assetMetadata(source, "background", "background_image");
+      settings.figmentor_assets.background_image = assetMetadata(
+        source,
+        "background",
+        "background_image"
+      );
     }
     if (element.widgetType === "image-carousel" && Array.isArray(settings.carousel)) {
       const children = source.children?.length ? source.children : [source];
@@ -2318,7 +2482,7 @@ function bindElementAssets(element, sourceMap, pluginId, sidecar) {
       }));
     }
     if (["icon-box", "button"].includes(element.widgetType)) bindIcon(settings, source, pluginId);
-    if (element.widgetType === "icon-list") bindIconList(settings, source, pluginId);
+    if (element.widgetType === "icon-list") bindIconList(settings, source);
     sidecar[element.id] = {
       sourceNodeId: settings.figmentor_source_node_id,
       sourceTag: tag || null,
@@ -2329,7 +2493,9 @@ function bindElementAssets(element, sourceMap, pluginId, sidecar) {
     if (Object.keys(settings.figmentor_assets).length === 0) delete sidecar[element.id].assets;
     delete settings.figmentor_assets;
   }
-  (element?.elements || []).forEach((child) => bindElementAssets(child, sourceMap, pluginId, sidecar));
+  (element?.elements || []).forEach(
+    (child) => bindElementAssets(child, sourceMap, pluginId, sidecar)
+  );
 }
 function sanitizeUnsupportedPositioning(elements) {
   for (const element of elements || []) {
@@ -2344,7 +2510,8 @@ function sanitizeUnsupportedPositioning(elements) {
         "_z_index",
         "offset_x",
         "offset_y"
-      ]) delete element.settings[key];
+      ])
+        delete element.settings[key];
     }
     sanitizeUnsupportedPositioning(element?.elements);
   }
@@ -2371,13 +2538,16 @@ async function buildElementorDocument(root, mode, pluginId) {
   const type = mode === "page" ? "page" : "container";
   const content = Array.isArray(mapped) ? mapped : mapped ? [mapped] : [];
   sanitizeUnsupportedPositioning(content);
-  const document2 = normalizeElementorDocument({
-    version: "0.4",
-    title: `${type === "page" ? "Page" : "Container"} Export - ${root.name || root.id}`,
-    type,
-    ...type === "page" ? { page_settings: {} } : {},
-    content
-  }, mode);
+  const document2 = normalizeElementorDocument(
+    {
+      version: "0.4",
+      title: `${type === "page" ? "Page" : "Container"} Export - ${root.name || root.id}`,
+      type,
+      ...type === "page" ? { page_settings: {} } : {},
+      content
+    },
+    mode
+  );
   const sourceMap = /* @__PURE__ */ new Map();
   walkNodes(root, (node) => sourceMap.set(node.id, node));
   const sidecar = {};
@@ -2432,7 +2602,9 @@ function patchElement(element, assetMap, sidecar) {
     }
     if (Array.isArray(metadata.carousel)) {
       metadata.carousel = metadata.carousel.map((item) => patchMetadata(item, assetMap));
-      settings.carousel = metadata.carousel.map((item) => uploadedMedia(assetMap.get(item.assetRef)));
+      settings.carousel = metadata.carousel.map(
+        (item) => uploadedMedia(assetMap.get(item.assetRef))
+      );
     }
     if (metadata.selected_icon) {
       const asset = assetMap.get(metadata.selected_icon.assetRef);
@@ -2477,7 +2649,11 @@ function encodeCanvas(canvas, quality) {
     return canvas.convertToBlob({ type: "image/webp", quality });
   }
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("O navegador n\xE3o conseguiu gerar o WebP.")), "image/webp", quality);
+    canvas.toBlob(
+      (blob) => blob ? resolve(blob) : reject(new Error("O navegador n\xE3o conseguiu gerar o WebP.")),
+      "image/webp",
+      quality
+    );
   });
 }
 function buildScales(minScale = 0.08, decay = 0.82) {
@@ -2585,12 +2761,16 @@ function extractWordPressContext(probe = {}) {
 }
 function validateWordPressContext(context, options = {}) {
   if (!context?.isWordPress) throw new Error("A aba ativa n\xE3o parece ser um painel WordPress.");
-  if (!context.nonce) throw new Error("N\xE3o foi poss\xEDvel encontrar o nonce REST do WordPress nesta aba.");
+  if (!context.nonce)
+    throw new Error("N\xE3o foi poss\xEDvel encontrar o nonce REST do WordPress nesta aba.");
   if (options.requireElementor !== false) {
     if (!context.isElementor) throw new Error("A aba ativa n\xE3o parece ser o editor Elementor.");
-    if (!context.postId) throw new Error("N\xE3o foi poss\xEDvel identificar o post aberto no Elementor.");
+    if (!context.postId)
+      throw new Error("N\xE3o foi poss\xEDvel identificar o post aberto no Elementor.");
     if (!context.elementorNonce || !context.elementorAjaxUrl) {
-      throw new Error("N\xE3o foi poss\xEDvel encontrar o endpoint e o nonce de salvamento do Elementor.");
+      throw new Error(
+        "N\xE3o foi poss\xEDvel encontrar o endpoint e o nonce de salvamento do Elementor."
+      );
     }
   }
   return context;
@@ -2670,8 +2850,10 @@ function buildElementorSavePayload(document2, existingElements = [], mode = "pag
   const schemaMode = document2?.type === "page" ? "page" : "section";
   const validation = validateElementorDocument(document2, schemaMode);
   if (!validation.valid) {
-    throw new Error(`O documento n\xE3o pode ser enviado ao Elementor:
-${validation.errors.join("\n")}`);
+    throw new Error(
+      `O documento n\xE3o pode ser enviado ao Elementor:
+${validation.errors.join("\n")}`
+    );
   }
   const incomingElements = Array.isArray(document2?.content) ? document2.content : [];
   const elements = mode === "section" ? [...Array.isArray(existingElements) ? existingElements : [], ...incomingElements] : incomingElements;
@@ -2715,15 +2897,24 @@ async function executeElementorAjax(tabId, context, requestId, action, data = {}
       } catch {
         json = null;
       }
-      return { ok: response.ok, status: response.status, json, text: json ? "" : text.slice(0, 500) };
+      return {
+        ok: response.ok,
+        status: response.status,
+        json,
+        text: json ? "" : text.slice(0, 500)
+      };
     }
   });
   const transport = results[0]?.result;
   if (!transport?.ok || !transport.json) {
-    throw new Error(`O Elementor respondeu ${transport?.status || "sem status"}: ${transport?.text || "resposta inv\xE1lida"}`);
+    throw new Error(
+      `O Elementor respondeu ${transport?.status || "sem status"}: ${transport?.text || "resposta inv\xE1lida"}`
+    );
   }
   if (transport.json.success !== true) {
-    throw new Error(transport.json?.data?.message || "O endpoint do Elementor recusou a requisi\xE7\xE3o.");
+    throw new Error(
+      transport.json?.data?.message || "O endpoint do Elementor recusou a requisi\xE7\xE3o."
+    );
   }
   const actionResponse = transport.json?.data?.responses?.[requestId];
   if (!actionResponse || actionResponse.success !== true) {
@@ -2790,8 +2981,10 @@ async function insertElementorDocument(tabId, context, document2, mode = "page")
   const schemaMode = document2?.type === "page" ? "page" : "section";
   const validation = validateElementorDocument(document2, schemaMode);
   if (!validation.valid) {
-    throw new Error(`O JSON final n\xE3o pode ser enviado ao Elementor:
-${validation.errors.join("\n")}`);
+    throw new Error(
+      `O JSON final n\xE3o pode ser enviado ao Elementor:
+${validation.errors.join("\n")}`
+    );
   }
   const draftResult = await ensureWordPressDraft(tabId, context);
   context = { ...context, postStatus: draftResult.status };
@@ -2806,12 +2999,16 @@ ${validation.errors.join("\n")}`);
   );
   const savedStatus = typeof saveResponse?.status === "string" ? saveResponse.status : saveResponse?.config?.document?.status?.value;
   if (savedStatus !== "draft") {
-    throw new Error(`O servidor n\xE3o confirmou o status draft (retornou ${savedStatus || "indefinido"}).`);
+    throw new Error(
+      `O servidor n\xE3o confirmou o status draft (retornou ${savedStatus || "indefinido"}).`
+    );
   }
   const after = await readElementorDocument(tabId, context);
   const verification = verifyElementorPersistence(after, payload.elements);
   if (!verification.persistent) {
-    throw new Error(`O conte\xFAdo n\xE3o foi confirmado ap\xF3s o salvamento. IDs ausentes: ${verification.missingElementIds.join(", ") || "nenhum"}; m\xEDdias ausentes: ${verification.missingMediaIds.join(", ") || "nenhuma"}.`);
+    throw new Error(
+      `O conte\xFAdo n\xE3o foi confirmado ap\xF3s o salvamento. IDs ausentes: ${verification.missingElementIds.join(", ") || "nenhum"}; m\xEDdias ausentes: ${verification.missingMediaIds.join(", ") || "nenhuma"}.`
+    );
   }
   return {
     saved: true,
@@ -2828,10 +3025,12 @@ async function ensureWordPressDraft(tabId, context) {
   const results = await chrome.scripting.executeScript({
     target: { tabId },
     world: "MAIN",
-    args: [{
-      url: `${context.restRoot}wp/v2/${context.postRestBase}/${context.postId}`,
-      nonce: context.nonce
-    }],
+    args: [
+      {
+        url: `${context.restRoot}wp/v2/${context.postRestBase}/${context.postId}`,
+        nonce: context.nonce
+      }
+    ],
     func: async ({ url, nonce }) => {
       const response = await fetch(url, {
         method: "POST",
@@ -2854,7 +3053,9 @@ async function ensureWordPressDraft(tabId, context) {
   });
   const result = results[0]?.result;
   if (!result?.ok || result.status !== "draft") {
-    throw new Error(result?.message || `O WordPress n\xE3o confirmou a mudan\xE7a para rascunho (HTTP ${result?.httpStatus || "indefinido"}, status ${result?.status || "indefinido"}).`);
+    throw new Error(
+      result?.message || `O WordPress n\xE3o confirmou a mudan\xE7a para rascunho (HTTP ${result?.httpStatus || "indefinido"}, status ${result?.status || "indefinido"}).`
+    );
   }
   return result;
 }
@@ -2868,13 +3069,16 @@ async function reloadAndVerifyElementorDocument(tabId, context, expectedElements
     await new Promise((resolve) => setTimeout(resolve, 300));
   }
   const tab = await chrome.tabs.get(tabId);
-  if (tab.status !== "complete") throw new Error("A aba do Elementor n\xE3o terminou de recarregar para a verifica\xE7\xE3o.");
+  if (tab.status !== "complete")
+    throw new Error("A aba do Elementor n\xE3o terminou de recarregar para a verifica\xE7\xE3o.");
   const refreshedContext = await probeWordPressTab(tabId);
   validateWordPressContext(refreshedContext);
   const snapshot = await readElementorDocument(tabId, refreshedContext);
   const verification = verifyElementorPersistence(snapshot, expectedElements);
   if (!verification.persistent) {
-    throw new Error(`O conte\xFAdo n\xE3o persistiu ap\xF3s recarregar. IDs ausentes: ${verification.missingElementIds.join(", ") || "nenhum"}; m\xEDdias ausentes: ${verification.missingMediaIds.join(", ") || "nenhuma"}.`);
+    throw new Error(
+      `O conte\xFAdo n\xE3o persistiu ap\xF3s recarregar. IDs ausentes: ${verification.missingElementIds.join(", ") || "nenhum"}; m\xEDdias ausentes: ${verification.missingMediaIds.join(", ") || "nenhuma"}.`
+    );
   }
   return { verified: true, context: refreshedContext, verification };
 }
@@ -2894,7 +3098,13 @@ async function uploadMediaToWordPress(tabId, context, blob, filename, mimeType) 
     target: { tabId },
     world: "MAIN",
     args: [{ restRoot: context.restRoot, nonce: context.nonce, filename, mimeType, base64 }],
-    func: async ({ restRoot, nonce, filename: uploadName, mimeType: uploadType, base64: encoded }) => {
+    func: async ({
+      restRoot,
+      nonce,
+      filename: uploadName,
+      mimeType: uploadType,
+      base64: encoded
+    }) => {
       const binary = atob(encoded);
       const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
       const response = await fetch(`${restRoot}wp/v2/media`, {
@@ -2902,7 +3112,7 @@ async function uploadMediaToWordPress(tabId, context, blob, filename, mimeType) 
         credentials: "include",
         headers: {
           "X-WP-Nonce": nonce,
-          "Content-Disposition": `attachment; filename="${uploadName.replace(/\"/g, "")}"`,
+          "Content-Disposition": `attachment; filename="${uploadName.replace(/"/g, "")}"`,
           "Content-Type": uploadType
         },
         body: bytes
@@ -2946,7 +3156,9 @@ var workflow = {
   report: null
 };
 function setStatus(message, isError = false, area = "figma") {
-  const status = $(area === "token" ? "token-status" : area === "elementor" ? "elementor-status" : "figma-status");
+  const status = $(
+    area === "token" ? "token-status" : area === "elementor" ? "elementor-status" : "figma-status"
+  );
   status.textContent = message;
   status.classList.toggle("error", isError);
   status.classList.toggle("success", !isError);
@@ -2955,7 +3167,10 @@ function showScreen(screen) {
   for (const name of ["token", "figma", "elementor"]) {
     $(`screen-${name}`).classList.toggle("active", name === screen);
     $(`step-${name}`).classList.toggle("active", name === screen);
-    $(`step-${name}`).classList.toggle("complete", name !== screen && (name === "token" ? Boolean($("token").value.trim()) : name === "figma" ? Boolean(workflow.document) : false));
+    $(`step-${name}`).classList.toggle(
+      "complete",
+      name !== screen && (name === "token" ? Boolean($("token").value.trim()) : name === "figma" ? Boolean(workflow.document) : false)
+    );
   }
 }
 function setConnected(connected) {
@@ -2966,7 +3181,7 @@ function setConnected(connected) {
 function updateElementorState() {
   const ready = Boolean(workflow.document && workflow.manifest && workflow.wordpress);
   $("insert-elementor").disabled = !ready;
-  $("continue-elementor").disabled = !Boolean(workflow.document && workflow.manifest);
+  $("continue-elementor").disabled = !(workflow.document && workflow.manifest);
   $("retry-assets").disabled = !workflow.manifest?.assets?.some((asset) => asset.status === "failed") || !workflow.wordpress;
   if (workflow.selection) {
     $("elementor-source").textContent = `${workflow.selection.name || workflow.selection.nodeId}
@@ -3042,13 +3257,15 @@ async function readFrame() {
           selection = await readRegisteredSelection(token, file.fileKey, pluginId);
           selection.source = "PLUGIN_DATA_FALLBACK";
         } catch (pluginError) {
-          throw new Error(`${selectionError.message}
+          throw new Error(
+            `${selectionError.message}
 
-Fallback do plugin: ${pluginError.message}`);
+Fallback do plugin: ${pluginError.message}`
+          );
         }
       }
     }
-    const root = await readNode(token, file.fileKey, selection.nodeId, pluginId);
+    const root = await readNode(token, file.fileKey, selection.nodeId);
     const resolvedSelection = {
       ...selection,
       name: root.name || selection.name,
@@ -3058,8 +3275,10 @@ Fallback do plugin: ${pluginError.message}`);
     const document2 = await buildElementorDocument(root, mode, pluginId);
     const validation = validateElementorDocument(document2, mode);
     if (!validation.valid) {
-      throw new Error(`O JSON preparado n\xE3o passou na valida\xE7\xE3o do Elementor:
-${validation.errors.join("\n")}`);
+      throw new Error(
+        `O JSON preparado n\xE3o passou na valida\xE7\xE3o do Elementor:
+${validation.errors.join("\n")}`
+      );
     }
     const manifest = buildAssetManifest(root, pluginId, resolvedSelection);
     const report = createFigmentorReport(manifest, document2);
@@ -3096,7 +3315,9 @@ async function useActiveFigmaSelection() {
   try {
     const parsed = parseFigmaFileUrl(tab.url);
     $("figma-url").value = tab.url;
-    setStatus(parsed.nodeId ? `Node ID encontrado no link: ${parsed.nodeId}` : "Consultando a sele\xE7\xE3o atual pela API do Figma...");
+    setStatus(
+      parsed.nodeId ? `Node ID encontrado no link: ${parsed.nodeId}` : "Consultando a sele\xE7\xE3o atual pela API do Figma..."
+    );
     await readFrame();
   } catch (error) {
     setStatus(error.message, true);
@@ -3120,11 +3341,15 @@ async function detectWordPress() {
     validateWordPressContext(context);
     workflow.wordpress = { tabId: tab.id, ...context };
     updateElementorState();
-    setStatus([
-      `WordPress detectado: ${context.title || context.href}`,
-      `Elementor detectado: ${context.isElementor ? "sim" : "n\xE3o confirmado"}`,
-      "Sess\xE3o e nonce encontrados."
-    ].join("\n"), false, "elementor");
+    setStatus(
+      [
+        `WordPress detectado: ${context.title || context.href}`,
+        `Elementor detectado: ${context.isElementor ? "sim" : "n\xE3o confirmado"}`,
+        "Sess\xE3o e nonce encontrados."
+      ].join("\n"),
+      false,
+      "elementor"
+    );
   } catch (error) {
     workflow.wordpress = null;
     updateElementorState();
@@ -3146,7 +3371,12 @@ async function processAssets(manifest, token, onlyFailed = false) {
       delete asset.error;
       setStatus(`Preparando ${asset.elementName || asset.figmaNodeId}...`, false, "elementor");
       const isSvg = asset.targetFormat === "SVG";
-      const rendered = await renderNodeImage(token, manifest.source.fileKey, asset.figmaNodeId, isSvg ? "svg" : "png");
+      const rendered = await renderNodeImage(
+        token,
+        manifest.source.fileKey,
+        asset.figmaNodeId,
+        isSvg ? "svg" : "png"
+      );
       let uploadBlob = rendered.blob;
       const mimeType = isSvg ? "image/svg+xml" : "image/webp";
       if (!isSvg) {
@@ -3171,7 +3401,8 @@ async function processAssets(manifest, token, onlyFailed = false) {
       );
       asset.mediaId = uploaded?.id || null;
       asset.mediaUrl = uploaded?.source_url || uploaded?.guid?.rendered || null;
-      if (!asset.mediaId || !asset.mediaUrl) throw new Error("O WordPress n\xE3o retornou o ID ou a URL da m\xEDdia.");
+      if (!asset.mediaId || !asset.mediaUrl)
+        throw new Error("O WordPress n\xE3o retornou o ID ou a URL da m\xEDdia.");
       asset.status = "uploaded";
     } catch (error) {
       asset.status = "failed";
@@ -3196,9 +3427,12 @@ async function insertIntoElementor(onlyFailed = false) {
   }
   const destination = workflow.wordpress.title || workflow.wordpress.href;
   const modeLabel = $("elementor-mode").value === "section" ? "adicionar a se\xE7\xE3o ao final" : "substituir o conte\xFAdo da p\xE1gina";
-  if (!window.confirm(`Confirmar envio para ${destination}?
+  if (!window.confirm(
+    `Confirmar envio para ${destination}?
 
-A extens\xE3o ir\xE1 ${modeLabel}, salvar como rascunho e recarregar a aba para verificar a persist\xEAncia.`)) return;
+A extens\xE3o ir\xE1 ${modeLabel}, salvar como rascunho e recarregar a aba para verificar a persist\xEAncia.`
+  ))
+    return;
   $("insert-elementor").disabled = true;
   $("retry-assets").disabled = true;
   try {
@@ -3210,8 +3444,10 @@ A extens\xE3o ir\xE1 ${modeLabel}, salvar como rascunho e recarregar a aba para 
       patchedDocument.type === "page" ? "page" : "section"
     );
     if (!validation.valid) {
-      throw new Error(`O JSON final n\xE3o passou na valida\xE7\xE3o do Elementor:
-${validation.errors.join("\n")}`);
+      throw new Error(
+        `O JSON final n\xE3o passou na valida\xE7\xE3o do Elementor:
+${validation.errors.join("\n")}`
+      );
     }
     const result = await insertElementorDocument(
       workflow.wordpress.tabId,
@@ -3219,7 +3455,11 @@ ${validation.errors.join("\n")}`);
       patchedDocument,
       mode
     );
-    setStatus("Servidor confirmou o rascunho. Recarregando a aba para verificar persist\xEAncia...", false, "elementor");
+    setStatus(
+      "Servidor confirmou o rascunho. Recarregando a aba para verificar persist\xEAncia...",
+      false,
+      "elementor"
+    );
     const reloadResult = await reloadAndVerifyElementorDocument(
       workflow.wordpress.tabId,
       workflow.wordpress,
@@ -3251,7 +3491,11 @@ ${validation.errors.join("\n")}`);
     });
     updateDownloads();
     updateElementorState();
-    setStatus("Fluxo completo confirmado: assets, rascunho e persist\xEAncia ap\xF3s reload.", false, "elementor");
+    setStatus(
+      "Fluxo completo confirmado: assets, rascunho e persist\xEAncia ap\xF3s reload.",
+      false,
+      "elementor"
+    );
   } catch (error) {
     const report = createFigmentorReport(manifest, workflow.document);
     workflow = { ...workflow, manifest, report };
@@ -3296,7 +3540,16 @@ $("use-figma-selection").addEventListener("click", useActiveFigmaSelection);
 $("detect-wordpress").addEventListener("click", detectWordPress);
 $("insert-elementor").addEventListener("click", () => insertIntoElementor(false));
 $("retry-assets").addEventListener("click", () => insertIntoElementor(true));
-$("download-json").addEventListener("click", () => downloadJson("elementor-template.json", workflow.document));
-$("download-manifest").addEventListener("click", () => downloadJson("figmentor-assets-manifest.json", workflow.manifest));
-$("download-report").addEventListener("click", () => downloadJson("figmentor-report.json", workflow.report));
+$("download-json").addEventListener(
+  "click",
+  () => downloadJson("elementor-template.json", workflow.document)
+);
+$("download-manifest").addEventListener(
+  "click",
+  () => downloadJson("figmentor-assets-manifest.json", workflow.manifest)
+);
+$("download-report").addEventListener(
+  "click",
+  () => downloadJson("figmentor-report.json", workflow.report)
+);
 restoreState().catch((error) => setStatus(error.message, true, "token"));

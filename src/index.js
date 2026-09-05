@@ -1,19 +1,19 @@
-import { traverseNode } from './core/traverse.js';
-import { annotateExportContent, validateExportDocument } from './core/contract.js';
+import { traverseNode } from "./core/traverse.js";
+import { annotateExportContent, validateExportDocument } from "./core/contract.js";
 import {
   FIGMENTOR_SELECTION_KEY,
   FIGMENTOR_SHARED_NAMESPACE,
   isSupportedRootNode,
   serializeSelectionRecord
-} from './core/selection.js';
-import { ELEMENTOR_SELECTOR_PROFILE } from './styles/elementor-selectors.js';
-import { summarizeEffects } from './styles/effects.js';
+} from "./core/selection.js";
+import { ELEMENTOR_SELECTOR_PROFILE } from "./styles/elementor-selectors.js";
+import { summarizeEffects } from "./styles/effects.js";
 
-const EXPORT_MODES = new Set(['section', 'page']);
+const EXPORT_MODES = new Set(["section", "page"]);
 
 function sendExportError(message) {
   figma.notify(`Exportação interrompida: ${message}`, { error: true });
-  figma.ui.postMessage({ type: 'export-error', message });
+  figma.ui.postMessage({ type: "export-error", message });
 }
 
 function persistSelectedRoot(rootNode, registeredAt = new Date().toISOString()) {
@@ -24,10 +24,10 @@ function persistSelectedRoot(rootNode, registeredAt = new Date().toISOString()) 
 
   return {
     nodeId: rootNode.id,
-    name: rootNode.name || '',
+    name: rootNode.name || "",
     type: rootNode.type,
     registeredAt,
-    pluginId: figma.pluginId || 'figma-to-elementor-test',
+    pluginId: figma.pluginId || "figma-to-elementor-test",
     dataNamespace: FIGMENTOR_SHARED_NAMESPACE
   };
 }
@@ -37,27 +37,27 @@ function syncCurrentSelection(notify = false) {
   if (selection.length !== 1 || !isSupportedRootNode(selection[0])) return null;
 
   const frame = persistSelectedRoot(selection[0]);
-  figma.ui.postMessage({ type: 'frame-selection-synced', data: frame });
+  figma.ui.postMessage({ type: "frame-selection-synced", data: frame });
   if (notify) figma.notify(`Frame sincronizado: ${frame.name || frame.nodeId}`);
   return frame;
 }
 
 try {
   figma.showUI(__html__, { width: 400, height: 620 });
-  figma.on('selectionchange', () => syncCurrentSelection(false));
+  figma.on("selectionchange", () => syncCurrentSelection(false));
   syncCurrentSelection(false);
 
   figma.ui.onmessage = (msg) => {
     try {
-      if (msg.type === 'apply-tag') {
+      if (msg.type === "apply-tag") {
         const selection = figma.currentPage.selection;
         if (selection.length > 0) {
-            selection.forEach(node => {
-              node.setPluginData("elementor-tag", "");
-              node.setPluginData("elementor-tag", msg.tag);
-              node.setSharedPluginData(FIGMENTOR_SHARED_NAMESPACE, "elementor-tag", msg.tag);
+          selection.forEach((node) => {
+            node.setPluginData("elementor-tag", "");
+            node.setPluginData("elementor-tag", msg.tag);
+            node.setSharedPluginData(FIGMENTOR_SHARED_NAMESPACE, "elementor-tag", msg.tag);
 
-            let newName = node.name.replace(/\[.*?\]\s*/g, '');
+            const newName = node.name.replace(/\[.*?\]\s*/g, "");
             node.name = `[${msg.tag.toUpperCase()}] ${newName}`;
           });
           figma.notify("Tag Aplicada: " + msg.tag.toUpperCase());
@@ -66,19 +66,19 @@ try {
         }
       }
 
-      if (msg.type === 'apply-role') {
+      if (msg.type === "apply-role") {
         const selection = figma.currentPage.selection;
         if (selection.length > 0) {
-            selection.forEach(node => {
-              node.setPluginData("elementor_role", msg.role);
-              node.setSharedPluginData(FIGMENTOR_SHARED_NAMESPACE, "elementor_role", msg.role);
-            
-            let newName = node.name.replace(/\[(?:title|description|icon|image)\]\s*/gi, '');
-            
+          selection.forEach((node) => {
+            node.setPluginData("elementor_role", msg.role);
+            node.setSharedPluginData(FIGMENTOR_SHARED_NAMESPACE, "elementor_role", msg.role);
+
+            const newName = node.name.replace(/\[(?:title|description|icon|image)\]\s*/gi, "");
+
             let roleLabel = msg.role;
-            if (msg.role === 'title_text') roleLabel = 'title';
-            if (msg.role === 'description_text') roleLabel = 'description';
-              
+            if (msg.role === "title_text") roleLabel = "title";
+            if (msg.role === "description_text") roleLabel = "description";
+
             node.name = `[${roleLabel}] ${newName}`;
           });
           figma.notify("Sub-Tag Aplicada: " + msg.role);
@@ -87,32 +87,32 @@ try {
         }
       }
 
-      if (msg.type === 'register-frame') {
+      if (msg.type === "register-frame") {
         const selection = figma.currentPage.selection;
 
         if (selection.length !== 1) {
           figma.ui.postMessage({
-            type: 'frame-registration-error',
-            message: 'Selecione exatamente um frame para registrar.'
+            type: "frame-registration-error",
+            message: "Selecione exatamente um frame para registrar."
           });
-          figma.notify('Selecione exatamente um frame para registrar.', { error: true });
+          figma.notify("Selecione exatamente um frame para registrar.", { error: true });
           return;
         }
 
         const rootNode = selection[0];
         if (!isSupportedRootNode(rootNode)) {
           figma.ui.postMessage({
-            type: 'frame-registration-error',
-            message: 'O elemento selecionado precisa ser um frame, grupo, seção ou componente.'
+            type: "frame-registration-error",
+            message: "O elemento selecionado precisa ser um frame, grupo, seção ou componente."
           });
-          figma.notify('Selecione um frame, grupo, seção ou componente.', { error: true });
+          figma.notify("Selecione um frame, grupo, seção ou componente.", { error: true });
           return;
         }
 
         const frame = persistSelectedRoot(rootNode);
 
         figma.ui.postMessage({
-          type: 'frame-registered',
+          type: "frame-registered",
           data: frame
         });
         figma.notify(`Frame registrado: ${rootNode.name || rootNode.id}`);
@@ -151,17 +151,17 @@ try {
         (async () => {
           try {
             const { colorMap, typoMap } = msg;
-            let structure = await traverseNode(selection[0], true, { colorMap, typoMap });
+            const structure = await traverseNode(selection[0], true, { colorMap, typoMap });
             let content = Array.isArray(structure) ? structure : [structure];
 
             function sanitizeOutput(nodes, effectItems) {
               if (!nodes || !Array.isArray(nodes)) return;
-              nodes.forEach(node => {
+              nodes.forEach((node) => {
                 if (node && node.settings) {
                   if (node.settings.figmentor_effects) {
                     effectItems.push({
                       elementId: node.id || null,
-                      widgetType: node.elType === 'widget' ? node.widgetType : 'container',
+                      widgetType: node.elType === "widget" ? node.widgetType : "container",
                       cssId: node.settings.css_id || null,
                       ...node.settings.figmentor_effects
                     });
@@ -209,7 +209,10 @@ try {
               return;
             }
 
-            figma.ui.postMessage({ type: "json-generated", data: JSON.stringify(elementorJSON, null, 2) });
+            figma.ui.postMessage({
+              type: "json-generated",
+              data: JSON.stringify(elementorJSON, null, 2)
+            });
             figma.notify("✅ JSON Gerado com Sucesso!");
           } catch (err) {
             sendExportError(err.message);
@@ -217,8 +220,6 @@ try {
           }
         })();
       }
-
-
     } catch (e) {
       figma.notify("Erro Msg: " + e.message);
       console.error(e);

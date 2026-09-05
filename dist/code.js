@@ -11,21 +11,21 @@
   // src/utils/typography.js
   function mapFontWeight(style) {
     const weights = {
-      "Thin": "100",
-      "Hairline": "100",
+      Thin: "100",
+      Hairline: "100",
       "Extra Light": "200",
       "Ultra Light": "200",
-      "Light": "300",
-      "Regular": "400",
-      "Normal": "400",
-      "Medium": "500",
+      Light: "300",
+      Regular: "400",
+      Normal: "400",
+      Medium: "500",
       "Semi Bold": "600",
       "Demi Bold": "600",
-      "Bold": "700",
+      Bold: "700",
       "Extra Bold": "800",
       "Ultra Bold": "800",
-      "Black": "900",
-      "Heavy": "900"
+      Black: "900",
+      Heavy: "900"
     };
     const match = Object.keys(weights).find((key) => style.includes(key));
     return weights[match] || "400";
@@ -102,7 +102,9 @@
       return mapTextAlign(node.textAlignHorizontal);
     }
     if ("findOne" in node) {
-      const textChild = node.findOne((child) => child.type === "TEXT" && child.textAlignHorizontal && !isFigmaMixed(child.textAlignHorizontal));
+      const textChild = node.findOne(
+        (child) => child.type === "TEXT" && child.textAlignHorizontal && !isFigmaMixed(child.textAlignHorizontal)
+      );
       if (textChild) {
         return mapTextAlign(textChild.textAlignHorizontal);
       }
@@ -277,7 +279,7 @@
     };
   }
   async function extractBackground(node, maps = { colorMap: {}, typoMap: {} }) {
-    let result = {};
+    const result = {};
     if (node.fills && !isFigmaMixed(node.fills) && node.fills.length > 0) {
       const solidFill = node.fills.find((f) => f.type === "SOLID" && f.visible !== false);
       if (solidFill) {
@@ -299,54 +301,54 @@
 
   // src/utils/cssId.js
   var accentMap = {
-    "\xE1": "a",
-    "\xE0": "a",
-    "\xE3": "a",
-    "\xE2": "a",
-    "\xE4": "a",
-    "\xE9": "e",
-    "\xE8": "e",
-    "\xEA": "e",
-    "\xEB": "e",
-    "\xED": "i",
-    "\xEC": "i",
-    "\xEE": "i",
-    "\xEF": "i",
-    "\xF3": "o",
-    "\xF2": "o",
-    "\xF5": "o",
-    "\xF4": "o",
-    "\xF6": "o",
-    "\xFA": "u",
-    "\xF9": "u",
-    "\xFB": "u",
-    "\xFC": "u",
-    "\xE7": "c",
-    "\xF1": "n",
-    "\xC1": "a",
-    "\xC0": "a",
-    "\xC3": "a",
-    "\xC2": "a",
-    "\xC4": "a",
-    "\xC9": "e",
-    "\xC8": "e",
-    "\xCA": "e",
-    "\xCB": "e",
-    "\xCD": "i",
-    "\xCC": "i",
-    "\xCE": "i",
-    "\xCF": "i",
-    "\xD3": "o",
-    "\xD2": "o",
-    "\xD5": "o",
-    "\xD4": "o",
-    "\xD6": "o",
-    "\xDA": "u",
-    "\xD9": "u",
-    "\xDB": "u",
-    "\xDC": "u",
-    "\xC7": "c",
-    "\xD1": "n"
+    \u00E1: "a",
+    \u00E0: "a",
+    \u00E3: "a",
+    \u00E2: "a",
+    \u00E4: "a",
+    \u00E9: "e",
+    \u00E8: "e",
+    \u00EA: "e",
+    \u00EB: "e",
+    \u00ED: "i",
+    \u00EC: "i",
+    \u00EE: "i",
+    \u00EF: "i",
+    \u00F3: "o",
+    \u00F2: "o",
+    \u00F5: "o",
+    \u00F4: "o",
+    \u00F6: "o",
+    \u00FA: "u",
+    \u00F9: "u",
+    \u00FB: "u",
+    \u00FC: "u",
+    \u00E7: "c",
+    \u00F1: "n",
+    \u00C1: "a",
+    \u00C0: "a",
+    \u00C3: "a",
+    \u00C2: "a",
+    \u00C4: "a",
+    \u00C9: "e",
+    \u00C8: "e",
+    \u00CA: "e",
+    \u00CB: "e",
+    \u00CD: "i",
+    \u00CC: "i",
+    \u00CE: "i",
+    \u00CF: "i",
+    \u00D3: "o",
+    \u00D2: "o",
+    \u00D5: "o",
+    \u00D4: "o",
+    \u00D6: "o",
+    \u00DA: "u",
+    \u00D9: "u",
+    \u00DB: "u",
+    \u00DC: "u",
+    \u00C7: "c",
+    \u00D1: "n"
   };
   function sanitizeCssId(name) {
     if (!name || typeof name !== "string") return "";
@@ -365,9 +367,18 @@
       root: ROOT,
       slots: {
         inner: { selector: ".e-con-inner", label: "container inner" },
-        backgroundVideo: { selector: ".elementor-background-video-container", label: "background video" },
-        backgroundVideoEmbed: { selector: ".elementor-background-video-embed", label: "embedded background video" },
-        backgroundVideoHosted: { selector: ".elementor-background-video-hosted", label: "hosted background video" },
+        backgroundVideo: {
+          selector: ".elementor-background-video-container",
+          label: "background video"
+        },
+        backgroundVideoEmbed: {
+          selector: ".elementor-background-video-embed",
+          label: "embedded background video"
+        },
+        backgroundVideoHosted: {
+          selector: ".elementor-background-video-hosted",
+          label: "hosted background video"
+        },
         shapeTop: { selector: ".elementor-shape.elementor-shape-top", label: "top shape" },
         shapeBottom: { selector: ".elementor-shape.elementor-shape-bottom", label: "bottom shape" },
         overlay: { selector: "::before", label: "container overlay" }
@@ -378,7 +389,14 @@
       profile: ELEMENTOR_SELECTOR_PROFILE,
       root: ROOT,
       slots: { title: { selector: ".elementor-heading-title", label: "heading title" } },
-      classes: [".elementor-size-default", ".elementor-size-small", ".elementor-size-medium", ".elementor-size-large", ".elementor-size-xl", ".elementor-size-xxl"]
+      classes: [
+        ".elementor-size-default",
+        ".elementor-size-small",
+        ".elementor-size-medium",
+        ".elementor-size-large",
+        ".elementor-size-xl",
+        ".elementor-size-xxl"
+      ]
     },
     "text-editor": {
       profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -389,7 +407,11 @@
         dropCap: { selector: ".elementor-drop-cap", label: "drop cap" },
         dropCapLetter: { selector: ".elementor-drop-cap-letter", label: "drop cap letter" }
       },
-      classes: [".elementor-drop-cap-view-default", ".elementor-drop-cap-view-stacked", ".elementor-drop-cap-view-framed"]
+      classes: [
+        ".elementor-drop-cap-view-default",
+        ".elementor-drop-cap-view-stacked",
+        ".elementor-drop-cap-view-framed"
+      ]
     },
     image: {
       profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -397,7 +419,10 @@
       slots: {
         image: { selector: "img", label: "image" },
         figure: { selector: "figure.wp-caption", label: "caption figure" },
-        caption: { selector: "figcaption.widget-image-caption.wp-caption-text", label: "image caption" }
+        caption: {
+          selector: "figcaption.widget-image-caption.wp-caption-text",
+          label: "image caption"
+        }
       },
       classes: [".elementor-clickable"]
     },
@@ -412,7 +437,15 @@
         title: { selector: ".elementor-image-box-title", label: "image box title" },
         description: { selector: ".elementor-image-box-description", label: "image box description" }
       },
-      classes: [".elementor-position-top", ".elementor-position-left", ".elementor-position-right", ".elementor-position-bottom", ".elementor-vertical-align-top", ".elementor-vertical-align-middle", ".elementor-vertical-align-bottom"]
+      classes: [
+        ".elementor-position-top",
+        ".elementor-position-left",
+        ".elementor-position-right",
+        ".elementor-position-bottom",
+        ".elementor-vertical-align-top",
+        ".elementor-vertical-align-middle",
+        ".elementor-vertical-align-bottom"
+      ]
     },
     "icon-box": {
       profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -425,7 +458,16 @@
         title: { selector: ".elementor-icon-box-title", label: "icon box title" },
         description: { selector: ".elementor-icon-box-description", label: "icon box description" }
       },
-      classes: [".elementor-view-default", ".elementor-view-stacked", ".elementor-view-framed", ".elementor-shape-circle", ".elementor-shape-square", ".elementor-animation-grow", ".elementor-animation-shrink", ".elementor-animation-pulse"]
+      classes: [
+        ".elementor-view-default",
+        ".elementor-view-stacked",
+        ".elementor-view-framed",
+        ".elementor-shape-circle",
+        ".elementor-shape-square",
+        ".elementor-animation-grow",
+        ".elementor-animation-shrink",
+        ".elementor-animation-pulse"
+      ]
     },
     "icon-list": {
       profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -437,7 +479,11 @@
         icon: { selector: ".elementor-icon-list-icon", label: "icon list icon" },
         text: { selector: ".elementor-icon-list-text", label: "icon list text" }
       },
-      classes: [".elementor-inline-items", ".elementor-icon-list--layout-traditional", ".elementor-icon-list--layout-inline"]
+      classes: [
+        ".elementor-inline-items",
+        ".elementor-icon-list--layout-traditional",
+        ".elementor-icon-list--layout-inline"
+      ]
     },
     button: {
       profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -451,7 +497,17 @@
         text: { selector: ".elementor-button-text", label: "button text" }
       },
       states: { hover: ":hover", focus: ":focus" },
-      classes: [".elementor-size-xs", ".elementor-size-sm", ".elementor-size-md", ".elementor-size-lg", ".elementor-size-xl", ".elementor-size-xxl", ".elementor-animation-grow", ".elementor-animation-shrink", ".elementor-animation-pulse"]
+      classes: [
+        ".elementor-size-xs",
+        ".elementor-size-sm",
+        ".elementor-size-md",
+        ".elementor-size-lg",
+        ".elementor-size-xl",
+        ".elementor-size-xxl",
+        ".elementor-animation-grow",
+        ".elementor-animation-shrink",
+        ".elementor-animation-pulse"
+      ]
     },
     accordion: {
       profile: ELEMENTOR_SELECTOR_PROFILE,
@@ -476,9 +532,18 @@
         accordion: { selector: ".e-n-accordion", label: "nested accordion" },
         item: { selector: ".e-n-accordion-item", label: "nested accordion item" },
         title: { selector: ".e-n-accordion-item-title", label: "nested accordion title" },
-        titleHeader: { selector: ".e-n-accordion-item-title-header", label: "nested accordion title header" },
-        titleText: { selector: ".e-n-accordion-item-title-text", label: "nested accordion title text" },
-        titleIcon: { selector: ".e-n-accordion-item-title-icon", label: "nested accordion title icon" }
+        titleHeader: {
+          selector: ".e-n-accordion-item-title-header",
+          label: "nested accordion title header"
+        },
+        titleText: {
+          selector: ".e-n-accordion-item-title-text",
+          label: "nested accordion title text"
+        },
+        titleIcon: {
+          selector: ".e-n-accordion-item-title-icon",
+          label: "nested accordion title icon"
+        }
       },
       states: { opened: ".e-opened", closed: ".e-closed", nativeOpened: "[open]" },
       itemTarget: ".e-n-accordion-item:nth-of-type({index})"
@@ -499,7 +564,10 @@
         next: { selector: ".elementor-swiper-button-next", label: "next navigation" },
         pagination: { selector: ".swiper-pagination", label: "carousel pagination" },
         bullet: { selector: ".swiper-pagination-bullet", label: "carousel pagination bullet" },
-        activeBullet: { selector: ".swiper-pagination-bullet-active", label: "active pagination bullet" }
+        activeBullet: {
+          selector: ".swiper-pagination-bullet-active",
+          label: "active pagination bullet"
+        }
       },
       itemTarget: ".swiper-slide:nth-of-type({index})"
     },
@@ -591,14 +659,18 @@
     return Math.round((radians * 180 / Math.PI + 360) % 360);
   }
   function gradientStops(paint) {
-    return (paint.gradientStops || []).map((stop) => `${alphaColor(stop.color, stop.color?.a * finite(paint.opacity, 1))} ${percent(stop.position)}`);
+    return (paint.gradientStops || []).map(
+      (stop) => `${alphaColor(stop.color, stop.color?.a * finite(paint.opacity, 1))} ${percent(stop.position)}`
+    );
   }
   function gradientToCss(paint) {
     const stops = gradientStops(paint);
     if (stops.length < 2) return null;
     if (paint.type === "GRADIENT_RADIAL") return `radial-gradient(circle, ${stops.join(", ")})`;
-    if (paint.type === "GRADIENT_ANGULAR") return `conic-gradient(from ${angleFromHandles(paint.gradientHandlePositions)}deg, ${stops.join(", ")})`;
-    if (paint.type === "GRADIENT_DIAMOND") return `radial-gradient(farthest-corner, ${stops.join(", ")})`;
+    if (paint.type === "GRADIENT_ANGULAR")
+      return `conic-gradient(from ${angleFromHandles(paint.gradientHandlePositions)}deg, ${stops.join(", ")})`;
+    if (paint.type === "GRADIENT_DIAMOND")
+      return `radial-gradient(farthest-corner, ${stops.join(", ")})`;
     return `linear-gradient(${angleFromHandles(paint.gradientHandlePositions)}deg, ${stops.join(", ")})`;
   }
   function paintToCss(paint) {
@@ -620,7 +692,8 @@
     return effects.length === 1 && shadows.length === 1;
   }
   function declaration(property, value) {
-    if (!CSS_SAFE_PROPERTIES.has(property) || value === null || value === void 0 || value === "") return null;
+    if (!CSS_SAFE_PROPERTIES.has(property) || value === null || value === void 0 || value === "")
+      return null;
     return `${property}: ${value};`;
   }
   function extractAdvancedEffects(node, widgetType, cssId) {
@@ -639,17 +712,29 @@
     const solidPaints = paints.filter((paint) => paint.type === "SOLID");
     const gradientPaints = paints.map(gradientToCss).filter(Boolean);
     const cssPaints = paints.map(paintToCss).filter(Boolean);
-    const unsupportedPaints = paints.filter((paint) => !["SOLID", "GRADIENT_LINEAR", "GRADIENT_RADIAL", "GRADIENT_ANGULAR", "GRADIENT_DIAMOND"].includes(paint.type));
+    const unsupportedPaints = paints.filter(
+      (paint) => ![
+        "SOLID",
+        "GRADIENT_LINEAR",
+        "GRADIENT_RADIAL",
+        "GRADIENT_ANGULAR",
+        "GRADIENT_DIAMOND"
+      ].includes(paint.type)
+    );
     if (paints.length === 1 && solidPaints.length === 1 && !hasAdvancedEffect) {
       native.background = "solid";
     } else if (cssPaints.length > 0) {
       cssDeclarations.push(declaration("background", cssPaints.join(", ")));
-      if (solidPaints.length > 0 && gradientPaints.length > 0) cssDeclarations.push(declaration("background-blend-mode", "normal"));
+      if (solidPaints.length > 0 && gradientPaints.length > 0)
+        cssDeclarations.push(declaration("background-blend-mode", "normal"));
     }
-    if (unsupportedPaints.length > 0) flags.push(...unsupportedPaints.map((paint) => `paint:${paint.type}`));
-    if (paints.some((paint) => paint.type === "GRADIENT_DIAMOND")) flags.push("approximation:gradient-diamond-to-radial");
+    if (unsupportedPaints.length > 0)
+      flags.push(...unsupportedPaints.map((paint) => `paint:${paint.type}`));
+    if (paints.some((paint) => paint.type === "GRADIENT_DIAMOND"))
+      flags.push("approximation:gradient-diamond-to-radial");
     const shadows = effects.filter((effect) => ["DROP_SHADOW", "INNER_SHADOW"].includes(effect.type));
-    if (shadows.length > 0 && !native.shadow) cssDeclarations.push(declaration("box-shadow", shadows.map(shadowToCss).join(", ")));
+    if (shadows.length > 0 && !native.shadow)
+      cssDeclarations.push(declaration("box-shadow", shadows.map(shadowToCss).join(", ")));
     if (effects.some((effect) => effect.type === "LAYER_BLUR")) {
       const blur = effects.find((effect) => effect.type === "LAYER_BLUR");
       cssDeclarations.push(declaration("filter", `blur(${finite(blur.radius)}px)`));
@@ -659,13 +744,22 @@
       cssDeclarations.push(declaration("backdrop-filter", `blur(${finite(blur.radius)}px)`));
       cssDeclarations.push(declaration("-webkit-backdrop-filter", `blur(${finite(blur.radius)}px)`));
     }
-    if (blendMode && blendMode !== "normal") cssDeclarations.push(declaration("mix-blend-mode", blendMode));
+    if (blendMode && blendMode !== "normal")
+      cssDeclarations.push(declaration("mix-blend-mode", blendMode));
     if (hasUnsupportedBlend) flags.push(`blend-mode:${node.blendMode}`);
-    const unsupportedEffects = effects.filter((effect) => !["DROP_SHADOW", "INNER_SHADOW", "LAYER_BLUR", "BACKGROUND_BLUR"].includes(effect.type));
-    if (unsupportedEffects.length > 0) flags.push(...unsupportedEffects.map((effect) => `effect:${effect.type}`));
-    if (effects.filter((effect) => effect.type === "LAYER_BLUR").length > 1) flags.push("multiple-layer-blur:first-layer-applied");
-    if (effects.filter((effect) => effect.type === "BACKGROUND_BLUR").length > 1) flags.push("multiple-background-blur:first-layer-applied");
-    if (node?.opacity !== void 0 && finite(node.opacity, 1) < 1) cssDeclarations.push(declaration("opacity", String(Math.max(0, Math.min(1, finite(node.opacity, 1))))));
+    const unsupportedEffects = effects.filter(
+      (effect) => !["DROP_SHADOW", "INNER_SHADOW", "LAYER_BLUR", "BACKGROUND_BLUR"].includes(effect.type)
+    );
+    if (unsupportedEffects.length > 0)
+      flags.push(...unsupportedEffects.map((effect) => `effect:${effect.type}`));
+    if (effects.filter((effect) => effect.type === "LAYER_BLUR").length > 1)
+      flags.push("multiple-layer-blur:first-layer-applied");
+    if (effects.filter((effect) => effect.type === "BACKGROUND_BLUR").length > 1)
+      flags.push("multiple-background-blur:first-layer-applied");
+    if (node?.opacity !== void 0 && finite(node.opacity, 1) < 1)
+      cssDeclarations.push(
+        declaration("opacity", String(Math.max(0, Math.min(1, finite(node.opacity, 1)))))
+      );
     const textGradient = gradientPaints.length > 0 && ["heading", "text-editor"].includes(widgetType);
     if (textGradient) {
       cssDeclarations.push(declaration("background-clip", "text"));
@@ -678,7 +772,8 @@
     const customCss = cssDeclarations.length && cssId ? resolvedSelector ? `${resolvedSelector} {
   ${cssDeclarations.filter(Boolean).join("\n  ")}
 }` : "" : "";
-    if (cssDeclarations.length > 0 && !resolvedSelector) flags.push(cssId ? "invalid-css-id" : "missing-css-id");
+    if (cssDeclarations.length > 0 && !resolvedSelector)
+      flags.push(cssId ? "invalid-css-id" : "missing-css-id");
     if (definition?.experimental) flags.push("experimental-selector-profile");
     if (shadows.some((effect) => effect.type === "INNER_SHADOW")) flags.push("inner-shadow-css");
     const cssCount = cssDeclarations.filter(Boolean).length;
@@ -775,8 +870,12 @@
       if (childTextNodes.length === 0) {
         continue;
       }
-      const explicitTitleNode = childTextNodes.find((textNode) => getNodeRole(textNode) === "title_text");
-      const explicitDescriptionNode = childTextNodes.find((textNode) => getNodeRole(textNode) === "description_text");
+      const explicitTitleNode = childTextNodes.find(
+        (textNode) => getNodeRole(textNode) === "title_text"
+      );
+      const explicitDescriptionNode = childTextNodes.find(
+        (textNode) => getNodeRole(textNode) === "description_text"
+      );
       const fallbackTitleNode = explicitTitleNode || childTextNodes[0];
       const fallbackContentNodes = explicitDescriptionNode ? [explicitDescriptionNode] : childTextNodes.filter((textNode) => textNode.id !== fallbackTitleNode.id);
       const tabTitle = fallbackTitleNode && fallbackTitleNode.characters && fallbackTitleNode.characters.trim() || `Item ${items.length + 1}`;
@@ -812,17 +911,22 @@
       if (childTextNodes.length === 0) {
         continue;
       }
-      const explicitTitleNode = childTextNodes.find((textNode) => getNodeRole(textNode) === "title_text");
-      const explicitDescriptionNode = childTextNodes.find((textNode) => getNodeRole(textNode) === "description_text");
+      const explicitTitleNode = childTextNodes.find(
+        (textNode) => getNodeRole(textNode) === "title_text"
+      );
       const fallbackTitleNode = explicitTitleNode || childTextNodes[0];
       const directChildren = "children" in child ? child.children.filter((item) => item.visible) : [];
       let explicitContentNode = null;
       if ("findAll" in child) {
-        explicitContentNode = child.findAll((nodeItem) => nodeItem.visible && nodeItem.id !== fallbackTitleNode.id && getNodeRole(nodeItem) === "description_text")[0] || null;
+        explicitContentNode = child.findAll(
+          (nodeItem) => nodeItem.visible && nodeItem.id !== fallbackTitleNode.id && getNodeRole(nodeItem) === "description_text"
+        )[0] || null;
       }
       let titleBranchNode = null;
       if (directChildren.length > 0 && fallbackTitleNode) {
-        titleBranchNode = directChildren.find((nodeItem) => nodeItem.id === fallbackTitleNode.id || "findOne" in nodeItem && nodeItem.findOne((descendant) => descendant.id === fallbackTitleNode.id)) || null;
+        titleBranchNode = directChildren.find(
+          (nodeItem) => nodeItem.id === fallbackTitleNode.id || "findOne" in nodeItem && nodeItem.findOne((descendant) => descendant.id === fallbackTitleNode.id)
+        ) || null;
       }
       let contentNodes = [];
       if (explicitContentNode) {
@@ -832,7 +936,9 @@
           contentNodes = [explicitContentNode];
         }
       } else if (directChildren.length > 0) {
-        contentNodes = directChildren.filter((nodeItem) => nodeItem.id !== (titleBranchNode && titleBranchNode.id));
+        contentNodes = directChildren.filter(
+          (nodeItem) => nodeItem.id !== (titleBranchNode && titleBranchNode.id)
+        );
       }
       if (contentNodes.length === 0) {
         contentNodes = childTextNodes.filter((textNode) => textNode.id !== fallbackTitleNode.id);
@@ -926,23 +1032,28 @@
     const styles = await Promise.all(textNodes.map((t) => extractTextStyle(t, maps)));
     const mainStyle = styles.length > 0 ? styles[0] : { color: "", size: 16, weight: "400" };
     const secStyle = styles.length > 1 ? styles[1] : mainStyle;
-    let settings = {};
+    const settings = {};
     let bgSettings = {};
     if (node.type !== "TEXT") {
       bgSettings = await extractBackground(node, maps);
       if (bgSettings.background_background) {
         settings._background_background = bgSettings.background_background;
         settings._background_color = bgSettings.background_color;
-        if (bgSettings.__globals__) settings.__globals__ = Object.assign({}, settings.__globals__ || {}, bgSettings.__globals__);
+        if (bgSettings.__globals__)
+          settings.__globals__ = Object.assign(
+            {},
+            settings.__globals__ || {},
+            bgSettings.__globals__
+          );
       }
     }
     extractBorders(node, settings, true, tag);
     extractShadows(node, settings, true, tag);
     if (tag === "image-box") {
-      let titleNode = textNodes.find((n) => getNodeRole(n) === "title_text");
-      let descNode = textNodes.find((n) => getNodeRole(n) === "description_text");
+      const titleNode = textNodes.find((n) => getNodeRole(n) === "title_text");
+      const descNode = textNodes.find((n) => getNodeRole(n) === "description_text");
       settings.title_text = titleNode ? titleNode.characters : texts[0] || "T\xEDtulo";
-      let tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
+      const tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
       if (tStyle.color) settings.title_color = tStyle.color;
       if (tStyle.globalColorId) {
         settings.__globals__ = settings.__globals__ || {};
@@ -954,7 +1065,7 @@
       }
       applyTypographySettings(settings, tStyle, "title_typography");
       settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
-      let dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
+      const dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
       if (dStyle.color) settings.description_color = dStyle.color;
       if (dStyle.globalColorId) {
         settings.__globals__ = settings.__globals__ || {};
@@ -968,11 +1079,11 @@
       settings.text_align = getTextAlign(node);
       settings.image = { url: "", id: "" };
     } else if (tag === "icon-box") {
-      let titleNode = textNodes.find((n) => getNodeRole(n) === "title_text");
-      let descNode = textNodes.find((n) => getNodeRole(n) === "description_text");
+      const titleNode = textNodes.find((n) => getNodeRole(n) === "title_text");
+      const descNode = textNodes.find((n) => getNodeRole(n) === "description_text");
       settings.title_text = titleNode ? titleNode.characters : texts[0] || "T\xEDtulo do \xCDcone";
       settings.title = settings.title_text;
-      let tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
+      const tStyle = titleNode ? await extractTextStyle(titleNode, maps) : mainStyle;
       if (tStyle.color) settings.title_color = tStyle.color;
       if (tStyle.globalColorId) {
         settings.__globals__ = settings.__globals__ || {};
@@ -985,7 +1096,7 @@
       applyTypographySettings(settings, tStyle, "title_typography");
       settings.description_text = descNode ? descNode.characters : texts.slice(1).join(" ");
       settings.description = settings.description_text;
-      let dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
+      const dStyle = descNode ? await extractTextStyle(descNode, maps) : secStyle;
       if (dStyle.color) settings.description_color = dStyle.color;
       if (dStyle.globalColorId) {
         settings.__globals__ = settings.__globals__ || {};
@@ -1000,8 +1111,9 @@
       let iconName = "fas fa-star";
       let vectorNodes = [];
       if (node.type === "VECTOR" || node.type === "BOOLEAN_OPERATION") vectorNodes.push(node);
-      else if ("findAll" in node) vectorNodes = node.findAll((n) => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
-      let specificIconVector = vectorNodes.find((n) => getNodeRole(n) === "icon");
+      else if ("findAll" in node)
+        vectorNodes = node.findAll((n) => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
+      const specificIconVector = vectorNodes.find((n) => getNodeRole(n) === "icon");
       if (specificIconVector) vectorNodes = [specificIconVector];
       if (vectorNodes.length > 0) {
         const vector = vectorNodes[0];
@@ -1013,7 +1125,10 @@
           }
         }
       }
-      settings.selected_icon = { value: iconName, library: iconName.startsWith("fab") ? "fa-brands" : "fa-solid" };
+      settings.selected_icon = {
+        value: iconName,
+        library: iconName.startsWith("fab") ? "fa-brands" : "fa-solid"
+      };
       if (iconColor) settings.primary_color = iconColor;
       settings.text_align = getTextAlign(node);
     } else if (tag === "icon-list") {
@@ -1087,9 +1202,9 @@
           delete settings._background_color;
           delete settings._background_background;
         }
-        let paddingTop = node.paddingTop || 0;
-        let paddingBottom = node.paddingBottom || 0;
-        let sumPadding = paddingTop + paddingBottom;
+        const paddingTop = node.paddingTop || 0;
+        const paddingBottom = node.paddingBottom || 0;
+        const sumPadding = paddingTop + paddingBottom;
         if (sumPadding >= 40) settings.size = "lg";
         else if (sumPadding >= 20) settings.size = "md";
         else settings.size = "sm";
@@ -1103,13 +1218,16 @@
         if ("findAll" in node) {
           vectorNodes = node.findAll((n) => n.type === "VECTOR" || n.type === "BOOLEAN_OPERATION");
         }
-        let specificIconVector = vectorNodes.find((n) => getNodeRole(n) === "icon");
+        const specificIconVector = vectorNodes.find((n) => getNodeRole(n) === "icon");
         if (specificIconVector) vectorNodes = [specificIconVector];
         if (vectorNodes.length > 0) {
           const vector = vectorNodes[0];
           const detectedIconName = getFontAwesomeName(vector);
           if (detectedIconName) {
-            settings.selected_icon = { value: detectedIconName, library: detectedIconName.startsWith("fab") ? "fa-brands" : detectedIconName.startsWith("far") ? "fa-regular" : "fa-solid" };
+            settings.selected_icon = {
+              value: detectedIconName,
+              library: detectedIconName.startsWith("fab") ? "fa-brands" : detectedIconName.startsWith("far") ? "fa-regular" : "fa-solid"
+            };
             if (textNodes.length > 0 && vector.x > textNodes[0].x) {
               settings.icon_align = "right";
             } else {
@@ -1244,7 +1362,7 @@
       settings.image_size = "full";
     } else if (tag === "container-carousel") {
       const iterableNodes = getIterableNodes(node);
-      let elements = [];
+      const elements = [];
       for (const child of iterableNodes) {
         const res = applyChildFillSizing(child, await traverseNode(child, false, maps, true));
         if (res) {
@@ -1263,7 +1381,12 @@
       applyOpacitySetting(settings, node);
       applySourceMetadata(settings, node, tag);
       applyNodeEffects(settings, node, "nested-carousel");
-      return { elType: "widget", widgetType: "nested-carousel", settings, elements };
+      return {
+        elType: "widget",
+        widgetType: "nested-carousel",
+        settings,
+        elements
+      };
     }
     applyOpacitySetting(settings, node);
     applySourceMetadata(settings, node, tag);
@@ -1348,7 +1471,7 @@
     try {
       const style = await extractTextStyle(node, maps);
       const widgetType = style.size >= 32 ? "heading" : "text-editor";
-      let settings = {
+      const settings = {
         align: getTextAlign(node)
       };
       applyTypographySettings(settings, style, "typography");
@@ -1378,7 +1501,7 @@
     }
   }
   async function mapImage(node) {
-    let settings = { image: { url: "", id: "" }, align: "center" };
+    const settings = { image: { url: "", id: "" }, align: "center" };
     extractBorders(node, settings, true, "image");
     extractShadows(node, settings, true, "image");
     applyOpacitySetting(settings, node);
@@ -1406,7 +1529,10 @@
     if ("children" in node) {
       let childrenJSON = [];
       for (const child of node.children) {
-        const data = applyChildFillSizing(child, await traverseNode(child, false, maps, passValidated));
+        const data = applyChildFillSizing(
+          child,
+          await traverseNode(child, false, maps, passValidated)
+        );
         if (data) {
           if (Array.isArray(data)) childrenJSON = childrenJSON.concat(data);
           else childrenJSON.push(data);
@@ -1463,7 +1589,9 @@
     const openBraces = (value.match(/{/g) || []).length;
     const closeBraces = (value.match(/}/g) || []).length;
     if (/<\/?script\b|@import\b/i.test(value) || openBraces !== closeBraces || !value.includes(`#${cssId}`)) {
-      errors.push(`${path} deve ser CSS escopado pelo css_id, sem imports/scripts e com chaves balanceadas.`);
+      errors.push(
+        `${path} deve ser CSS escopado pelo css_id, sem imports/scripts e com chaves balanceadas.`
+      );
     }
   }
   function annotateElements(elements, depth, parentPath, seenCssIds) {
@@ -1478,16 +1606,14 @@
       if (annotated.settings) {
         annotated.settings = {
           ...annotated.settings,
-          css_id: uniqueCssId(safeCssId(annotated.settings.css_id, `figmentor-${annotated.id}`), seenCssIds)
+          css_id: uniqueCssId(
+            safeCssId(annotated.settings.css_id, `figmentor-${annotated.id}`),
+            seenCssIds
+          )
         };
       }
       if (Array.isArray(annotated.elements)) {
-        annotated.elements = annotateElements(
-          annotated.elements,
-          depth + 1,
-          path,
-          seenCssIds
-        );
+        annotated.elements = annotateElements(annotated.elements, depth + 1, path, seenCssIds);
       }
       return annotated;
     });
@@ -1530,7 +1656,8 @@
     }
     const cssId = element.settings && element.settings.css_id;
     if (cssId) {
-      if (!CSS_ID_PATTERN2.test(cssId)) errors.push(`${path}.settings.css_id deve ser um identificador CSS seguro.`);
+      if (!CSS_ID_PATTERN2.test(cssId))
+        errors.push(`${path}.settings.css_id deve ser um identificador CSS seguro.`);
       if (seenCssIds.has(cssId)) {
         errors.push(`${path}.settings.css_id est\xE1 duplicado.`);
       } else {
@@ -1640,7 +1767,7 @@
               node.setPluginData("elementor-tag", "");
               node.setPluginData("elementor-tag", msg.tag);
               node.setSharedPluginData(FIGMENTOR_SHARED_NAMESPACE, "elementor-tag", msg.tag);
-              let newName = node.name.replace(/\[.*?\]\s*/g, "");
+              const newName = node.name.replace(/\[.*?\]\s*/g, "");
               node.name = `[${msg.tag.toUpperCase()}] ${newName}`;
             });
             figma.notify("Tag Aplicada: " + msg.tag.toUpperCase());
@@ -1654,7 +1781,7 @@
             selection.forEach((node) => {
               node.setPluginData("elementor_role", msg.role);
               node.setSharedPluginData(FIGMENTOR_SHARED_NAMESPACE, "elementor_role", msg.role);
-              let newName = node.name.replace(/\[(?:title|description|icon|image)\]\s*/gi, "");
+              const newName = node.name.replace(/\[(?:title|description|icon|image)\]\s*/gi, "");
               let roleLabel = msg.role;
               if (msg.role === "title_text") roleLabel = "title";
               if (msg.role === "description_text") roleLabel = "description";
@@ -1748,7 +1875,7 @@
                 });
               };
               const { colorMap, typoMap } = msg;
-              let structure = await traverseNode(selection[0], true, { colorMap, typoMap });
+              const structure = await traverseNode(selection[0], true, { colorMap, typoMap });
               let content = Array.isArray(structure) ? structure : [structure];
               content = annotateExportContent(content);
               const effectItems = [];
@@ -1773,7 +1900,10 @@
                 sendExportError(validation.errors.join(" "));
                 return;
               }
-              figma.ui.postMessage({ type: "json-generated", data: JSON.stringify(elementorJSON, null, 2) });
+              figma.ui.postMessage({
+                type: "json-generated",
+                data: JSON.stringify(elementorJSON, null, 2)
+              });
               figma.notify("\u2705 JSON Gerado com Sucesso!");
             } catch (err) {
               sendExportError(err.message);

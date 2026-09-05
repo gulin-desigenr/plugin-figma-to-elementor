@@ -1,6 +1,6 @@
-import { figmaColorToRGBA } from '../utils/colors.js';
-import { mapFontWeight } from '../utils/typography.js';
-import { getSafeFontFamily, isFigmaMixed } from '../utils/nodes.js';
+import { figmaColorToRGBA } from "../utils/colors.js";
+import { mapFontWeight } from "../utils/typography.js";
+import { getSafeFontFamily, isFigmaMixed } from "../utils/nodes.js";
 
 async function resolveStyleName(styleId, maps) {
   if (!styleId) return null;
@@ -52,7 +52,12 @@ export function extractBorders(node, settings, isWidget = false, widgetType = ""
     }
   }
 
-  if (node.strokes && node.strokes.length > 0 && !isFigmaMixed(node.strokeWeight) && node.strokeWeight > 0) {
+  if (
+    node.strokes &&
+    node.strokes.length > 0 &&
+    !isFigmaMixed(node.strokeWeight) &&
+    node.strokeWeight > 0
+  ) {
     const stroke = node.strokes[0];
     if (stroke.type === "SOLID") {
       settings[borderKey] = "solid";
@@ -74,7 +79,7 @@ export function extractShadows(node, settings, isWidget = false, widgetType = ""
   if (widgetType === "image") prefix = "image_box_shadow_";
 
   if (node.effects && node.effects.length > 0) {
-    const shadow = node.effects.find(e => e.type === "DROP_SHADOW" && e.visible);
+    const shadow = node.effects.find((e) => e.type === "DROP_SHADOW" && e.visible);
     if (shadow) {
       const shadowKey = widgetType === "image" ? "image_box_shadow" : prefix + "box_shadow";
       const typeKey = widgetType === "image" ? "image_box_shadow_type" : prefix + "box_shadow_type";
@@ -100,7 +105,7 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
   if (node.fills && !isFigmaMixed(node.fills) && node.fills.length > 0) {
     if (node.fills[0].type === "SOLID") {
       color = figmaColorToRGBA(node.fills[0].color, node.fills[0].opacity);
-      
+
       if (node.fillStyleId) {
         const styleName = await resolveStyleName(node.fillStyleId, maps);
         if (styleName && maps.colorMap && maps.colorMap[styleName]) {
@@ -110,7 +115,7 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
     }
   }
 
-  const size = (node.fontSize !== undefined && !isFigmaMixed(node.fontSize)) ? node.fontSize : 16;
+  const size = node.fontSize !== undefined && !isFigmaMixed(node.fontSize) ? node.fontSize : 16;
   let weight = "400";
   if (node.fontName !== undefined && !isFigmaMixed(node.fontName)) {
     weight = mapFontWeight(node.fontName.style);
@@ -189,11 +194,10 @@ export async function extractTextStyle(node, maps = { colorMap: {}, typoMap: {} 
 }
 
 export async function extractBackground(node, maps = { colorMap: {}, typoMap: {} }) {
-  let result = {};
+  const result = {};
 
   if (node.fills && !isFigmaMixed(node.fills) && node.fills.length > 0) {
-
-    const solidFill = node.fills.find(f => f.type === "SOLID" && f.visible !== false);
+    const solidFill = node.fills.find((f) => f.type === "SOLID" && f.visible !== false);
     if (solidFill) {
       const color = figmaColorToRGBA(solidFill.color, solidFill.opacity);
       let globalColorId = null;
