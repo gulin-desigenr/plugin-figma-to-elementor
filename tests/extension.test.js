@@ -323,6 +323,42 @@ test("extension discovers untagged raster images nested inside image-background 
   assert.equal(assets[1].kind, "image");
 });
 
+test("extension discovers untagged raster images that are direct children of an image-background section", () => {
+  const root = {
+    id: "1:1",
+    name: "[CONTAINER] Section",
+    type: "FRAME",
+    children: [
+      {
+        id: "20:1",
+        name: "[BACKGROUND] Hero background",
+        type: "FRAME",
+        width: 1920,
+        height: 800,
+        pluginData: { [pluginId]: { "elementor-tag": "image-background" } },
+        children: [
+          {
+            id: "20:2",
+            name: "Direct Child Photo",
+            type: "RECTANGLE",
+            width: 400,
+            height: 300,
+            fills: [{ type: "IMAGE", visible: true }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const assets = discoverAssets(root, pluginId);
+  assert.equal(assets.length, 2);
+  assert.deepEqual(
+    assets.map((asset) => asset.kind),
+    ["background", "image"]
+  );
+  assert.equal(assets[1].figmaNodeId, "20:2");
+});
+
 test("extension creates an Elementor document and patches uploaded media IDs", async () => {
   const root = {
     id: "2:1",

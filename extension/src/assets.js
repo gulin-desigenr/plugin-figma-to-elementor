@@ -143,7 +143,7 @@ export function discoverAssets(root, pluginId) {
     assets.push(record);
   };
 
-  const visit = (node, path = "0", inheritedIconTag = null, insideRasterTag = false) => {
+  const visit = (node, path = "0", inheritedIconTag = null) => {
     const tag = getNodeTag(node, pluginId);
     const role = getNodeRole(node, pluginId);
     const iconOwnerTag = iconTags.has(tag) ? tag : inheritedIconTag;
@@ -162,7 +162,6 @@ export function discoverAssets(root, pluginId) {
         kind === "image" || kind === "background" || kind === "carousel" ? "WEBP" : "WEBP";
       add(createAssetRecord(node, path, pluginId, kind, "PNG", targetFormat));
     } else if (
-      !insideRasterTag &&
       !carouselChildIds.has(node.id) &&
       Array.isArray(node.fills) &&
       node.fills.some((fill) => fill?.type === "IMAGE" && fill.visible !== false)
@@ -181,9 +180,8 @@ export function discoverAssets(root, pluginId) {
       add(record);
     }
 
-    const childInsideRaster = Boolean(tag && ASSET_TAGS.has(tag));
     (node.children || []).forEach((child, index) =>
-      visit(child, `${path}.${index}`, iconOwnerTag, childInsideRaster)
+      visit(child, `${path}.${index}`, iconOwnerTag)
     );
   };
 

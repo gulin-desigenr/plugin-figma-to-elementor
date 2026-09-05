@@ -341,7 +341,7 @@ function discoverAssets(root, pluginId) {
     seen.add(record.assetRef);
     assets.push(record);
   };
-  const visit = (node, path = "0", inheritedIconTag = null, insideRasterTag = false) => {
+  const visit = (node, path = "0", inheritedIconTag = null) => {
     const tag = getNodeTag(node, pluginId);
     const role = getNodeRole(node, pluginId);
     const iconOwnerTag = iconTags.has(tag) ? tag : inheritedIconTag;
@@ -355,7 +355,7 @@ function discoverAssets(root, pluginId) {
       const kind = tag === "image-background" || tag === "background-image" ? "background" : "image";
       const targetFormat = kind === "image" || kind === "background" || kind === "carousel" ? "WEBP" : "WEBP";
       add(createAssetRecord(node, path, pluginId, kind, "PNG", targetFormat));
-    } else if (!insideRasterTag && !carouselChildIds.has(node.id) && Array.isArray(node.fills) && node.fills.some((fill) => fill?.type === "IMAGE" && fill.visible !== false)) {
+    } else if (!carouselChildIds.has(node.id) && Array.isArray(node.fills) && node.fills.some((fill) => fill?.type === "IMAGE" && fill.visible !== false)) {
       add(createAssetRecord(node, path, pluginId, "image", "PNG", "WEBP"));
     }
     if ((role === "icon" || iconOwnerTag) && VECTOR_TYPES.has(node.type) && !getFontAwesomeIcon(node)) {
@@ -364,9 +364,8 @@ function discoverAssets(root, pluginId) {
       record.elementorWidget = iconOwnerTag || null;
       add(record);
     }
-    const childInsideRaster = Boolean(tag && ASSET_TAGS.has(tag));
     (node.children || []).forEach(
-      (child, index) => visit(child, `${path}.${index}`, iconOwnerTag, childInsideRaster)
+      (child, index) => visit(child, `${path}.${index}`, iconOwnerTag)
     );
   };
   visit(root);
