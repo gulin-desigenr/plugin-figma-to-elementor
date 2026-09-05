@@ -364,7 +364,7 @@ function discoverAssets(root, pluginId) {
       record.elementorWidget = iconOwnerTag || null;
       add(record);
     }
-    const childInsideRaster = insideRasterTag || Boolean(tag && ASSET_TAGS.has(tag));
+    const childInsideRaster = Boolean(tag && ASSET_TAGS.has(tag));
     (node.children || []).forEach(
       (child, index) => visit(child, `${path}.${index}`, iconOwnerTag, childInsideRaster)
     );
