@@ -1,3 +1,5 @@
+> **Histórico/superado.** A fonte de verdade atual do projeto é [`docs/ROADMAP.md`](../../ROADMAP.md). A auditoria visual em andamento (achados abertos) está em [`docs/auditoria-atual/`](../../auditoria-atual/).
+
 # Tarefas do Figmentor — Figma → Elementor
 
 Esta pasta preserva as decisões e requisitos que orientaram o exportador. A

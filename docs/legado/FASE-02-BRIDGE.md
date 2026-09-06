@@ -1,3 +1,5 @@
+> **Histórico/superado.** A fonte de verdade atual do projeto é [`docs/ROADMAP.md`](../ROADMAP.md).
+
 # Fase 02 — Figmentor Bridge
 
 Status: **concluída e aprovada em 2026-08-03; correção de segurança do icon-list aplicada em 2026-08-10**.
