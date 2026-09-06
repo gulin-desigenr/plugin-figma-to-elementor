@@ -1,5 +1,24 @@
 import { validateElementorDocument } from "./contract.js";
 
+const LOCAL_DEV_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
+const LOCAL_DEV_HOST_SUFFIXES = [".local", ".test"];
+
+export function isAllowedWordPressTabUrl(url) {
+  if (typeof url !== "string" || !url) return false;
+  if (/^https:\/\//.test(url)) return true;
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "http:") return false;
+  return (
+    LOCAL_DEV_HOSTNAMES.has(parsed.hostname) ||
+    LOCAL_DEV_HOST_SUFFIXES.some((suffix) => parsed.hostname.endsWith(suffix))
+  );
+}
+
 function normalizeRestRoot(value, origin) {
   const fallback = `${origin.replace(/\/$/, "")}/wp-json/`;
   if (!value || typeof value !== "string") return fallback;
