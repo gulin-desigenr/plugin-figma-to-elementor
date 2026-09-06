@@ -9,7 +9,7 @@ import {
 import { buildAssetManifest, createAssetReport, selectAssetsForProcessing } from "./src/assets.js";
 import { buildElementorDocument, patchElementorAssets } from "./src/elementor.js";
 import { validateElementorDocument } from "./src/contract.js";
-import { convertPngBlobToWebp } from "./src/webp.js";
+import { compositeBackgroundImage, convertPngBlobToWebp } from "./src/webp.js";
 import {
   extractWordPressContext,
   insertElementorDocument,
@@ -293,7 +293,10 @@ async function processAssets(manifest, token, onlyFailed = false) {
       const mimeType = isSvg ? "image/svg+xml" : "image/webp";
 
       if (!isSvg) {
-        const converted = await convertPngBlobToWebp(rendered.blob);
+        const sourceBlob = asset.crop
+          ? await compositeBackgroundImage(rendered.blob, asset.crop)
+          : rendered.blob;
+        const converted = await convertPngBlobToWebp(sourceBlob);
         asset.sourceBytes = rendered.blob.size;
         asset.targetBytes = converted.bytes;
         asset.width = converted.width;

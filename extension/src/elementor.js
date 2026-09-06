@@ -85,6 +85,16 @@ function bindIconList(settings, source) {
   });
 }
 
+function findBackgroundChild(sourceNode, pluginId) {
+  if (!Array.isArray(sourceNode?.children)) return null;
+  return (
+    sourceNode.children.find((child) => {
+      const childTag = getNodeTag(child, pluginId);
+      return childTag === "image-background" || childTag === "background-image";
+    }) || null
+  );
+}
+
 function bindElementAssets(element, sourceMap, pluginId, sidecar) {
   const settings = element?.settings;
   const source = settings?.figmentor_source_node_id
@@ -100,17 +110,20 @@ function bindElementAssets(element, sourceMap, pluginId, sidecar) {
       settings.figmentor_assets.image = assetMetadata(source, "image", "image");
     }
 
-    if (element.elType === "container" && ["image-background", "background-image"].includes(tag)) {
-      settings.background_background = "classic";
-      settings.background_image = nativeImage();
-      settings.background_position = settings.background_position || "center center";
-      settings.background_repeat = settings.background_repeat || "no-repeat";
-      settings.background_size = settings.background_size || "cover";
-      settings.figmentor_assets.background_image = assetMetadata(
-        source,
-        "background",
-        "background_image"
-      );
+    if (element.elType === "container") {
+      const backgroundChild = findBackgroundChild(source, pluginId);
+      if (backgroundChild) {
+        settings.background_background = "classic";
+        settings.background_image = nativeImage();
+        settings.background_position = settings.background_position || "center center";
+        settings.background_repeat = settings.background_repeat || "no-repeat";
+        settings.background_size = settings.background_size || "cover";
+        settings.figmentor_assets.background_image = assetMetadata(
+          backgroundChild,
+          "background",
+          "background_image"
+        );
+      }
     }
 
     if (element.widgetType === "image-carousel" && Array.isArray(settings.carousel)) {
