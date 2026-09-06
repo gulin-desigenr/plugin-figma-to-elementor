@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- A extensão agora aceita WordPress local (`localhost`, `127.0.0.1`, `*.local`, `*.test`) sem exigir HTTPS, mantendo a exigência de HTTPS para qualquer outro domínio.
+
 ### Fixed
 
 - A validação estrita de mídia nativa introduzida em `f0502db` bloqueava indevidamente o passo de preparo do JSON, antes do upload existir; agora esse passo usa uma checagem relaxada e a validação final continua estrita.

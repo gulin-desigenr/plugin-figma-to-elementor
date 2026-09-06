@@ -13,6 +13,7 @@ import { convertPngBlobToWebp } from "./src/webp.js";
 import {
   extractWordPressContext,
   insertElementorDocument,
+  isAllowedWordPressTabUrl,
   probeWordPressTab,
   reloadAndVerifyElementorDocument,
   uploadMediaToWordPress,
@@ -223,8 +224,12 @@ async function detectWordPress() {
   setStatus("Verificando a aba ativa como WordPress/Elementor...", false, "elementor");
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  if (!tab?.id || !tab.url || !/^https:\/\//.test(tab.url)) {
-    setStatus("A aba ativa não é uma página HTTPS disponível para o WordPress.", true, "elementor");
+  if (!tab?.id || !isAllowedWordPressTabUrl(tab.url)) {
+    setStatus(
+      "A aba ativa não é HTTPS nem um ambiente local reconhecido (localhost, 127.0.0.1, *.local, *.test).",
+      true,
+      "elementor"
+    );
     return;
   }
 

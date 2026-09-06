@@ -2742,6 +2742,20 @@ async function convertPngBlobToWebp(pngBlob, options = {}) {
 }
 
 // extension/src/wordpress.js
+var LOCAL_DEV_HOSTNAMES = /* @__PURE__ */ new Set(["localhost", "127.0.0.1"]);
+var LOCAL_DEV_HOST_SUFFIXES = [".local", ".test"];
+function isAllowedWordPressTabUrl(url) {
+  if (typeof url !== "string" || !url) return false;
+  if (/^https:\/\//.test(url)) return true;
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "http:") return false;
+  return LOCAL_DEV_HOSTNAMES.has(parsed.hostname) || LOCAL_DEV_HOST_SUFFIXES.some((suffix) => parsed.hostname.endsWith(suffix));
+}
 function normalizeRestRoot(value, origin) {
   const fallback = `${origin.replace(/\/$/, "")}/wp-json/`;
   if (!value || typeof value !== "string") return fallback;
@@ -3339,8 +3353,12 @@ async function useActiveFigmaSelection() {
 async function detectWordPress() {
   setStatus("Verificando a aba ativa como WordPress/Elementor...", false, "elementor");
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id || !tab.url || !/^https:\/\//.test(tab.url)) {
-    setStatus("A aba ativa n\xE3o \xE9 uma p\xE1gina HTTPS dispon\xEDvel para o WordPress.", true, "elementor");
+  if (!tab?.id || !isAllowedWordPressTabUrl(tab.url)) {
+    setStatus(
+      "A aba ativa n\xE3o \xE9 HTTPS nem um ambiente local reconhecido (localhost, 127.0.0.1, *.local, *.test).",
+      true,
+      "elementor"
+    );
     return;
   }
   try {

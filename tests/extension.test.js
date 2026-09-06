@@ -22,6 +22,7 @@ import {
   ensureWordPressDraft,
   extractWordPressContext,
   insertElementorDocument,
+  isAllowedWordPressTabUrl,
   validateWordPressContext,
   verifyElementorPersistence
 } from "../extension/src/wordpress.js";
@@ -947,6 +948,41 @@ test("WebP conversion returns the best candidate instead of throwing when the ce
   assert.equal(result.ok, false);
   assert.equal(result.bytes, 10);
   assert.match(result.reason, /acima do limite/);
+});
+
+test("isAllowedWordPressTabUrl accepts any HTTPS URL", () => {
+  assert.equal(isAllowedWordPressTabUrl("https://qualquer-dominio.com"), true);
+});
+
+test("isAllowedWordPressTabUrl accepts http://localhost with custom ports", () => {
+  assert.equal(isAllowedWordPressTabUrl("http://localhost:10004"), true);
+});
+
+test("isAllowedWordPressTabUrl accepts http://127.0.0.1", () => {
+  assert.equal(isAllowedWordPressTabUrl("http://127.0.0.1"), true);
+});
+
+test("isAllowedWordPressTabUrl accepts http://*.local domains", () => {
+  assert.equal(isAllowedWordPressTabUrl("http://figmentor-teste.local"), true);
+});
+
+test("isAllowedWordPressTabUrl accepts http://*.test domains", () => {
+  assert.equal(isAllowedWordPressTabUrl("http://meusite.test"), true);
+});
+
+test("isAllowedWordPressTabUrl rejects non-local HTTP domains", () => {
+  assert.equal(isAllowedWordPressTabUrl("http://meusite.com"), false);
+});
+
+test("isAllowedWordPressTabUrl rejects domains with .local inside the hostname rather than suffix", () => {
+  assert.equal(isAllowedWordPressTabUrl("http://evil.local.attacker.com"), false);
+});
+
+test("isAllowedWordPressTabUrl handles malformed and invalid URLs safely", () => {
+  assert.equal(isAllowedWordPressTabUrl("not-a-url"), false);
+  assert.equal(isAllowedWordPressTabUrl(""), false);
+  assert.equal(isAllowedWordPressTabUrl(null), false);
+  assert.equal(isAllowedWordPressTabUrl(undefined), false);
 });
 
 test("extension normalizes and validates the WordPress session context", () => {
