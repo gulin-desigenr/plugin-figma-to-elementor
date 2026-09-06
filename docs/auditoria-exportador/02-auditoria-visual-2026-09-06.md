@@ -57,6 +57,18 @@ Entre a seção de badges (fim ~5100px) e o título "Already creating..." (~1113
 
 **Causa raiz:** não identificada com certeza — não deu tempo de rastrear até `handlers.js`/`traverse.js` dentro do escopo desta rodada. Fica como prioridade para a próxima investigação, já que é o tipo de bug que o refactor do `handleManualTag` (próximo item do roadmap) pode tanto revelar quanto acidentalmente mascarar — vale investigar **antes** do refactor, não depois.
 
+## Achado #5 — `custom_css` mira o wrapper errado na maioria dos widgets — **confirmado, prioridade Alta** (2026-09-06, pós-correção da Feature 10)
+
+Depois da Feature 10 corrigir `_element_id`, o Pedro validou visualmente no editor do Elementor (com Elementor Pro instalado por ele mesmo no site de teste) e achou um problema estrutural na geração do próprio `custom_css`: em `src/styles/effects.js`, a função `extractAdvancedEffects` calcula `targetSlot` como `"root"` para todo widget, **exceto** o caso especial de gradiente de texto em `heading`/`text-editor` (linha ~198: `const targetSlot = textGradient ? (...) : "root";`). `"root"` resolve pra um seletor vazio (`scopeSelector(cssId, "")` → `#{cssId}` puro, sem sufixo) — ou seja, mira sempre o wrapper mais externo do widget.
+
+Isso está certo pra `container` (o wrapper de container é a própria superfície visual), mas está **errado** pra vários tipos de widget, onde o Elementor renderiza a aparência visual real (fundo, sombra, borda) num elemento **interno**, não no wrapper externo — que costuma reservar mais espaço/alinhamento do que o conteúdo visível. Confirmado ao vivo pelo Pedro pra `button`: aplicar `background`/`box-shadow` em `#{css_id}` (o wrapper) produzia um retângulo preto maior que o botão verde visível; o efeito só ficou correto usando o seletor `.elementor-button` (que já existe no registro de `src/styles/elementor-selectors.js`, slot `button.slots.button`, mas nunca é usado pra isso).
+
+**Causa raiz:** `targetSlot` hardcoded como `"root"` em `src/styles/effects.js`, sem consultar o registro de slots por tipo de widget pra decidir qual sub-elemento realmente representa a superfície visual de cada widget.
+
+**Onde corrigir (não implementado, só localizado):** `src/styles/effects.js`, a lógica que define `targetSlot` (linha ~198) precisaria de um mapa por `widgetType` → slot correto pra efeitos gerais (background/box-shadow/blur/blend-mode/opacity), usando os slots que já existem em `ELEMENTOR_SELECTOR_REGISTRY` (`elementor-selectors.js`). **Confirmado até agora:** `button` → slot `button` (`.elementor-button`); `container` → `root` (sem mudança); `image` → `root` parece correto (Pedro não reportou problema, e o wrapper de imagem normalmente não tem padding extra). **Não verificado ainda:** `icon-box`, `image-box`, `icon-list`, `accordion`/`nested-accordion`, `image-carousel`/`nested-carousel` — precisam de checagem visual no editor, widget por widget, antes de qualquer correção ampla (não adivinhar pelo nome do slot).
+
+**Decisão do Pedro (2026-09-06):** registrar o achado, não corrigir agora — fica no backlog pra quando o `custom_css`/efeitos avançados voltarem a ser prioridade.
+
 ## Achados não investigados (fora do escopo desta rodada por limite de tempo)
 
 - Comparação seção-a-seção completa das 6 seções da página (hero, "not for part-time attention", badges, "already creating", benefícios, CTA final) — só as primeiras ~3 seções foram olhadas com profundidade.
@@ -71,5 +83,6 @@ Entre a seção de badges (fim ~5100px) e o título "Already creating..." (~1113
 | #2 `css_id` vs `_element_id` | Alta | Confirmado | `src/core/contract.js`, `extension/src/contract.js`, `src/styles/elementor-selectors.js` |
 | #3 texto branco sem fundo | Alta | Confirmado (sintoma); causa não identificada | provavelmente `src/styles/index.js` (extração de background) |
 | #4 grade virando coluna de 7565px | Alta | Confirmado (sintoma); causa não identificada | provavelmente `src/core/handlers.js` (mapeamento de layout wrap/grid) |
+| #5 `custom_css` mira wrapper errado (exceto container) | Alta | Confirmado pra `button`; outros widgets não verificados | `src/styles/effects.js`, `src/styles/elementor-selectors.js` |
 
-**3 achados de prioridade Alta, 1 hipótese refutada.** `src/core/contract.js` e `src/core/handlers.js` concentram as causas prováveis — reforça a decisão já tomada de priorizar testes diretos (feito) e o refactor de `handleManualTag` logo em seguida, mas com o achado #2 (`css_id`) tratado antes, por ser o de maior confiança e impacto mais amplo (afeta todo `custom_css` do projeto, não uma seção isolada).
+**Status em 2026-09-06:** achado #2 corrigido e validado visualmente (commit `5ebaa98`, Feature 10). Achados #3, #4 e #5 registrados no backlog, ainda não corrigidos — decisão do Pedro foi seguir em frente por hora. `src/core/contract.js`, `src/core/handlers.js` e `src/styles/effects.js` concentram as causas prováveis — reforça a decisão já tomada de priorizar testes diretos (feito) antes do refactor de `handleManualTag`.
