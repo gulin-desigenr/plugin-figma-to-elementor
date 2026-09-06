@@ -1,3 +1,5 @@
+> **Histórico/superado.** A fonte de verdade atual do projeto é [`docs/ROADMAP.md`](../../ROADMAP.md).
+
 # Planejamento original (branch `dev`, março de 2026)
 
 Estes arquivos vieram da branch `origin/dev` (último commit em 28/03/2026), trazidos aqui em 2026-09-05 só como referência histórica.

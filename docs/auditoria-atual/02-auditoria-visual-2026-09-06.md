@@ -1,3 +1,5 @@
+> **Ativo.** Achados #3, #4 e #5 ainda em aberto — ver o backlog consolidado em [`docs/ROADMAP.md`](../ROADMAP.md).
+
 # Auditoria 02 — comparação visual e de código Figma vs. resultado do Figmentor
 
 **Data:** 2026-09-06
