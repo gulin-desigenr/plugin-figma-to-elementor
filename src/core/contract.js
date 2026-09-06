@@ -83,12 +83,14 @@ function annotateElements(elements, depth, parentPath, seenCssIds) {
     };
 
     if (annotated.settings) {
+      const finalCssId = uniqueCssId(
+        safeCssId(annotated.settings.css_id, `figmentor-${annotated.id}`),
+        seenCssIds
+      );
       annotated.settings = {
         ...annotated.settings,
-        css_id: uniqueCssId(
-          safeCssId(annotated.settings.css_id, `figmentor-${annotated.id}`),
-          seenCssIds
-        )
+        css_id: finalCssId,
+        _element_id: finalCssId
       };
     }
 

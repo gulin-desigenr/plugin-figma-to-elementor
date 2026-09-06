@@ -138,6 +138,8 @@ test("export contract annotates stable metadata and validates page output", () =
   assert.equal(content[0].isInner, false);
   assert.equal(content[0].elements[0].isInner, true);
   assert.equal(content[0].elements[0].settings.css_id, "section-2");
+  assert.equal(content[0].settings._element_id, content[0].settings.css_id);
+  assert.equal(content[0].elements[0].settings._element_id, content[0].elements[0].settings.css_id);
 });
 
 test("export contract avoids collisions with existing suffixed css ids", () => {

@@ -190,6 +190,7 @@ function normalizeElements(value, depth, parentPath, seenCssIds, seenIds) {
       sanitizeStableCssId(requestedCssId, fallbackCssId),
       seenCssIds
     );
+    normalized.settings._element_id = normalized.settings.css_id;
 
     if (normalized.elType === "container" || Array.isArray(item.elements)) {
       normalized.elements = normalizeElements(item.elements, depth + 1, path, seenCssIds, seenIds);
