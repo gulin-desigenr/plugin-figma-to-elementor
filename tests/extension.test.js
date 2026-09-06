@@ -14,7 +14,7 @@ import {
   selectAssetsForProcessing
 } from "../extension/src/assets.js";
 import { buildElementorDocument, patchElementorAssets } from "../extension/src/elementor.js";
-import { validateElementorDocument } from "../extension/src/contract.js";
+import { normalizeElementorDocument, validateElementorDocument } from "../extension/src/contract.js";
 import { convertPngBlobToWebp } from "../extension/src/webp.js";
 import {
   buildElementorAjaxBody,
@@ -1257,4 +1257,36 @@ test("Elementor insertion rejects a false save response instead of reporting suc
     if (previousWindow === undefined) delete globalThis.window;
     else globalThis.window = previousWindow;
   }
+});
+
+test("normalizeElementorDocument mirrors css_id to _element_id for every element", () => {
+  const document = normalizeElementorDocument(
+    {
+      version: "0.4",
+      type: "page",
+      page_settings: {},
+      content: [
+        {
+          elType: "container",
+          settings: { css_id: "section" },
+          elements: [
+            {
+              elType: "widget",
+              widgetType: "heading",
+              settings: { title: "Título", css_id: "section" }
+            }
+          ]
+        }
+      ]
+    },
+    "page"
+  );
+
+  assert.equal(document.content[0].settings._element_id, document.content[0].settings.css_id);
+  assert.equal(
+    document.content[0].elements[0].settings._element_id,
+    document.content[0].elements[0].settings.css_id
+  );
+  assert.equal(document.content[0].elements[0].settings.css_id, "section-2");
+  assert.equal(document.content[0].elements[0].settings._element_id, "section-2");
 });

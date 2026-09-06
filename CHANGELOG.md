@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- O `custom_css` nunca era aplicado pelo Elementor porque o Figmentor escrevia apenas `css_id` enquanto o controle real do Elementor lê `_element_id`; agora ambos são emitidos com o mesmo valor tanto no contrato do plugin quanto na extensão.
 - A validação estrita de mídia nativa introduzida em `f0502db` bloqueava indevidamente o passo de preparo do JSON, antes do upload existir; agora esse passo usa uma checagem relaxada e a validação final continua estrita.
 - A descoberta de assets ignorava imagens sem tag aninhadas em qualquer profundidade dentro de uma seção com background/imagem tagueada; a supressão de raster agora se aplica apenas aos filhos diretos do nó tagueado.
 - A supressão de imagem aninhada sob nós tagueados como asset foi removida por completo; a mitigação anterior (limitada a 1 nível) ainda descartava imagens reais de conteúdo posicionadas como filhas diretas de seções com background tagueado.
