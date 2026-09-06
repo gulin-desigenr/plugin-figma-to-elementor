@@ -818,6 +818,53 @@ test("semantic validation allows placeholder native media during document prepar
   assert.doesNotMatch(backgroundResult.errors.join("\n"), /deve conter id e url nativos/);
 });
 
+test("treatMissingMediaAsWarning downgrades missing native media to a warning without blocking other errors", () => {
+  const missingMediaOnly = {
+    version: "0.4",
+    title: "Missing media only",
+    type: "page",
+    page_settings: {},
+    content: [
+      {
+        id: "w123456",
+        elType: "widget",
+        widgetType: "image",
+        isInner: false,
+        settings: { image: { id: "", url: "", size: "full" } },
+        elements: []
+      }
+    ]
+  };
+  const result = validateElementorDocument(missingMediaOnly, "page", {
+    treatMissingMediaAsWarning: true
+  });
+  assert.equal(result.valid, true);
+  assert.match(result.warnings.join("\n"), /deve conter id e url nativos/);
+  assert.doesNotMatch(result.errors.join("\n"), /deve conter id e url nativos/);
+
+  const structurallyInvalid = {
+    version: "0.4",
+    title: "Bad widget type",
+    type: "page",
+    page_settings: {},
+    content: [
+      {
+        id: "w654321",
+        elType: "widget",
+        widgetType: "not-a-real-widget",
+        isInner: false,
+        settings: {},
+        elements: []
+      }
+    ]
+  };
+  const stillBlocked = validateElementorDocument(structurallyInvalid, "page", {
+    treatMissingMediaAsWarning: true
+  });
+  assert.equal(stillBlocked.valid, false);
+  assert.match(stillBlocked.errors.join("\n"), /não é um widget Elementor suportado/);
+});
+
 test("asset failures produce a detailed report and retry selects only failed assets", () => {
   const manifest = {
     assets: [

@@ -37,23 +37,23 @@ function containsAssetRef(value) {
   return Object.values(value).some(containsAssetRef);
 }
 
-function validateNativeMedia(value, path, errors, options = {}) {
+function validateNativeMedia(value, path, errors, warnings, options = {}) {
   if (!isPlainObject(value)) {
     errors.push(`${path} deve ser um objeto de mídia nativo do Elementor.`);
     return;
   }
   if (containsAssetRef(value)) errors.push(`${path} não pode conter assetRef do Figmentor.`);
-  const { requireNativeMedia = true } = options;
-  if (
-    requireNativeMedia &&
-    !(
-      value.url &&
-      value.id &&
-      typeof value.url === "string" &&
-      (typeof value.id === "string" || typeof value.id === "number")
-    )
-  ) {
-    errors.push(`${path} deve conter id e url nativos.`);
+  const { requireNativeMedia = true, treatMissingMediaAsWarning = false } = options;
+  const missingNativeMedia = !(
+    value.url &&
+    value.id &&
+    typeof value.url === "string" &&
+    (typeof value.id === "string" || typeof value.id === "number")
+  );
+  if (requireNativeMedia && missingNativeMedia) {
+    const message = `${path} deve conter id e url nativos.`;
+    if (treatMissingMediaAsWarning) warnings.push(message);
+    else errors.push(message);
   }
 }
 
@@ -279,12 +279,13 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds, o
 
   if (isPlainObject(element.settings)) {
     if (element.settings.image !== undefined)
-      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors, options);
+      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors, warnings, options);
     if (element.settings.background_image !== undefined)
       validateNativeMedia(
         element.settings.background_image,
         `${path}.settings.background_image`,
         errors,
+        warnings,
         options
       );
     if (element.settings.selected_icon !== undefined)

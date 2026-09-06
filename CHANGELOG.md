@@ -8,6 +8,10 @@
 - A descoberta de assets ignorava imagens sem tag aninhadas em qualquer profundidade dentro de uma seção com background/imagem tagueada; a supressão de raster agora se aplica apenas aos filhos diretos do nó tagueado.
 - A supressão de imagem aninhada sob nós tagueados como asset foi removida por completo; a mitigação anterior (limitada a 1 nível) ainda descartava imagens reais de conteúdo posicionadas como filhas diretas de seções com background tagueado.
 
+### Changed
+
+- Imagem nativa faltando não bloqueia mais o salvamento no Elementor: passa a ser reportada como aviso ao usuário para ajuste manual posterior, enquanto erros estruturais continuam bloqueando.
+
 ## [2.0.0] - 2026-09-03
 
 ### Fixed
