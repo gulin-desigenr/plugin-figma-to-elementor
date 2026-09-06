@@ -1985,15 +1985,18 @@ function containsAssetRef(value) {
   if (Array.isArray(value)) return value.some(containsAssetRef);
   return Object.values(value).some(containsAssetRef);
 }
-function validateNativeMedia(value, path, errors, options = {}) {
+function validateNativeMedia(value, path, errors, warnings, options = {}) {
   if (!isPlainObject(value)) {
     errors.push(`${path} deve ser um objeto de m\xEDdia nativo do Elementor.`);
     return;
   }
   if (containsAssetRef(value)) errors.push(`${path} n\xE3o pode conter assetRef do Figmentor.`);
-  const { requireNativeMedia = true } = options;
-  if (requireNativeMedia && !(value.url && value.id && typeof value.url === "string" && (typeof value.id === "string" || typeof value.id === "number"))) {
-    errors.push(`${path} deve conter id e url nativos.`);
+  const { requireNativeMedia = true, treatMissingMediaAsWarning = false } = options;
+  const missingNativeMedia = !(value.url && value.id && typeof value.url === "string" && (typeof value.id === "string" || typeof value.id === "number"));
+  if (requireNativeMedia && missingNativeMedia) {
+    const message = `${path} deve conter id e url nativos.`;
+    if (treatMissingMediaAsWarning) warnings.push(message);
+    else errors.push(message);
   }
 }
 function validateNativeIcon(value, path, errors) {
@@ -2172,12 +2175,13 @@ function validateElement(element, path, errors, warnings, seenIds, seenCssIds, o
   }
   if (isPlainObject(element.settings)) {
     if (element.settings.image !== void 0)
-      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors, options);
+      validateNativeMedia(element.settings.image, `${path}.settings.image`, errors, warnings, options);
     if (element.settings.background_image !== void 0)
       validateNativeMedia(
         element.settings.background_image,
         `${path}.settings.background_image`,
         errors,
+        warnings,
         options
       );
     if (element.settings.selected_icon !== void 0)
@@ -2855,9 +2859,9 @@ async function probeWordPressTab(tabId) {
   });
   return extractWordPressContext({ ...results[0]?.result || {}, tabId });
 }
-function buildElementorSavePayload(document2, existingElements = [], mode = "page", existingSettings = {}) {
+function buildElementorSavePayload(document2, existingElements = [], mode = "page", existingSettings = {}, options = {}) {
   const schemaMode = document2?.type === "page" ? "page" : "section";
-  const validation = validateElementorDocument(document2, schemaMode);
+  const validation = validateElementorDocument(document2, schemaMode, options);
   if (!validation.valid) {
     throw new Error(
       `O documento n\xE3o pode ser enviado ao Elementor:
@@ -2985,10 +2989,10 @@ async function readElementorDocument(tabId, context) {
   );
   return snapshotFromConfig(config);
 }
-async function insertElementorDocument(tabId, context, document2, mode = "page") {
+async function insertElementorDocument(tabId, context, document2, mode = "page", options = {}) {
   validateWordPressContext(context);
   const schemaMode = document2?.type === "page" ? "page" : "section";
-  const validation = validateElementorDocument(document2, schemaMode);
+  const validation = validateElementorDocument(document2, schemaMode, options);
   if (!validation.valid) {
     throw new Error(
       `O JSON final n\xE3o pode ser enviado ao Elementor:
@@ -2998,7 +3002,7 @@ ${validation.errors.join("\n")}`
   const draftResult = await ensureWordPressDraft(tabId, context);
   context = { ...context, postStatus: draftResult.status };
   const before = await readElementorDocument(tabId, context);
-  const payload = buildElementorSavePayload(document2, before.elements, mode, before.settings);
+  const payload = buildElementorSavePayload(document2, before.elements, mode, before.settings, options);
   const saveResponse = await executeElementorAjax(
     tabId,
     context,
@@ -3450,7 +3454,8 @@ A extens\xE3o ir\xE1 ${modeLabel}, salvar como rascunho e recarregar a aba para 
     const mode = $("elementor-mode").value;
     const validation = validateElementorDocument(
       patchedDocument,
-      patchedDocument.type === "page" ? "page" : "section"
+      patchedDocument.type === "page" ? "page" : "section",
+      { treatMissingMediaAsWarning: true }
     );
     if (!validation.valid) {
       throw new Error(
@@ -3462,7 +3467,8 @@ ${validation.errors.join("\n")}`
       workflow.wordpress.tabId,
       workflow.wordpress,
       patchedDocument,
-      mode
+      mode,
+      { treatMissingMediaAsWarning: true }
     );
     setStatus(
       "Servidor confirmou o rascunho. Recarregando a aba para verificar persist\xEAncia...",
@@ -3488,6 +3494,7 @@ ${validation.errors.join("\n")}`
       `Assets enviados: ${manifest.assets.filter((asset) => asset.status === "uploaded").length}/${manifest.assets.length}`,
       `Efeitos: ${report.effects.summary.total || 0} mapeado(s), ${report.effects.summary.customCss || 0} em CSS, ${report.effects.summary.flags || 0} flag(s).`,
       ...formatAssetReport(report.assets),
+      ...validation.warnings.length ? [`\u26A0\uFE0F ${validation.warnings.length} elemento(s) salvos sem imagem nativa (edite manualmente no Elementor):`, ...validation.warnings] : [],
       `Elementor salvo como rascunho (${result.elementCount} elemento(s)).`,
       `Persist\xEAncia confirmada ap\xF3s recarregar (${reloadResult.verification.elementCount} IDs verificados).`
     ].join("\n");

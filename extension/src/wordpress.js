@@ -161,10 +161,11 @@ export function buildElementorSavePayload(
   document,
   existingElements = [],
   mode = "page",
-  existingSettings = {}
+  existingSettings = {},
+  options = {}
 ) {
   const schemaMode = document?.type === "page" ? "page" : "section";
-  const validation = validateElementorDocument(document, schemaMode);
+  const validation = validateElementorDocument(document, schemaMode, options);
   if (!validation.valid) {
     throw new Error(
       `O documento não pode ser enviado ao Elementor:\n${validation.errors.join("\n")}`
@@ -316,10 +317,10 @@ export async function readElementorDocument(tabId, context) {
   return snapshotFromConfig(config);
 }
 
-export async function insertElementorDocument(tabId, context, document, mode = "page") {
+export async function insertElementorDocument(tabId, context, document, mode = "page", options = {}) {
   validateWordPressContext(context);
   const schemaMode = document?.type === "page" ? "page" : "section";
-  const validation = validateElementorDocument(document, schemaMode);
+  const validation = validateElementorDocument(document, schemaMode, options);
   if (!validation.valid) {
     throw new Error(
       `O JSON final não pode ser enviado ao Elementor:\n${validation.errors.join("\n")}`
@@ -329,7 +330,7 @@ export async function insertElementorDocument(tabId, context, document, mode = "
   const draftResult = await ensureWordPressDraft(tabId, context);
   context = { ...context, postStatus: draftResult.status };
   const before = await readElementorDocument(tabId, context);
-  const payload = buildElementorSavePayload(document, before.elements, mode, before.settings);
+  const payload = buildElementorSavePayload(document, before.elements, mode, before.settings, options);
   const saveResponse = await executeElementorAjax(
     tabId,
     context,

@@ -361,7 +361,8 @@ async function insertIntoElementor(onlyFailed = false) {
     const mode = $("elementor-mode").value;
     const validation = validateElementorDocument(
       patchedDocument,
-      patchedDocument.type === "page" ? "page" : "section"
+      patchedDocument.type === "page" ? "page" : "section",
+      { treatMissingMediaAsWarning: true }
     );
     if (!validation.valid) {
       throw new Error(
@@ -372,7 +373,8 @@ async function insertIntoElementor(onlyFailed = false) {
       workflow.wordpress.tabId,
       workflow.wordpress,
       patchedDocument,
-      mode
+      mode,
+      { treatMissingMediaAsWarning: true }
     );
     setStatus(
       "Servidor confirmou o rascunho. Recarregando a aba para verificar persistência...",
@@ -399,6 +401,9 @@ async function insertIntoElementor(onlyFailed = false) {
       `Assets enviados: ${manifest.assets.filter((asset) => asset.status === "uploaded").length}/${manifest.assets.length}`,
       `Efeitos: ${report.effects.summary.total || 0} mapeado(s), ${report.effects.summary.customCss || 0} em CSS, ${report.effects.summary.flags || 0} flag(s).`,
       ...formatAssetReport(report.assets),
+      ...(validation.warnings.length
+        ? [`⚠️ ${validation.warnings.length} elemento(s) salvos sem imagem nativa (edite manualmente no Elementor):`, ...validation.warnings]
+        : []),
       `Elementor salvo como rascunho (${result.elementCount} elemento(s)).`,
       `Persistência confirmada após recarregar (${reloadResult.verification.elementCount} IDs verificados).`
     ].join("\n");
