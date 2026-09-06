@@ -15,7 +15,7 @@ import {
 } from "../extension/src/assets.js";
 import { buildElementorDocument, patchElementorAssets } from "../extension/src/elementor.js";
 import { normalizeElementorDocument, validateElementorDocument } from "../extension/src/contract.js";
-import { convertPngBlobToWebp } from "../extension/src/webp.js";
+import { compositeBackgroundImage, convertPngBlobToWebp } from "../extension/src/webp.js";
 import {
   buildElementorAjaxBody,
   buildElementorSavePayload,
@@ -264,7 +264,7 @@ test("extension discovers tagged image, background and SVG icon assets", () => {
   assert.equal(assets[2].targetFormat, "SVG");
 });
 
-test("extension discovers untagged raster images nested inside image-background section", () => {
+test("extension ignores untagged raster images nested inside image-background section", () => {
   const root = {
     id: "1:1",
     name: "[CONTAINER] Section",
@@ -313,18 +313,12 @@ test("extension discovers untagged raster images nested inside image-background 
   };
 
   const assets = discoverAssets(root, pluginId);
-  assert.equal(assets.length, 2);
-  assert.deepEqual(
-    assets.map((asset) => asset.kind),
-    ["background", "image"]
-  );
+  assert.equal(assets.length, 1);
   assert.equal(assets[0].figmaNodeId, "10:1");
   assert.equal(assets[0].kind, "background");
-  assert.equal(assets[1].figmaNodeId, "10:5");
-  assert.equal(assets[1].kind, "image");
 });
 
-test("extension discovers untagged raster images that are direct children of an image-background section", () => {
+test("extension ignores untagged raster images that are direct children of an image-background section", () => {
   const root = {
     id: "1:1",
     name: "[CONTAINER] Section",
@@ -352,12 +346,9 @@ test("extension discovers untagged raster images that are direct children of an 
   };
 
   const assets = discoverAssets(root, pluginId);
-  assert.equal(assets.length, 2);
-  assert.deepEqual(
-    assets.map((asset) => asset.kind),
-    ["background", "image"]
-  );
-  assert.equal(assets[1].figmaNodeId, "20:2");
+  assert.equal(assets.length, 1);
+  assert.equal(assets[0].figmaNodeId, "20:1");
+  assert.equal(assets[0].kind, "background");
 });
 
 test("extension creates an Elementor document and patches uploaded media IDs", async () => {
@@ -407,10 +398,16 @@ test("extension flattens page wrapper output and maps backgrounds to native cont
     children: [
       {
         id: "3:2",
-        name: "[BACKGROUND] Hero",
+        name: "[CONTAINER] Hero",
         type: "FRAME",
-        pluginData: { [pluginId]: { "elementor-tag": "image-background" } },
+        pluginData: { [pluginId]: { "elementor-tag": "container" } },
         children: [
+          {
+            id: "3:2:bg",
+            name: "[BACKGROUND] Hero background",
+            type: "FRAME",
+            pluginData: { [pluginId]: { "elementor-tag": "image-background" } }
+          },
           {
             id: "3:3",
             name: "[HEADING] Title",
@@ -434,7 +431,7 @@ test("extension flattens page wrapper output and maps backgrounds to native cont
   const patched = patchElementorAssets(document, {
     assets: [
       {
-        assetRef: "figmentor-3-2-background",
+        assetRef: "figmentor-3-2-bg-background",
         status: "uploaded",
         mediaId: 10,
         mediaUrl: "https://site.test/hero.webp"
@@ -453,7 +450,7 @@ test("extension flattens page wrapper output and maps backgrounds to native cont
   assert.equal(document.content[0].settings.background_image.assetRef, undefined);
   assert.equal(
     document.figmentor.elements[document.content[0].id].assets.background_image.assetRef,
-    "figmentor-3-2-background"
+    "figmentor-3-2-bg-background"
   );
   assert.equal(document.content[0].elements[0].widgetType, "heading");
 });
@@ -1289,4 +1286,312 @@ test("normalizeElementorDocument mirrors css_id to _element_id for every element
   );
   assert.equal(document.content[0].elements[0].settings.css_id, "section-2");
   assert.equal(document.content[0].elements[0].settings._element_id, "section-2");
+});
+
+test("discoverAssets flattens image-background, crops to parent bounds and suppresses child images", () => {
+  const root = {
+    id: "parent:1",
+    name: "[CONTAINER] Section",
+    type: "FRAME",
+    pluginData: { [pluginId]: { "elementor-tag": "container" } },
+    absoluteBoundingBox: { x: 100, y: 200, width: 1200, height: 600 },
+    children: [
+      {
+        id: "bg:1",
+        name: "[IMAGE-BACKGROUND] Leaking background",
+        type: "GROUP",
+        pluginData: { [pluginId]: { "elementor-tag": "image-background" } },
+        absoluteBoundingBox: { x: 80, y: 150, width: 1400, height: 800 },
+        children: [
+          {
+            id: "bg:child1",
+            name: "Decorative icon 1",
+            type: "RECTANGLE",
+            fills: [{ type: "IMAGE", visible: true }]
+          },
+          {
+            id: "bg:child2",
+            name: "Decorative icon 2",
+            type: "RECTANGLE",
+            fills: [{ type: "IMAGE", visible: true }]
+          },
+          {
+            id: "bg:child3",
+            name: "Decorative icon 3",
+            type: "RECTANGLE",
+            fills: [{ type: "IMAGE", visible: true }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const assets = discoverAssets(root, pluginId);
+  assert.equal(assets.length, 1);
+  const asset = assets[0];
+  assert.equal(asset.figmaNodeId, "bg:1");
+  assert.equal(asset.kind, "background");
+  assert.equal(asset.width, 1200);
+  assert.equal(asset.height, 600);
+  assert.equal(asset.aspectRatio, 2);
+  assert.deepEqual(asset.crop, {
+    width: 1200,
+    height: 600,
+    offsetX: -20,
+    offsetY: -50,
+    backgroundColor: null
+  });
+});
+
+test("discoverAssets uses parent solid fill color as background fallback for flattened background", () => {
+  const root = {
+    id: "parent:1",
+    name: "[CONTAINER] Section",
+    type: "FRAME",
+    pluginData: { [pluginId]: { "elementor-tag": "container" } },
+    absoluteBoundingBox: { x: 100, y: 200, width: 1200, height: 600 },
+    fills: [
+      {
+        type: "SOLID",
+        visible: true,
+        color: { r: 0.2, g: 0.4, b: 0.6 },
+        opacity: 0.9
+      }
+    ],
+    children: [
+      {
+        id: "bg:1",
+        name: "[IMAGE-BACKGROUND] Leaking background",
+        type: "GROUP",
+        pluginData: { [pluginId]: { "elementor-tag": "image-background" } },
+        absoluteBoundingBox: { x: 80, y: 150, width: 1400, height: 800 },
+        children: [
+          {
+            id: "bg:child1",
+            name: "Decorative icon 1",
+            type: "RECTANGLE",
+            fills: [{ type: "IMAGE", visible: true }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const assets = discoverAssets(root, pluginId);
+  assert.equal(assets.length, 1);
+  assert.equal(assets[0].crop.backgroundColor, "rgba(51,102,153,0.9)");
+});
+
+test("discoverAssets falls back to root solid fill color when parent has no fill", () => {
+  const root = {
+    id: "page:1",
+    name: "[PAGE] Page wrapper",
+    type: "FRAME",
+    pluginData: { [pluginId]: { "elementor-tag": "page-wrapper" } },
+    fills: [
+      {
+        type: "SOLID",
+        visible: true,
+        color: { r: 1, g: 0.5, b: 0 },
+        opacity: 1
+      }
+    ],
+    children: [
+      {
+        id: "section:1",
+        name: "[CONTAINER] Section",
+        type: "FRAME",
+        pluginData: { [pluginId]: { "elementor-tag": "container" } },
+        absoluteBoundingBox: { x: 0, y: 100, width: 1000, height: 500 },
+        fills: [],
+        children: [
+          {
+            id: "bg:1",
+            name: "[BACKGROUND-IMAGE] Background group",
+            type: "GROUP",
+            pluginData: { [pluginId]: { "elementor-tag": "background-image" } },
+            absoluteBoundingBox: { x: -50, y: 80, width: 1100, height: 600 },
+            children: [
+              {
+                id: "bg:child1",
+                name: "Decorative image",
+                type: "RECTANGLE",
+                fills: [{ type: "IMAGE", visible: true }]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  const assets = discoverAssets(root, pluginId);
+  assert.equal(assets.length, 1);
+  assert.equal(assets[0].crop.backgroundColor, "rgba(255,128,0,1)");
+});
+
+test("buildElementorDocument flattens image-background to container background and excludes loose image widgets", async () => {
+  const root = {
+    id: "12:0",
+    name: "[CONTAINER] Frame 12",
+    type: "FRAME",
+    pluginData: { [pluginId]: { "elementor-tag": "container" } },
+    children: [
+      {
+        id: "12:8",
+        name: "[IMAGE-BACKGROUND] Group 8",
+        type: "GROUP",
+        pluginData: { [pluginId]: { "elementor-tag": "image-background" } },
+        children: [
+          {
+            id: "12:8:1",
+            name: "Floating Icon 1",
+            type: "RECTANGLE",
+            fills: [{ type: "IMAGE", visible: true }]
+          },
+          {
+            id: "12:8:2",
+            name: "Floating Icon 2",
+            type: "RECTANGLE",
+            fills: [{ type: "IMAGE", visible: true }]
+          },
+          {
+            id: "12:8:3",
+            name: "Floating Icon 3",
+            type: "RECTANGLE",
+            fills: [{ type: "IMAGE", visible: true }]
+          }
+        ]
+      },
+      {
+        id: "12:7",
+        name: "Group 7",
+        type: "GROUP",
+        layoutMode: "NONE",
+        children: [
+          {
+            id: "12:7:1",
+            name: "[HEADING] Main Title",
+            type: "TEXT",
+            characters: "Hello World",
+            pluginData: { [pluginId]: { "elementor-tag": "heading" } }
+          },
+          {
+            id: "12:7:2",
+            name: "[BUTTON] Call to Action",
+            type: "FRAME",
+            pluginData: { [pluginId]: { "elementor-tag": "button" } },
+            children: [
+              {
+                id: "12:7:2:1",
+                name: "Button text",
+                type: "TEXT",
+                characters: "Click here"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  const document = await buildElementorDocument(root, "section", pluginId);
+  assert.equal(document.content.length, 1);
+  const container = document.content[0];
+  assert.equal(container.elType, "container");
+  assert.equal(container.settings.background_background, "classic");
+  assert.deepEqual(container.settings.background_image, { id: "", url: "", size: "full" });
+  assert.equal(container.settings.background_position, "center center");
+  assert.equal(container.settings.background_repeat, "no-repeat");
+  assert.equal(container.settings.background_size, "cover");
+
+  const sidecarAssets = document.figmentor.elements[container.id].assets;
+  assert.equal(sidecarAssets.background_image.kind, "background");
+  assert.equal(sidecarAssets.background_image.figmaNodeId, "12:8");
+  assert.equal(sidecarAssets.background_image.assetRef, "figmentor-12-8-background");
+
+  const widgetTypes = container.elements.map((el) => el.widgetType);
+  assert.equal(widgetTypes.includes("image"), false);
+  assert.deepEqual(widgetTypes, ["heading", "button"]);
+});
+
+test("compositeBackgroundImage creates cropped canvas and applies background color when provided", async () => {
+  let fillRectCalls = [];
+  let drawImageCalls = [];
+  let canvasDimensions = null;
+  const mockBitmap = {
+    width: 1400,
+    height: 800,
+    closeCalled: false,
+    close() {
+      this.closeCalled = true;
+    }
+  };
+
+  const mockCanvasFactory = (width, height) => {
+    canvasDimensions = { width, height };
+    return {
+      width,
+      height,
+      getContext(type) {
+        if (type !== "2d") return null;
+        return {
+          clearRect() {},
+          fillStyle: null,
+          fillRect(x, y, w, h) {
+            fillRectCalls.push({ fillStyle: this.fillStyle, x, y, w, h });
+          },
+          drawImage(img, x, y) {
+            drawImageCalls.push({ img, x, y });
+          }
+        };
+      },
+      async convertToBlob() {
+        return new Blob(["mock-png"], { type: "image/png" });
+      }
+    };
+  };
+
+  const blob1 = await compositeBackgroundImage(new Blob(["source-png"]), {
+    width: 1200,
+    height: 600,
+    offsetX: -20,
+    offsetY: -50,
+    backgroundColor: "rgba(51,102,153,0.9)",
+    bitmapFactory: async () => mockBitmap,
+    canvasFactory: mockCanvasFactory
+  });
+
+  assert.equal(blob1 instanceof Blob, true);
+  assert.deepEqual(canvasDimensions, { width: 1200, height: 600 });
+  assert.equal(fillRectCalls.length, 1);
+  assert.deepEqual(fillRectCalls[0], {
+    fillStyle: "rgba(51,102,153,0.9)",
+    x: 0,
+    y: 0,
+    w: 1200,
+    h: 600
+  });
+  assert.equal(drawImageCalls.length, 1);
+  assert.deepEqual(drawImageCalls[0], { img: mockBitmap, x: -20, y: -50 });
+  assert.equal(mockBitmap.closeCalled, true);
+
+  fillRectCalls = [];
+  drawImageCalls = [];
+  const mockBitmap2 = { width: 1400, height: 800, close() {} };
+  const blob2 = await compositeBackgroundImage(new Blob(["source-png"]), {
+    width: 800,
+    height: 400,
+    offsetX: 10,
+    offsetY: 20,
+    backgroundColor: null,
+    bitmapFactory: async () => mockBitmap2,
+    canvasFactory: mockCanvasFactory
+  });
+
+  assert.equal(blob2 instanceof Blob, true);
+  assert.deepEqual(canvasDimensions, { width: 800, height: 400 });
+  assert.equal(fillRectCalls.length, 0);
+  assert.equal(drawImageCalls.length, 1);
+  assert.deepEqual(drawImageCalls[0], { img: mockBitmap2, x: 10, y: 20 });
 });

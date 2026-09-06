@@ -246,13 +246,10 @@ export function applyChildFillSizing(childNode, childResult) {
 }
 
 export async function handleManualTag(node, tag, isRoot, maps) {
-  if (
-    tag === "container" ||
-    tag === "container-full" ||
-    tag === "page-wrapper" ||
-    tag === "image-background" ||
-    tag === "background-image"
-  ) {
+  if (tag === "image-background" || tag === "background-image") {
+    return null;
+  }
+  if (tag === "container" || tag === "container-full" || tag === "page-wrapper") {
     let children = [];
     const childIsRoot = tag === "page-wrapper";
 

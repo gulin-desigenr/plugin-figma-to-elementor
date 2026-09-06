@@ -29,6 +29,18 @@ function encodeCanvas(canvas, quality) {
   });
 }
 
+function encodeCanvasToPng(canvas) {
+  if (typeof canvas.convertToBlob === "function") {
+    return canvas.convertToBlob({ type: "image/png" });
+  }
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("O navegador não conseguiu gerar o PNG."))),
+      "image/png"
+    );
+  });
+}
+
 function buildScales(minScale = 0.08, decay = 0.82) {
   const scales = [];
   let scale = 1;
@@ -116,4 +128,31 @@ export async function convertPngBlobToWebp(pngBlob, options = {}) {
     resized: best.scale !== 1,
     reason: `A melhor versão gerada ficou com ${best.bytes} bytes, acima do limite de ${maxBytes} bytes.`
   };
+}
+
+/**
+ * Recorta o PNG renderizado pelo Figma no tamanho do frame pai (`width`/`height`),
+ * posicionando-o em (`offsetX`, `offsetY`) — necessário porque um grupo tagueado
+ * image-background pode ter bounding box maior que o frame que o contém. Se
+ * `backgroundColor` for informado, preenche o canvas com essa cor antes de
+ * desenhar a imagem por cima, pra não perder cor atrás de partes transparentes.
+ */
+export async function compositeBackgroundImage(pngBlob, options = {}) {
+  const { width, height, offsetX = 0, offsetY = 0, backgroundColor = null } = options;
+  if (!width || !height) throw new Error("compositeBackgroundImage precisa de width e height.");
+  const bitmap = await (options.bitmapFactory || defaultBitmapFactory)(pngBlob);
+  try {
+    const canvas = (options.canvasFactory || defaultCanvasFactory)(width, height);
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("O navegador não criou o contexto 2D para compor o background.");
+    context.clearRect?.(0, 0, width, height);
+    if (backgroundColor) {
+      context.fillStyle = backgroundColor;
+      context.fillRect(0, 0, width, height);
+    }
+    context.drawImage(bitmap, offsetX, offsetY);
+    return await encodeCanvasToPng(canvas);
+  } finally {
+    bitmap.close?.();
+  }
 }

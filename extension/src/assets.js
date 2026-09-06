@@ -1,4 +1,5 @@
 import { ASSET_TAGS, FIGMENTOR_TAGS, VECTOR_TYPES } from "./constants.js";
+import { figmaColorToRGBA } from "../../src/utils/colors.js";
 
 const TAG_PATTERN = /^\[([^\]]+)\]/;
 
@@ -77,6 +78,17 @@ export function walkNodes(node, visitor, path = "0") {
   }
 }
 
+function firstSolidFillColor(node) {
+  const paint = Array.isArray(node?.fills)
+    ? node.fills.find((fill) => fill?.type === "SOLID" && fill.visible !== false)
+    : null;
+  return paint ? figmaColorToRGBA(paint.color, paint.opacity ?? paint.color?.a) : null;
+}
+
+function resolveBackgroundFallbackColor(sectionNode, rootNode) {
+  return firstSolidFillColor(sectionNode) || firstSolidFillColor(rootNode) || null;
+}
+
 function getDimensions(node) {
   const bounds = node.absoluteBoundingBox || node.size || {};
   const width = toNumber(bounds.width, toNumber(node.width));
@@ -143,7 +155,7 @@ export function discoverAssets(root, pluginId) {
     assets.push(record);
   };
 
-  const visit = (node, path = "0", inheritedIconTag = null) => {
+  const visit = (node, path = "0", inheritedIconTag = null, parentNode = null) => {
     const tag = getNodeTag(node, pluginId);
     const role = getNodeRole(node, pluginId);
     const iconOwnerTag = iconTags.has(tag) ? tag : inheritedIconTag;
@@ -156,11 +168,25 @@ export function discoverAssets(root, pluginId) {
         add(createAssetRecord(child, `${path}.${index}`, pluginId, "carousel", "PNG", "WEBP"));
       });
     } else if (tag && ASSET_TAGS.has(tag) && !carouselChildIds.has(node.id)) {
-      const kind =
-        tag === "image-background" || tag === "background-image" ? "background" : "image";
-      const targetFormat =
-        kind === "image" || kind === "background" || kind === "carousel" ? "WEBP" : "WEBP";
-      add(createAssetRecord(node, path, pluginId, kind, "PNG", targetFormat));
+      const isFlattenedBackground = tag === "image-background" || tag === "background-image";
+      const kind = isFlattenedBackground ? "background" : "image";
+      const record = createAssetRecord(node, path, pluginId, kind, "PNG", "WEBP");
+      if (isFlattenedBackground && parentNode?.absoluteBoundingBox && node?.absoluteBoundingBox) {
+        const parentBounds = parentNode.absoluteBoundingBox;
+        const nodeBounds = node.absoluteBoundingBox;
+        record.width = parentBounds.width;
+        record.height = parentBounds.height;
+        record.aspectRatio =
+          parentBounds.height > 0 ? Number((parentBounds.width / parentBounds.height).toFixed(4)) : null;
+        record.crop = {
+          width: parentBounds.width,
+          height: parentBounds.height,
+          offsetX: nodeBounds.x - parentBounds.x,
+          offsetY: nodeBounds.y - parentBounds.y,
+          backgroundColor: resolveBackgroundFallbackColor(parentNode, root)
+        };
+      }
+      add(record);
     } else if (
       !carouselChildIds.has(node.id) &&
       Array.isArray(node.fills) &&
@@ -180,9 +206,12 @@ export function discoverAssets(root, pluginId) {
       add(record);
     }
 
-    (node.children || []).forEach((child, index) =>
-      visit(child, `${path}.${index}`, iconOwnerTag)
-    );
+    const isFlattenedBackground = tag === "image-background" || tag === "background-image";
+    if (!isFlattenedBackground) {
+      (node.children || []).forEach((child, index) =>
+        visit(child, `${path}.${index}`, iconOwnerTag, node)
+      );
+    }
   };
 
   visit(root);

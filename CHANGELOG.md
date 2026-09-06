@@ -4,6 +4,7 @@
 
 ### Added
 
+- Grupos tagueados como `image-background`/`background-image` agora passam por flattening no tamanho do frame pai (com recorte de canvas e fallback de cor de fundo), sendo aplicados como `background_image` nativo do container pai em vez de gerar containers ou widgets de imagem soltos.
 - A extensão agora aceita WordPress local (`localhost`, `127.0.0.1`, `*.local`, `*.test`) sem exigir HTTPS, mantendo a exigência de HTTPS para qualquer outro domínio.
 
 ### Fixed

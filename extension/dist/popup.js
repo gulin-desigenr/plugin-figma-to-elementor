@@ -235,6 +235,15 @@ async function renderNodeImage(token, fileKey, nodeId, format = "png") {
   };
 }
 
+// src/utils/colors.js
+function figmaColorToRGBA(color, opacity = 1) {
+  const r = Math.round(color.r * 255);
+  const g = Math.round(color.g * 255);
+  const b = Math.round(color.b * 255);
+  const alpha = opacity !== void 0 ? opacity : 1;
+  return `rgba(${r},${g},${b},${parseFloat(alpha.toFixed(2))})`;
+}
+
 // extension/src/assets.js
 var TAG_PATTERN = /^\[([^\]]+)\]/;
 function toNumber(value, fallback = 0) {
@@ -286,6 +295,13 @@ function walkNodes(node, visitor, path = "0") {
   if (Array.isArray(node.children)) {
     node.children.forEach((child, index) => walkNodes(child, visitor, `${path}.${index}`));
   }
+}
+function firstSolidFillColor(node) {
+  const paint = Array.isArray(node?.fills) ? node.fills.find((fill) => fill?.type === "SOLID" && fill.visible !== false) : null;
+  return paint ? figmaColorToRGBA(paint.color, paint.opacity ?? paint.color?.a) : null;
+}
+function resolveBackgroundFallbackColor(sectionNode, rootNode) {
+  return firstSolidFillColor(sectionNode) || firstSolidFillColor(rootNode) || null;
 }
 function getDimensions(node) {
   const bounds = node.absoluteBoundingBox || node.size || {};
@@ -341,7 +357,7 @@ function discoverAssets(root, pluginId) {
     seen.add(record.assetRef);
     assets.push(record);
   };
-  const visit = (node, path = "0", inheritedIconTag = null) => {
+  const visit = (node, path = "0", inheritedIconTag = null, parentNode = null) => {
     const tag = getNodeTag(node, pluginId);
     const role = getNodeRole(node, pluginId);
     const iconOwnerTag = iconTags.has(tag) ? tag : inheritedIconTag;
@@ -352,9 +368,24 @@ function discoverAssets(root, pluginId) {
         add(createAssetRecord(child, `${path}.${index}`, pluginId, "carousel", "PNG", "WEBP"));
       });
     } else if (tag && ASSET_TAGS.has(tag) && !carouselChildIds.has(node.id)) {
-      const kind = tag === "image-background" || tag === "background-image" ? "background" : "image";
-      const targetFormat = kind === "image" || kind === "background" || kind === "carousel" ? "WEBP" : "WEBP";
-      add(createAssetRecord(node, path, pluginId, kind, "PNG", targetFormat));
+      const isFlattenedBackground2 = tag === "image-background" || tag === "background-image";
+      const kind = isFlattenedBackground2 ? "background" : "image";
+      const record = createAssetRecord(node, path, pluginId, kind, "PNG", "WEBP");
+      if (isFlattenedBackground2 && parentNode?.absoluteBoundingBox && node?.absoluteBoundingBox) {
+        const parentBounds = parentNode.absoluteBoundingBox;
+        const nodeBounds = node.absoluteBoundingBox;
+        record.width = parentBounds.width;
+        record.height = parentBounds.height;
+        record.aspectRatio = parentBounds.height > 0 ? Number((parentBounds.width / parentBounds.height).toFixed(4)) : null;
+        record.crop = {
+          width: parentBounds.width,
+          height: parentBounds.height,
+          offsetX: nodeBounds.x - parentBounds.x,
+          offsetY: nodeBounds.y - parentBounds.y,
+          backgroundColor: resolveBackgroundFallbackColor(parentNode, root)
+        };
+      }
+      add(record);
     } else if (!carouselChildIds.has(node.id) && Array.isArray(node.fills) && node.fills.some((fill) => fill?.type === "IMAGE" && fill.visible !== false)) {
       add(createAssetRecord(node, path, pluginId, "image", "PNG", "WEBP"));
     }
@@ -364,9 +395,12 @@ function discoverAssets(root, pluginId) {
       record.elementorWidget = iconOwnerTag || null;
       add(record);
     }
-    (node.children || []).forEach(
-      (child, index) => visit(child, `${path}.${index}`, iconOwnerTag)
-    );
+    const isFlattenedBackground = tag === "image-background" || tag === "background-image";
+    if (!isFlattenedBackground) {
+      (node.children || []).forEach(
+        (child, index) => visit(child, `${path}.${index}`, iconOwnerTag, node)
+      );
+    }
   };
   visit(root);
   return assets;
@@ -407,15 +441,6 @@ function buildAssetManifest(root, pluginId, selection) {
     },
     assets
   };
-}
-
-// src/utils/colors.js
-function figmaColorToRGBA(color, opacity = 1) {
-  const r = Math.round(color.r * 255);
-  const g = Math.round(color.g * 255);
-  const b = Math.round(color.b * 255);
-  const alpha = opacity !== void 0 ? opacity : 1;
-  return `rgba(${r},${g},${b},${parseFloat(alpha.toFixed(2))})`;
 }
 
 // src/utils/typography.js
@@ -1406,7 +1431,10 @@ function applyChildFillSizing(childNode, childResult) {
   return childResult;
 }
 async function handleManualTag(node, tag, isRoot, maps) {
-  if (tag === "container" || tag === "container-full" || tag === "page-wrapper" || tag === "image-background" || tag === "background-image") {
+  if (tag === "image-background" || tag === "background-image") {
+    return null;
+  }
+  if (tag === "container" || tag === "container-full" || tag === "page-wrapper") {
     let children = [];
     const childIsRoot = tag === "page-wrapper";
     if ("children" in node) {
@@ -2465,6 +2493,13 @@ function bindIconList(settings, source) {
     };
   });
 }
+function findBackgroundChild(sourceNode, pluginId) {
+  if (!Array.isArray(sourceNode?.children)) return null;
+  return sourceNode.children.find((child) => {
+    const childTag = getNodeTag(child, pluginId);
+    return childTag === "image-background" || childTag === "background-image";
+  }) || null;
+}
 function bindElementAssets(element, sourceMap, pluginId, sidecar) {
   const settings = element?.settings;
   const source = settings?.figmentor_source_node_id ? sourceMap.get(settings.figmentor_source_node_id) : null;
@@ -2475,17 +2510,20 @@ function bindElementAssets(element, sourceMap, pluginId, sidecar) {
       settings.image = nativeImage();
       settings.figmentor_assets.image = assetMetadata(source, "image", "image");
     }
-    if (element.elType === "container" && ["image-background", "background-image"].includes(tag)) {
-      settings.background_background = "classic";
-      settings.background_image = nativeImage();
-      settings.background_position = settings.background_position || "center center";
-      settings.background_repeat = settings.background_repeat || "no-repeat";
-      settings.background_size = settings.background_size || "cover";
-      settings.figmentor_assets.background_image = assetMetadata(
-        source,
-        "background",
-        "background_image"
-      );
+    if (element.elType === "container") {
+      const backgroundChild = findBackgroundChild(source, pluginId);
+      if (backgroundChild) {
+        settings.background_background = "classic";
+        settings.background_image = nativeImage();
+        settings.background_position = settings.background_position || "center center";
+        settings.background_repeat = settings.background_repeat || "no-repeat";
+        settings.background_size = settings.background_size || "cover";
+        settings.figmentor_assets.background_image = assetMetadata(
+          backgroundChild,
+          "background",
+          "background_image"
+        );
+      }
     }
     if (element.widgetType === "image-carousel" && Array.isArray(settings.carousel)) {
       const children = source.children?.length ? source.children : [source];
@@ -2670,6 +2708,17 @@ function encodeCanvas(canvas, quality) {
     );
   });
 }
+function encodeCanvasToPng(canvas) {
+  if (typeof canvas.convertToBlob === "function") {
+    return canvas.convertToBlob({ type: "image/png" });
+  }
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => blob ? resolve(blob) : reject(new Error("O navegador n\xE3o conseguiu gerar o PNG.")),
+      "image/png"
+    );
+  });
+}
 function buildScales(minScale = 0.08, decay = 0.82) {
   const scales = [];
   let scale = 1;
@@ -2740,6 +2789,25 @@ async function convertPngBlobToWebp(pngBlob, options = {}) {
     resized: best.scale !== 1,
     reason: `A melhor vers\xE3o gerada ficou com ${best.bytes} bytes, acima do limite de ${maxBytes} bytes.`
   };
+}
+async function compositeBackgroundImage(pngBlob, options = {}) {
+  const { width, height, offsetX = 0, offsetY = 0, backgroundColor = null } = options;
+  if (!width || !height) throw new Error("compositeBackgroundImage precisa de width e height.");
+  const bitmap = await (options.bitmapFactory || defaultBitmapFactory)(pngBlob);
+  try {
+    const canvas = (options.canvasFactory || defaultCanvasFactory)(width, height);
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("O navegador n\xE3o criou o contexto 2D para compor o background.");
+    context.clearRect?.(0, 0, width, height);
+    if (backgroundColor) {
+      context.fillStyle = backgroundColor;
+      context.fillRect(0, 0, width, height);
+    }
+    context.drawImage(bitmap, offsetX, offsetY);
+    return await encodeCanvasToPng(canvas);
+  } finally {
+    bitmap.close?.();
+  }
 }
 
 // extension/src/wordpress.js
@@ -3412,7 +3480,8 @@ async function processAssets(manifest, token, onlyFailed = false) {
       let uploadBlob = rendered.blob;
       const mimeType = isSvg ? "image/svg+xml" : "image/webp";
       if (!isSvg) {
-        const converted = await convertPngBlobToWebp(rendered.blob);
+        const sourceBlob = asset.crop ? await compositeBackgroundImage(rendered.blob, asset.crop) : rendered.blob;
+        const converted = await convertPngBlobToWebp(sourceBlob);
         asset.sourceBytes = rendered.blob.size;
         asset.targetBytes = converted.bytes;
         asset.width = converted.width;

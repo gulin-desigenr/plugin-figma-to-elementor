@@ -149,3 +149,29 @@ test("handleManualTag processa tag accordeon sem itens reconhecíveis caindo no 
   assert.equal(result.elements[0].elType, "container");
   assert.equal(result.elements[1].elType, "container");
 });
+
+test("handleManualTag chamado diretamente com image-background e background-image retorna null", async () => {
+  const node = adaptRestNode(
+    {
+      id: "6:1",
+      name: "[IMAGE-BACKGROUND] Hero background",
+      type: "FRAME",
+      pluginData: { [pluginId]: { "elementor-tag": "image-background" } },
+      children: [
+        {
+          id: "6:2",
+          name: "Child",
+          type: "RECTANGLE"
+        }
+      ]
+    },
+    pluginId
+  );
+  const maps = buildRestStyleMaps(node);
+
+  const resImageBg = await handleManualTag(node, "image-background", false, maps);
+  assert.equal(resImageBg, null);
+
+  const resBgImage = await handleManualTag(node, "background-image", false, maps);
+  assert.equal(resBgImage, null);
+});
